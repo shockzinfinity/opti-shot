@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import type { ScanProgress } from '@shared/types'
 import type { ScanOptions } from './folder'
-import { IPC } from '@shared/types'
 
 export interface Discovery {
   groupNumber: number
@@ -57,19 +56,18 @@ export const useScanStore = create<ScanState>((set, get) => ({
 
     }
 
-    const unsubscribe = window.electron.on(IPC.SCAN.PROGRESS, handler)
+    const unsubscribe = window.electron.subscribe('scan.progress', handler as (p: unknown) => void)
     return unsubscribe
   },
 
   startScan: async (options: ScanOptions) => {
     set({ isScanning: true, isPaused: false, isComplete: false, progress: null, discoveries: [] })
     try {
-      const response = await window.electron.invoke(IPC.SCAN.START, options)
-      if (response?.success) {
-        // IPC returns AFTER saveScanResults — DB is ready
+      const response = await window.electron.command('scan.start', options)
+      if (response.success) {
         set({ isComplete: true, isScanning: false })
       } else {
-        console.error('Scan failed:', response?.error)
+        console.error('Scan failed:', response.error)
         set({ isScanning: false })
       }
     } catch (err) {
@@ -80,8 +78,8 @@ export const useScanStore = create<ScanState>((set, get) => ({
 
   pauseScan: async () => {
     try {
-      const response = await window.electron.invoke(IPC.SCAN.PAUSE)
-      if (response?.success) {
+      const response = await window.electron.command('scan.pause')
+      if (response.success) {
         set({ isPaused: true })
       }
     } catch (err) {
@@ -91,8 +89,8 @@ export const useScanStore = create<ScanState>((set, get) => ({
 
   cancelScan: async () => {
     try {
-      const response = await window.electron.invoke(IPC.SCAN.CANCEL)
-      if (response?.success) {
+      const response = await window.electron.command('scan.cancel')
+      if (response.success) {
         set({ isScanning: false, isPaused: false })
       }
     } catch (err) {

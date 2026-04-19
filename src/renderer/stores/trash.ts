@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { IPC } from '@shared/types'
 
 export interface TrashItem {
   id: string
@@ -45,11 +44,11 @@ export const useTrashStore = create<TrashState>((set, get) => ({
   loadItems: async () => {
     set({ loading: true })
     try {
-      const response = await window.electron.invoke(IPC.TRASH.LIST, {
+      const response = await window.electron.query('trash.list', {
         offset: 0,
         limit: 200,
       })
-      const result = response?.success ? (response.data as { items: TrashItem[]; total: number }) : undefined
+      const result = response.success ? (response.data as unknown as { items: TrashItem[]; total: number }) : undefined
       if (result) {
         set({ items: result.items, total: result.total })
       }
@@ -62,8 +61,8 @@ export const useTrashStore = create<TrashState>((set, get) => ({
 
   loadSummary: async () => {
     try {
-      const response = await window.electron.invoke(IPC.TRASH.SUMMARY)
-      const summary = response?.success ? (response.data as TrashSummary) : undefined
+      const response = await window.electron.query('trash.summary')
+      const summary = response.success ? (response.data as unknown as TrashSummary) : undefined
       if (summary) {
         set({ summary })
       }
@@ -97,8 +96,8 @@ export const useTrashStore = create<TrashState>((set, get) => ({
     const ids = Array.from(selectedIds)
     try {
       for (const id of ids) {
-        const response = await window.electron.invoke(IPC.TRASH.RESTORE, id)
-        if (!response?.success) console.error('Failed to restore:', id, response?.error)
+        const response = await window.electron.command('trash.restore', { trashId: id })
+        if (!response.success) console.error('Failed to restore:', id, response.error)
       }
       set((state) => ({
         items: state.items.filter((i) => !state.selectedIds.has(i.id)),
@@ -116,8 +115,8 @@ export const useTrashStore = create<TrashState>((set, get) => ({
     const ids = Array.from(selectedIds)
     try {
       for (const id of ids) {
-        const response = await window.electron.invoke(IPC.TRASH.DELETE, id)
-        if (!response?.success) console.error('Failed to delete:', id, response?.error)
+        const response = await window.electron.command('trash.delete', { trashId: id })
+        if (!response.success) console.error('Failed to delete:', id, response.error)
       }
       set((state) => ({
         items: state.items.filter((i) => !state.selectedIds.has(i.id)),
@@ -132,8 +131,8 @@ export const useTrashStore = create<TrashState>((set, get) => ({
 
   emptyTrash: async () => {
     try {
-      const response = await window.electron.invoke(IPC.TRASH.EMPTY)
-      if (!response?.success) return
+      const response = await window.electron.command('trash.empty')
+      if (!response.success) return
       set({ items: [], total: 0, selectedIds: new Set() })
       await get().loadSummary()
     } catch (err) {

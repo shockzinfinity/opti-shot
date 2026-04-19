@@ -148,7 +148,7 @@ export function GroupDetail() {
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => {
-                        window.electron.invoke('shell:openPath', masterPhoto.path)
+                        window.electron.command('shell.openPath', { filePath: masterPhoto.path })
                       }}
                       className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold py-2 rounded-xl border border-border text-foreground-secondary hover:bg-surface-secondary transition-colors"
                     >

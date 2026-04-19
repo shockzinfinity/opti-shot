@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import type { ScanMode } from '@shared/types'
-import { IPC } from '@shared/types'
 
 export interface FolderEntry {
   id: string
@@ -52,14 +51,10 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   advancedOpen: false,
 
   addFolder: async () => {
-    const dialogResult = (await window.electron.invoke('dialog:openDirectory')) as {
-      success: boolean
-      data?: string
-      error?: string
-    }
+    const dialogResult = await window.electron.command('dialog.openDirectory')
     if (!dialogResult.success || !dialogResult.data) return
 
-    const path = dialogResult.data
+    const path = dialogResult.data as string
 
     // Prevent duplicates
     if (get().folders.some((f) => f.path === path)) return
@@ -82,18 +77,15 @@ export const useFolderStore = create<FolderState>((set, get) => ({
     const { folders } = get()
 
     // Clear existing DB folders and save current selection
-    const listResult = (await window.electron.invoke(IPC.FOLDERS.LIST)) as {
-      success: boolean
-      data: FolderEntry[]
-    }
+    const listResult = await window.electron.query('folder.list')
     if (listResult.success) {
-      for (const existing of listResult.data) {
-        await window.electron.invoke(IPC.FOLDERS.REMOVE, existing.id)
+      for (const existing of (listResult.data as unknown as FolderEntry[])) {
+        await window.electron.command('folder.remove', { id: existing.id })
       }
     }
 
     for (const folder of folders) {
-      await window.electron.invoke(IPC.FOLDERS.ADD, folder.path)
+      await window.electron.command('folder.add', { path: folder.path })
     }
   },
 

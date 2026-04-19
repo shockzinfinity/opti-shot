@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import type { ExportProgress } from '@shared/types'
-import { IPC } from '@shared/types'
 
 interface ExportState {
   targetPath: string
@@ -38,20 +37,12 @@ export const useExportStore = create<ExportState>((set, get) => ({
 
   loadSummary: async () => {
     try {
-      const result = (await window.electron.invoke('stats:get')) as {
-        success: boolean
-        data?: {
-          totalPhotos: number
-          totalGroups: number
-          reclaimableSize: number
-        }
-        error?: string
-      }
+      const result = await window.electron.query('stats.dashboard')
       if (result.success && result.data) {
-        // Use totalPhotos as export-selected count approximation
+        const data = result.data as { totalPhotos: number; totalGroups: number; reclaimableSize: number }
         set({
-          totalFiles: result.data.totalPhotos,
-          totalSize: result.data.reclaimableSize,
+          totalFiles: data.totalPhotos,
+          totalSize: data.reclaimableSize,
         })
       }
     } catch (err) {
@@ -63,8 +54,8 @@ export const useExportStore = create<ExportState>((set, get) => ({
 
   browseFolder: async () => {
     try {
-      const response = await window.electron.invoke('dialog:openDirectory')
-      if (response?.success && response.data) {
+      const response = await window.electron.command('dialog.openDirectory')
+      if (response.success && response.data) {
         set({ targetPath: response.data as string })
       }
     } catch (err) {
@@ -83,14 +74,14 @@ export const useExportStore = create<ExportState>((set, get) => ({
     const { targetPath, action, conflictStrategy, autoCreateFolder } = get()
     set({ isRunning: true, isComplete: false, progress: null })
     try {
-      const response = await window.electron.invoke(IPC.EXPORT.START, {
+      const response = await window.electron.command('export.start', {
         targetPath,
         action,
         conflictStrategy,
         autoCreateFolder,
       })
-      if (!response?.success) {
-        console.error('Failed to start export:', response?.error)
+      if (!response.success) {
+        console.error('Failed to start export:', response.error)
         set({ isRunning: false })
       }
     } catch (err) {
@@ -101,8 +92,8 @@ export const useExportStore = create<ExportState>((set, get) => ({
 
   cancelExport: async () => {
     try {
-      const response = await window.electron.invoke(IPC.EXPORT.CANCEL)
-      if (!response?.success) console.error('Failed to cancel export:', response?.error)
+      const response = await window.electron.command('export.cancel')
+      if (!response.success) console.error('Failed to cancel export:', response.error)
     } catch (err) {
       console.error('Failed to cancel export:', err)
     } finally {
@@ -130,7 +121,7 @@ export const useExportStore = create<ExportState>((set, get) => ({
       }
     }
 
-    const unsubscribe = window.electron.on(IPC.EXPORT.PROGRESS, handler)
+    const unsubscribe = window.electron.subscribe('export.progress', handler as (p: unknown) => void)
     return unsubscribe
   },
 }))

@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import type { ScanSettings, UiSettings, DataSettings } from '@main/services/settings'
-import { IPC } from '@shared/types'
 
 export type { ScanSettings, UiSettings, DataSettings }
 
@@ -58,7 +57,7 @@ const PRESET_VALUES: Record<'balanced' | 'conservative' | 'sensitive', Partial<S
 /** Save a single settings section to disk via IPC */
 async function persistSection(section: 'scan' | 'ui' | 'data', data: unknown): Promise<void> {
   try {
-    await window.electron.invoke(IPC.SETTINGS.SAVE, section, data)
+    await window.electron.command('settings.save', { section, data: data as Record<string, unknown> })
   } catch (err) {
     console.error(`Failed to save ${section} settings:`, err)
   }
@@ -75,9 +74,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ loading: true })
     try {
       const [scanRes, uiRes, dataRes] = await Promise.all([
-        window.electron.invoke(IPC.SETTINGS.GET, 'scan') as Promise<{ success: boolean; data: ScanSettings }>,
-        window.electron.invoke(IPC.SETTINGS.GET, 'ui') as Promise<{ success: boolean; data: UiSettings }>,
-        window.electron.invoke(IPC.SETTINGS.GET, 'data') as Promise<{ success: boolean; data: DataSettings }>,
+        window.electron.query('settings.get', { section: 'scan' }) as unknown as Promise<{ success: boolean; data: ScanSettings }>,
+        window.electron.query('settings.get', { section: 'ui' }) as unknown as Promise<{ success: boolean; data: UiSettings }>,
+        window.electron.query('settings.get', { section: 'data' }) as unknown as Promise<{ success: boolean; data: DataSettings }>,
       ])
       if (scanRes.success && uiRes.success && dataRes.success) {
         set({ scan: scanRes.data, ui: uiRes.data, data: dataRes.data })
@@ -117,7 +116,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   resetSection: async (section) => {
-    const result = await window.electron.invoke(IPC.SETTINGS.RESET, section) as { success: boolean; data: unknown }
+    const result = await window.electron.command('settings.reset', { section }) as { success: boolean; data: unknown }
     if (result.success) {
       set({ [section]: result.data })
     }
