@@ -1,7 +1,6 @@
 import { app, BrowserWindow, nativeImage, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
-import { registerAllHandlers } from './ipc/register'
 import { initCqrs } from './cqrs'
 import { initAutoUpdater } from './services/updater'
 import { getSettings } from './services/settings'
@@ -154,8 +153,7 @@ app.whenReady().then(() => {
     app.dock.setIcon(nativeImage.createFromPath(getIconPath()))
   }
 
-  registerAllHandlers()  // 기존 IPC (Phase 3에서 제거)
-  initCqrs()             // CQRS 버스 (공존)
+  initCqrs()
   createWindow()
   createTray()
   initAutoUpdater()

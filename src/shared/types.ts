@@ -20,17 +20,6 @@ export type ConflictStrategy = 'skip' | 'rename' | 'overwrite'
 export type TrashStatus = 'trashed' | 'restored' | 'purged'
 export type ScanPreset = 'balanced' | 'conservative' | 'sensitive'
 
-// IPC Channel names
-export const IPC = {
-  FOLDERS: { ADD: 'folders:add', REMOVE: 'folders:remove', LIST: 'folders:list', VALIDATE: 'folders:validate' },
-  SCAN: { START: 'scan:start', PAUSE: 'scan:pause', CANCEL: 'scan:cancel', PROGRESS: 'scan:progress', STATUS: 'scan:status' },
-  GROUPS: { LIST: 'groups:list', DETAIL: 'groups:detail', CHANGE_MASTER: 'groups:changeMaster', MARK_REVIEWED: 'groups:markReviewed' },
-  PHOTOS: { INFO: 'photos:info', THUMBNAIL: 'photos:thumbnail' },
-  REVIEWS: { GET_PENDING: 'reviews:getPending' },
-  EXPORT: { START: 'export:start', PAUSE: 'export:pause', CANCEL: 'export:cancel', PROGRESS: 'export:progress' },
-  TRASH: { LIST: 'trash:list', SUMMARY: 'trash:summary', MOVE: 'trash:move', RESTORE: 'trash:restore', RESTORE_GROUP: 'trash:restoreGroup', DELETE: 'trash:delete', EMPTY: 'trash:empty' },
-  SETTINGS: { GET: 'settings:get', SAVE: 'settings:save', RESET: 'settings:reset' },
-} as const
 
 // Status & Decision Constants
 export const SCAN_STATUS = {

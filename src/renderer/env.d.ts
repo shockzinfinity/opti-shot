@@ -4,11 +4,6 @@ declare module '*.css' {}
 
 interface Window {
   electron: {
-    // Legacy API (Phase 3에서 제거)
-    invoke: (channel: string, ...args: unknown[]) => Promise<import('@shared/types').IpcResponse>
-    on: (channel: string, callback: (...args: unknown[]) => void) => () => void
-
-    // CQRS API
     command: <K extends keyof import('@shared/cqrs').CommandMap>(
       type: K,
       ...args: import('@shared/cqrs').CommandMap[K]['input'] extends void ? [] : [import('@shared/cqrs').CommandMap[K]['input']]
