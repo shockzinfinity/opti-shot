@@ -420,7 +420,7 @@ export function InfoTab() {
 
   useEffect(() => {
     window.electron.invoke('app:info')
-      .then((data) => setInfo(data as Record<string, string>))
+      .then((res) => { if (res.success) setInfo(res.data as Record<string, string>) })
       .catch(() => {})
   }, [])
 

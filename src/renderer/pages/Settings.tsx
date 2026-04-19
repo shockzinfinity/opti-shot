@@ -7,7 +7,7 @@ import { UITab, DataTab, InfoTab } from '@renderer/components/SettingsTabs'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 import type { TranslationKey } from '@renderer/i18n'
 
-type TabId = 'scan' | 'ui' | 'data' | 'info'
+type TabId = 'ui' | 'data' | 'info'
 
 interface TabConfig {
   id: TabId

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { ScanProgress } from '@shared/types'
+import type { ScanOptions } from './folder'
 import { IPC } from '@shared/types'
 
 export interface Discovery {
@@ -18,7 +19,7 @@ interface ScanState {
   discoveries: Discovery[]
   // actions
   startListening: () => () => void
-  startScan: (options: Record<string, unknown>) => Promise<void>
+  startScan: (options: ScanOptions) => Promise<void>
   pauseScan: () => Promise<void>
   cancelScan: () => Promise<void>
   reset: () => void
@@ -60,7 +61,7 @@ export const useScanStore = create<ScanState>((set, get) => ({
     return unsubscribe
   },
 
-  startScan: async (options: Record<string, unknown>) => {
+  startScan: async (options: ScanOptions) => {
     set({ isScanning: true, isPaused: false, isComplete: false, progress: null, discoveries: [] })
     try {
       const response = await window.electron.invoke(IPC.SCAN.START, options)

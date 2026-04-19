@@ -2,6 +2,13 @@
 
 export type UUID = string
 
+// IPC Response wrapper — all IPC handlers return this shape
+export interface IpcResponse<T = unknown> {
+  success: boolean
+  data?: T
+  error?: string
+}
+
 // Enums
 export type ScanMode = 'full' | 'date_range' | 'folder_only' | 'incremental'
 export type ScanStatus = 'running' | 'paused' | 'completed' | 'failed' | 'cancelled'

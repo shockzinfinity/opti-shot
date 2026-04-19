@@ -3,11 +3,14 @@ import { existsSync } from 'fs'
 
 export function registerAppInfoHandlers(): void {
   ipcMain.handle('app:info', () => ({
-    version: app.getVersion(),
-    electron: process.versions.electron,
-    node: process.versions.node,
-    chrome: process.versions.chrome,
-    platform: `${process.platform} ${process.arch}`,
+    success: true,
+    data: {
+      version: app.getVersion(),
+      electron: process.versions.electron,
+      node: process.versions.node,
+      chrome: process.versions.chrome,
+      platform: `${process.platform} ${process.arch}`,
+    },
   }))
 
   ipcMain.handle('shell:openPath', async (_event, filePath: unknown) => {

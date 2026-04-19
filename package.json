@@ -36,9 +36,7 @@
       "category": "public.app-category.utilities"
     },
     "win": {
-      "target": ["nsis", "portable"],
-      "certificateFile": null,
-      "certificatePassword": null
+      "target": ["nsis", "portable"]
     },
     "linux": {
       "target": ["AppImage", "deb"],
