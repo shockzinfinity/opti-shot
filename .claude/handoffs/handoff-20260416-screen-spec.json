@@ -1,0 +1,187 @@
+{
+  "completed_skill": "screen-spec",
+  "next_skill": "tasks-generator",
+  "timestamp": "2026-04-16",
+  "session_duration_approx": "~60min",
+
+  "context_summary": {
+    "project_name": "OptiShot",
+    "cogito_proposition": "수십 년간 흩어진 추억을 안전하게 한 곳에 보존",
+    "positioning": "내 사진을 내 규칙으로, 단계별로 확인하며 정리하는 로컬 데스크톱 도구",
+
+    "features": {
+      "F1": "유사/중복 감지·그룹화 (2-Stage: pHash→ORB/SSIM, BK-Tree)",
+      "F2": "품질 평가·베스탈 선별 (Laplacian Variance, AI추천+사용자확인)",
+      "F3": "메타데이터 통합/복원 (v2 — MVP 범위 외)",
+      "F4": "내보내기 (MVP: 단순 복사/이동, v2: 규칙 기반)"
+    },
+
+    "screens": {
+      "S1": {"name": "대시보드", "route": "/", "layout": "full-width", "key_resources": ["stats", "scans"]},
+      "S2": {"name": "폴더 선택", "route": "/folders", "layout": "full-width", "key_resources": ["folders", "scan_options"]},
+      "S3": {"name": "스캔 진행", "route": "/scan", "layout": "full-width", "key_resources": ["scans", "scan_discoveries"]},
+      "S4": {"name": "그룹 리뷰", "route": "/review", "layout": "sidebar-main", "key_resources": ["groups", "photos", "review_decisions"]},
+      "S5": {"name": "내보내기", "route": "/export", "layout": "full-width", "key_resources": ["exports", "export_items", "photos"]},
+      "S6": {"name": "휴지통", "route": "/trash", "layout": "full-width", "key_resources": ["trash", "trash_summary"]},
+      "S7": {"name": "설정", "route": "/settings", "layout": "full-width", "key_resources": ["settings_scan", "settings_ui", "settings_data", "settings_info"]}
+    },
+
+    "navigation_flow": {
+      "primary": "/ → /folders → /scan → /review → /export → /",
+      "global_access": ["/settings", "/trash"],
+      "note": "header_bar에서 settings/trash 접근 가능, 모든 화면에서 / (대시보드)로 복귀 가능"
+    },
+
+    "tech_stack": ".NET 10 (LTS) + WPF + MVVM + OpenCvSharp4 + MetadataExtractor + SQLite",
+
+    "constraints": {
+      "performance": "20만 장 Stage 1 스캔 30분 이내",
+      "safety": "Soft Delete, 원본 절대 안 건드림",
+      "privacy": "100% 로컬, 클라우드 없음",
+      "scan_modes": "전체/폴더별/기간별/증분"
+    },
+
+    "domain_resources": {
+      "version": "1.1",
+      "count": 16,
+      "singletons": ["stats", "scan_options", "trash_summary"],
+      "collections": ["folders", "scans", "scan_discoveries", "groups", "photos", "review_decisions", "exports", "export_items", "trash"],
+      "settings": ["settings_scan", "settings_ui", "settings_data", "settings_info"],
+      "key_refs": [
+        "scans.options → scan_options",
+        "scan_discoveries.group_id → groups",
+        "groups.master_id → photos (순환 — DB 초기 저장 순서 설계 필요)",
+        "photos.group_id → groups",
+        "review_decisions.group_id → groups, .photo_id → photos",
+        "export_items.export_id → exports, .photo_id → photos, .group_id → groups",
+        "trash.photo_id → photos"
+      ],
+      "codex_review_changes": [
+        "v1.0→v1.1: review_decisions 리소스 신규 추가 (S4 사용자 판정)",
+        "export_items 리소스 신규 추가 (내보내기 대상 연결)",
+        "scan_discoveries.group_id에 ref: groups 추가",
+        "trash에 photo_id(ref), status enum, restored_at 추가",
+        "scans에 error_message, ended_at 추가",
+        "groups에 reclaimable_size, reviewed_at 추가",
+        "enable_correction_detect → enable_correction_detection 네이밍 수정",
+        "photos.thumbnail binary → thumbnail_path string (MVVM 바인딩 최적화)",
+        "settings를 섹션별 분리 (settings_scan/ui/data/info — DTO 매핑 용이)",
+        "estimated_remaining → estimated_remaining_seconds 단위 명시",
+        "settings_info에 license, website_url, github_url, release_notes_url 추가"
+      ]
+    },
+
+    "design_system": {
+      "pencil_file": "design/design-system.pen",
+      "style": "Soft Bento + Electric Cobalt",
+      "colors": {
+        "primary": "#0062FF",
+        "primary_hover": "#0050D4",
+        "primary_light": "#E8F0FE",
+        "surface_primary": "#FFFFFF",
+        "surface_secondary": "#F7F8FA",
+        "foreground_primary": "#1A1A1A",
+        "foreground_secondary": "#4B5563",
+        "foreground_muted": "#9CA3AF",
+        "success": "#22C55E",
+        "warning": "#F59E0B",
+        "error": "#EF4444",
+        "border": "#E5E7EB"
+      },
+      "fonts": {"headings": "Geist", "body": "Inter", "mono": "Geist Mono"},
+      "spacing_scale": {"xs": 4, "sm": 8, "md": 16, "lg": 24, "xl": 32, "2xl": 48},
+      "radius_scale": {"sm": 4, "md": 8, "lg": 12, "xl": 16, "full": 9999},
+      "icon_set": "lucide (100% 통일)",
+      "components": [
+        "Button/Primary", "Button/Secondary", "Button/Outline", "Button/Danger", "Button/Ghost",
+        "InputGroup", "SelectGroup",
+        "StatCard", "Card (container with header/content/actions slots)",
+        "ProgressBar",
+        "Badge/Success", "Badge/Warning", "Badge/Error", "Badge/Info",
+        "NavItem/Active", "NavItem/Default",
+        "HeaderBar (logo + breadcrumb + actions)",
+        "TabBar", "Tab/Active", "Tab/Inactive",
+        "Checkbox/Checked", "Checkbox/Unchecked",
+        "Radio/Checked", "Radio/Unchecked",
+        "Toggle/On", "Toggle/Off",
+        "PhotoCard/Master (blue border + star + metadata)",
+        "PhotoCard/Duplicate (faded, opacity 0.7)",
+        "ListItem (checkbox + content + action icon)",
+        "Dialog (icon + title + desc + action buttons)",
+        "EmptyState (icon + title + desc + CTA)",
+        "Slider (label + value + track + thumb + range)"
+      ]
+    },
+
+    "stitch_project": {
+      "project_id": "977412230907375002",
+      "stitch_url": "https://stitch.withgoogle.com/p/977412230907375002",
+      "metadata_file": "design/stitch-project.json",
+      "screens": {
+        "dashboard": "55e3db6d2f294b1a85d511b679e22074",
+        "folder-select": "5100e89e84204c2ab73b8cb7ae416c30",
+        "scan-progress": "5b6c5d1c427f42f2914f8c18ede6e9db",
+        "group-review": "7ec29d2014b34e73a8cd72c3566c45ca",
+        "export": "641bad22b0714c938a7c718fbd29e4f3",
+        "trash": "c8a13ca61b584d9e8481848c2a0b4bb7",
+        "settings": "3d0b9a930b33408eac01b3eeafb79fea"
+      },
+      "note": "Stitch에서 직접 편집 가능 — URL: https://stitch.withgoogle.com/p/977412230907375002"
+    },
+
+    "personas": {
+      "primary": "IT 개발자 5년+, NAS+HDD+스마트폰, 20만+장, 제어권 중시",
+      "secondary": "NAS 사진 관리 고민러, IT 친화적"
+    },
+
+    "business_model": "Freemium (소량 무료, 대량처리 유료)"
+  },
+
+  "output_files": [
+    "specs/domain/resources.yaml",
+    "specs/screens/index.yaml",
+    "specs/screens/dashboard.yaml",
+    "specs/screens/folder-select.yaml",
+    "specs/screens/scan-progress.yaml",
+    "specs/screens/group-review.yaml",
+    "specs/screens/export.yaml",
+    "specs/screens/trash.yaml",
+    "specs/screens/settings.yaml",
+    "specs/shared/components.yaml",
+    "specs/shared/types.yaml",
+    "design/design-system.pen",
+    "design/stitch-project.json",
+    "design/html/dashboard.html"
+  ],
+
+  "upstream_files": [
+    "docs/planning/01-prd.md",
+    "docs/planning/02-features.md",
+    "docs/planning/03-tech-stack.md",
+    "docs/planning/04-user-stories.md",
+    "docs/planning/05-navigation.md",
+    "docs/planning/06-screens.md",
+    "docs/planning/07-competitive.md",
+    "docs/planning/08-business.md",
+    "docs/planning/09-personas.md"
+  ],
+
+  "quality_checks": {
+    "field_coverage": "100% — 16/16 리소스, 모든 필드가 최소 1개 화면에서 참조",
+    "ref_integrity": "모든 리소스 간 ref 관계 정의됨",
+    "codex_review": "적용 완료 — 10개 항목 반영",
+    "design_review": "Dialog, EmptyState, Slider 보강, 아이콘 lucide 통일",
+    "stitch_generation": "7/7 화면 목업 생성 완료"
+  },
+
+  "known_issues": [
+    "groups.master_id ↔ photos.group_id 순환 참조 — DB 초기 저장 순서 설계 필요",
+    "photos.thumbnail_path — 썸네일 생성/캐시 전략 구현 시 결정 필요",
+    "Stitch 화면 HTML은 dashboard만 저장됨 — 나머지는 Stitch 웹에서 fetch_screen_code로 추출 가능"
+  ],
+
+  "next_session_instructions": "새 세션에서 /tasks-generator 입력. 이 핸드오프 파일이 자동 로드됨. specs/screens/*.yaml + specs/domain/resources.yaml 기반으로 Phase/Task 분해 실행.",
+
+  "ambiguity_score": 0.05,
+  "user_level": "L4"
+}

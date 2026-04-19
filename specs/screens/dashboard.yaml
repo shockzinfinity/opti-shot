@@ -1,0 +1,116 @@
+version: "2.0"
+screen:
+  name: Dashboard
+  route: /
+  layout: full-width
+data_requirements:
+  - resource: stats
+    needs: [total_photos, total_groups, reclaimable_size, last_scan_at, last_scan_duration_seconds, last_scan_photos, last_scan_groups]
+  - resource: scans
+    needs: [id, status, progress_percent, started_at, ended_at]
+components:
+  - id: header_bar
+    type: navigation
+    position: header
+    function: "Display app logo, title, and access settings/help"
+    events:
+      - on: settings_click
+        do: navigate_to(/settings)
+      - on: help_click
+        do: show_help_modal()
+
+  - id: summary_stats_card_photos
+    type: stat-card
+    position: main
+    function: "Display total photos count"
+    data_source:
+      resource: stats
+    events:
+      - on: card_hover
+        do: show_tooltip(total_photos_description)
+
+  - id: summary_stats_card_groups
+    type: stat-card
+    position: main
+    function: "Display total duplicate groups count"
+    data_source:
+      resource: stats
+    events:
+      - on: card_hover
+        do: show_tooltip(total_groups_description)
+
+  - id: summary_stats_card_reclaimable
+    type: stat-card
+    position: main
+    function: "Display reclaimable storage size in human-readable format"
+    data_source:
+      resource: stats
+    events:
+      - on: card_hover
+        do: show_tooltip(reclaimable_size_description)
+
+  - id: recent_scan_card
+    type: card
+    position: main
+    function: "Display details of last completed scan with timestamp and results"
+    data_source:
+      resource: scans
+    events:
+      - on: view_results_click
+        do: navigate_to(/review)
+      - on: check_settings_click
+        do: navigate_to(/settings)
+
+  - id: action_buttons
+    type: card
+    position: main
+    function: "Provide primary action buttons with state-aware enabling/disabling"
+    events:
+      - on: start_scan_click
+        do: navigate_to(/folders)
+      - on: view_recent_click
+        do: navigate_to(/review)
+      - on: trash_click
+        do: navigate_to(/trash)
+      - on: settings_click
+        do: navigate_to(/settings)
+
+connections:
+  navigations:
+    - from: header_bar
+      to: /settings
+    - from: header_bar
+      to: /help
+    - from: action_buttons
+      to: /folders
+    - from: action_buttons
+      to: /review
+    - from: action_buttons
+      to: /trash
+    - from: action_buttons
+      to: /settings
+  shared_components: [header_bar]
+
+tests:
+  - name: First Run State
+    when: "No scan has been completed (last_scan_at is null)"
+    then:
+      - "Empty state message 'Please start a scan' is displayed"
+      - "Start Scan button is enabled"
+      - "View Recent Scan button is disabled"
+      - "Stats cards show zero values"
+
+  - name: Scan In Progress State
+    when: "A scan with status=running exists"
+    then:
+      - "Progress indicator displays current scan status and percentage"
+      - "All primary action buttons are disabled"
+      - "Real-time stats update from active scan"
+
+  - name: Scan Completed State
+    when: "Last scan has status=completed and last_scan_at is set"
+    then:
+      - "Summary statistics display actual counts"
+      - "Recent scan card shows elapsed time, file count, and group count"
+      - "All action buttons are enabled"
+      - "Reclaimable size formatted as human-readable (e.g., 50GB)"

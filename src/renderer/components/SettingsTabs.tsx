@@ -1,0 +1,462 @@
+import { useState, useEffect, type ReactNode } from 'react'
+import { clearThumbnailCache } from '@renderer/hooks/useThumbnail'
+import { formatBytes } from '@shared/utils'
+import {
+  ScanSearch,
+  Palette,
+  Database,
+  Info,
+  Filter,
+  RefreshCcw,
+  Check,
+  Bell,
+  Monitor,
+  Minimize2,
+  Maximize2,
+  Globe,
+  Trash2,
+  Clock,
+} from 'lucide-react'
+import { useSettingsStore } from '@renderer/stores/settings'
+import { useTranslation } from '@renderer/hooks/useTranslation'
+import { PresetSelector } from './PresetSelector'
+import { SettingsSlider } from './SettingsSlider'
+
+// --- Toggle Switch ---
+
+interface ToggleProps {
+  on: boolean
+  onToggle: () => void
+  label: string
+}
+
+function Toggle({ on, onToggle, label }: ToggleProps) {
+  return (
+    <button
+      onClick={onToggle}
+      className={`w-12 h-6 rounded-full relative flex items-center px-1 transition-colors ${on ? 'bg-primary' : 'bg-border'}`}
+      role="switch"
+      aria-checked={on}
+      aria-label={`Toggle ${label}`}
+    >
+      <div
+        className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${on ? 'translate-x-6' : 'translate-x-0'}`}
+      />
+    </button>
+  )
+}
+
+// --- Toggle Card ---
+
+interface ToggleCardProps {
+  icon: ReactNode
+  label: string
+  description: string
+  value: boolean
+  onToggle: () => void
+}
+
+function ToggleCard({ icon, label, description, value, onToggle }: ToggleCardProps) {
+  return (
+    <div className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          {icon}
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground-primary">{label}</p>
+          <p className="text-xs text-foreground-muted">{description}</p>
+        </div>
+      </div>
+      <Toggle on={value} onToggle={onToggle} label={label} />
+    </div>
+  )
+}
+
+// --- Section Header ---
+
+function SectionHeader({ title }: { title: string }) {
+  return <h3 className="text-base font-heading font-semibold text-foreground-primary">{title}</h3>
+}
+
+// ============================
+// SCAN TAB
+// ============================
+
+export function ScanTab() {
+  const { scan, updateScan, applyPreset } = useSettingsStore()
+  const { t } = useTranslation()
+
+  return (
+    <div className="space-y-8">
+      {/* Scanning Presets */}
+      <div className="space-y-3">
+        <SectionHeader title={t('settings.scanPresets')} />
+        <p className="text-sm text-foreground-muted">{t('settings.scanPresetsDesc')}</p>
+        <PresetSelector value={scan.preset} onChange={(p) => applyPreset(p)} />
+      </div>
+
+      {/* Heuristic Parameters */}
+      <div className="bg-surface-secondary p-8 rounded-xl space-y-6">
+        <div className="flex items-center gap-2">
+          <ScanSearch className="w-4 h-4 text-primary" />
+          <SectionHeader title={t('settings.heuristicParams')} />
+        </div>
+
+        <SettingsSlider
+          label={t('settings.phashThreshold')}
+          value={scan.phashThreshold}
+          min={4}
+          max={16}
+          step={1}
+          format={(v) => `${v}`}
+          onChange={(v) => updateScan('phashThreshold', v)}
+        />
+        <SettingsSlider
+          label={t('settings.ssimThreshold')}
+          value={scan.ssimThreshold}
+          min={0.5}
+          max={0.95}
+          step={0.01}
+          format={(v) => v.toFixed(2)}
+          onChange={(v) => updateScan('ssimThreshold', v)}
+        />
+        <SettingsSlider
+          label={t('settings.timeWindow')}
+          value={scan.timeWindowHours}
+          min={0}
+          max={24}
+          step={1}
+          format={(v) => (v === 0 ? t('settings.timeWindowOff') : `${v}hr`)}
+          onChange={(v) => updateScan('timeWindowHours', v)}
+        />
+        <SettingsSlider
+          label={t('settings.parallelThreads')}
+          value={scan.parallelThreads}
+          min={1}
+          max={16}
+          step={1}
+          format={(v) => `${v}`}
+          onChange={(v) => updateScan('parallelThreads', v)}
+        />
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-body text-foreground-primary">{t('settings.batchSize')}</span>
+            <span className="text-sm font-mono font-semibold text-primary min-w-[3rem] text-right">
+              {scan.batchSize}
+            </span>
+          </div>
+          <input
+            type="number"
+            min={10}
+            max={1000}
+            step={10}
+            value={scan.batchSize}
+            onChange={(e) => updateScan('batchSize', Number(e.target.value))}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-surface-primary text-foreground-primary text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+      </div>
+
+      {/* Advanced Processing */}
+      <div className="space-y-3">
+        <SectionHeader title={t('settings.advancedProcessing')} />
+        <div className="space-y-3">
+          <ToggleCard
+            icon={<RefreshCcw className="w-4 h-4" />}
+            label={t('settings.correctionDetection')}
+            description={t('settings.correctionDetectionDesc')}
+            value={scan.enableCorrectionDetection}
+            onToggle={() => updateScan('enableCorrectionDetection', !scan.enableCorrectionDetection)}
+          />
+          <ToggleCard
+            icon={<Filter className="w-4 h-4" />}
+            label={t('settings.exifFiltering')}
+            description={t('settings.exifFilteringDesc')}
+            value={scan.enableExifFilter}
+            onToggle={() => updateScan('enableExifFilter', !scan.enableExifFilter)}
+          />
+          <ToggleCard
+            icon={<Check className="w-4 h-4" />}
+            label={t('settings.incrementalScan')}
+            description={t('settings.incrementalScanDesc')}
+            value={scan.enableIncremental}
+            onToggle={() => updateScan('enableIncremental', !scan.enableIncremental)}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================
+// UI TAB
+// ============================
+
+type Theme = 'light' | 'dark' | 'auto'
+
+const LANGUAGES: { id: 'ko' | 'en' | 'ja'; label: string }[] = [
+  { id: 'ko', label: '한국어' },
+  { id: 'en', label: 'English' },
+  { id: 'ja', label: '日本語' },
+]
+
+export function UITab() {
+  const { ui, updateUi } = useSettingsStore()
+  const { t } = useTranslation()
+
+  const THEMES: { id: Theme; label: string; icon: ReactNode }[] = [
+    { id: 'light', label: t('settings.themeLight'), icon: <Monitor className="w-4 h-4" /> },
+    { id: 'dark', label: t('settings.themeDark'), icon: <Monitor className="w-4 h-4" /> },
+    { id: 'auto', label: t('settings.themeAuto'), icon: <Monitor className="w-4 h-4" /> },
+  ]
+
+  return (
+    <div className="space-y-8">
+      {/* Language */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Globe className="w-4 h-4 text-primary" />
+          <SectionHeader title={t('settings.language')} />
+        </div>
+        <div className="flex gap-3">
+          {LANGUAGES.map((lang) => (
+            <button
+              key={lang.id}
+              onClick={() => updateUi('language', lang.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all border-2 ${
+                ui.language === lang.id
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-transparent bg-surface-secondary text-foreground-secondary hover:border-border'
+              }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Theme */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Palette className="w-4 h-4 text-primary" />
+          <SectionHeader title={t('settings.theme')} />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {THEMES.map((theme) => {
+            const isActive = ui.theme === theme.id
+            return (
+              <button
+                key={theme.id}
+                onClick={() => updateUi('theme', theme.id)}
+                className={`p-4 rounded-xl text-left transition-all border-2 ${
+                  isActive
+                    ? 'border-primary bg-primary/5'
+                    : 'border-transparent bg-surface-secondary hover:border-border'
+                }`}
+              >
+                <div className={`mb-2 ${isActive ? 'text-primary' : 'text-foreground-muted'}`}>{theme.icon}</div>
+                <span className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-foreground-primary'}`}>
+                  {theme.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Notification & Window toggles */}
+      <div className="space-y-3">
+        <SectionHeader title={t('settings.behavior')} />
+        <div className="space-y-3">
+          <ToggleCard
+            icon={<Clock className="w-4 h-4" />}
+            label={t('settings.use24HourClock')}
+            description={t('settings.use24HourClockDesc')}
+            value={ui.use24HourClock}
+            onToggle={() => updateUi('use24HourClock', !ui.use24HourClock)}
+          />
+          <ToggleCard
+            icon={<Bell className="w-4 h-4" />}
+            label={t('settings.notifyOnComplete')}
+            description={t('settings.notifyOnCompleteDesc')}
+            value={ui.notifyOnComplete}
+            onToggle={() => updateUi('notifyOnComplete', !ui.notifyOnComplete)}
+          />
+          <ToggleCard
+            icon={<Minimize2 className="w-4 h-4" />}
+            label={t('settings.minimizeToTray')}
+            description={t('settings.minimizeToTrayDesc')}
+            value={ui.minimizeToTray}
+            onToggle={() => updateUi('minimizeToTray', !ui.minimizeToTray)}
+          />
+          <ToggleCard
+            icon={<Maximize2 className="w-4 h-4" />}
+            label={t('settings.restoreWindowSize')}
+            description={t('settings.restoreWindowSizeDesc')}
+            value={ui.restoreWindowSize}
+            onToggle={() => updateUi('restoreWindowSize', !ui.restoreWindowSize)}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================
+// DATA TAB
+// ============================
+
+
+export function DataTab() {
+  const { data, updateData } = useSettingsStore()
+  const { t } = useTranslation()
+  const [storageStats, setStorageStats] = useState<{ dbSize: number; cacheSize: number }>({ dbSize: 0, cacheSize: 0 })
+
+  useEffect(() => {
+    window.electron.invoke('maintenance:storageStats').then((res: any) => {
+      if (res?.success) setStorageStats(res.data)
+    })
+  }, [])
+
+  const handleClearCache = async () => {
+    const res = await window.electron.invoke('maintenance:clearCache') as { success: boolean }
+    if (res?.success) {
+      setStorageStats((s) => ({ ...s, cacheSize: 0 }))
+      alert(t('settings.cacheCleared'))
+    }
+  }
+
+  const handleClearScanHistory = async () => {
+    if (!confirm(t('settings.clearScanHistoryConfirm'))) return
+    const res = await window.electron.invoke('maintenance:clearScanHistory') as { success: boolean }
+    if (res?.success) {
+      clearThumbnailCache()
+      setStorageStats({ dbSize: 0, cacheSize: 0 })
+      alert(t('settings.scanHistoryCleared'))
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Trash Retention */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Database className="w-4 h-4 text-primary" />
+          <SectionHeader title={t('settings.trashRetention')} />
+        </div>
+        <div className="bg-surface-secondary p-6 rounded-xl">
+          <SettingsSlider
+            label={t('settings.retentionPeriod')}
+            value={data.trashRetentionDays}
+            min={7}
+            max={90}
+            step={1}
+            format={(v) => `${v} days`}
+            onChange={(v) => updateData('trashRetentionDays', v)}
+          />
+        </div>
+      </div>
+
+      {/* Toggles */}
+      <div className="space-y-3">
+        <SectionHeader title={t('settings.automation')} />
+        <ToggleCard
+          icon={<RefreshCcw className="w-4 h-4" />}
+          label={t('settings.autoCacheCleanup')}
+          description={t('settings.autoCacheCleanupDesc')}
+          value={data.autoCacheCleanup}
+          onToggle={() => updateData('autoCacheCleanup', !data.autoCacheCleanup)}
+        />
+        <ToggleCard
+          icon={<Trash2 className="w-4 h-4" />}
+          label={t('settings.useSystemTrash')}
+          description={t('settings.useSystemTrashDesc')}
+          value={data.useSystemTrash}
+          onToggle={() => updateData('useSystemTrash', !data.useSystemTrash)}
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="space-y-3">
+        <SectionHeader title={t('settings.maintenance')} />
+        <div className="flex gap-3">
+          <button
+            onClick={handleClearScanHistory}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface-secondary border border-error/20 text-error hover:bg-error-light transition-colors"
+          >
+            {t('settings.clearScanHistory')}
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="space-y-3">
+        <SectionHeader title={t('settings.storageStats')} />
+        <div className="bg-surface-secondary rounded-xl divide-y divide-border">
+          {[
+            { labelKey: 'settings.dbSize' as const, value: formatBytes(storageStats.dbSize) },
+            { labelKey: 'settings.cacheSize' as const, value: formatBytes(storageStats.cacheSize) },
+          ].map(({ labelKey, value }) => (
+            <div key={labelKey} className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm text-foreground-secondary">{t(labelKey)}</span>
+              <span className="text-sm font-mono text-foreground-primary">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================
+// INFO TAB
+// ============================
+
+export function InfoTab() {
+  const { t } = useTranslation()
+  const [info, setInfo] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    window.electron.invoke('app:info')
+      .then((data) => setInfo(data as Record<string, string>))
+      .catch(() => {})
+  }, [])
+
+  const rows = [
+    { labelKey: 'settings.version' as const, value: info.version ?? '—' },
+    { labelKey: 'settings.platform' as const, value: info.platform ?? '—' },
+    { labelKey: 'settings.electron' as const, value: info.electron ?? '—' },
+    { labelKey: 'settings.node' as const, value: info.node ?? '—' },
+    { labelKey: 'settings.chrome' as const, value: info.chrome ?? '—' },
+    { labelKey: 'settings.license' as const, value: 'MIT' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+          <Info className="w-6 h-6" />
+        </div>
+        <div>
+          <p className="text-lg font-heading font-bold text-foreground-primary">OptiShot</p>
+          <p className="text-sm text-foreground-muted">{t('settings.appDesc')}</p>
+        </div>
+      </div>
+
+      <div className="bg-surface-secondary rounded-xl divide-y divide-border">
+        {rows.map(({ labelKey, value }) => (
+          <div key={labelKey} className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-foreground-secondary">{t(labelKey)}</span>
+            <span className="text-sm font-mono text-foreground-primary">{value}</span>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-xs text-foreground-muted leading-relaxed">
+        {t('settings.privacyNote')}
+      </p>
+    </div>
+  )
+}

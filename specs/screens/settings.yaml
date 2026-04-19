@@ -1,0 +1,323 @@
+version: "2.0"
+screen:
+  name: Settings
+  route: /settings
+  layout: full-width
+  description: "Global settings for scan behavior, UI, data management, and app info"
+
+data_requirements:
+  - resource: settings_scan
+    needs:
+      - preset
+      - phash_threshold
+      - ssim_threshold
+      - time_window_hours
+      - parallel_threads
+      - batch_size
+      - enable_correction_detection
+      - enable_exif_filter
+      - enable_incremental
+    filters: {}
+
+  - resource: settings_ui
+    needs:
+      - language
+      - theme
+      - notify_on_complete
+      - minimize_to_tray
+      - restore_window_size
+    filters: {}
+
+  - resource: settings_data
+    needs:
+      - trash_retention_days
+      - trash_location
+      - trash_used_size
+      - trash_max_size
+      - db_location
+      - db_size
+      - cache_size
+      - auto_cache_cleanup
+    filters: {}
+
+  - resource: settings_info
+    needs:
+      - version
+      - build
+      - platform
+      - license
+      - website_url
+      - github_url
+      - release_notes_url
+    filters: {}
+
+components:
+  - id: header_bar
+    type: header-bar
+    position: top
+    function: "Display navigation and access to app help"
+    data_source:
+      resource: null
+    events:
+      - on: back_click
+        do: navigate_back
+      - on: help_click
+        do: show_help_dialog
+
+  - id: tab_bar
+    type: tab-bar
+    position: main-top
+    function: "Switch between 4 settings sections: Scan, UI, Data, Info"
+    data_source:
+      resource: null
+    events:
+      - on: scan_tab_click
+        do: show_scan_settings
+      - on: ui_tab_click
+        do: show_ui_settings
+      - on: data_tab_click
+        do: show_data_settings
+      - on: info_tab_click
+        do: show_info_settings
+
+  - id: scan_settings_form
+    type: form
+    position: main-content
+    function: "Configure scan presets and custom parameters with test button"
+    data_source:
+      resource: settings_scan
+    events:
+      - on: preset_change
+        do: update_custom_params_from_preset
+      - on: custom_param_change
+        do: mark_form_dirty
+      - on: test_button_click
+        do: run_scan_test
+      - on: reset_defaults_click
+        do: reset_to_defaults
+      - on: form_load
+        do: fetch_scan_settings
+
+  - id: ui_settings_form
+    type: form
+    position: main-content
+    function: "Configure language, theme, and notification preferences"
+    data_source:
+      resource: settings_ui
+    events:
+      - on: language_change
+        do: switch_language_and_reload
+      - on: theme_change
+        do: apply_theme
+      - on: notification_toggle
+        do: update_notification_setting
+      - on: tray_toggle
+        do: update_tray_setting
+      - on: form_load
+        do: fetch_ui_settings
+
+  - id: data_settings_form
+    type: form
+    position: main-content
+    function: "Manage trash retention, database, and cache settings"
+    data_source:
+      resource: settings_data
+    events:
+      - on: trash_days_change
+        do: update_trash_retention
+      - on: db_optimize_click
+        do: optimize_database
+      - on: db_export_click
+        do: export_database
+      - on: db_import_click
+        do: import_database
+      - on: cache_clear_click
+        do: clear_cache
+      - on: auto_cache_toggle
+        do: update_auto_cache
+      - on: form_load
+        do: fetch_data_settings
+
+  - id: info_panel
+    type: panel
+    position: main-content
+    function: "Display read-only app info, version, license, and external links"
+    data_source:
+      resource: settings_info
+    events:
+      - on: update_check_click
+        do: check_for_updates
+      - on: release_notes_click
+        do: open_release_notes
+      - on: website_click
+        do: open_website
+      - on: github_click
+        do: open_github
+      - on: feedback_click
+        do: open_feedback_form
+      - on: issue_click
+        do: open_issue_tracker
+      - on: panel_load
+        do: fetch_info_settings
+
+  - id: action_buttons
+    type: button-group
+    position: main-bottom
+    function: "Save/Cancel settings changes"
+    data_source:
+      resource: null
+    events:
+      - on: cancel_click
+        do: discard_changes_and_close
+      - on: save_click
+        do: validate_and_save_all_settings
+
+connections:
+  navigations:
+    - from: header_bar
+      to: /dashboard
+    - from: info_panel
+      to: "external:website"
+    - from: info_panel
+      to: "external:github"
+    - from: info_panel
+      to: "external:release_notes"
+
+  shared_components:
+    - header_bar
+
+tests:
+  - name: "Load all four settings sections without errors"
+    when: "Settings screen opens"
+    then:
+      - "Tab bar shows 4 tabs: [Scan] [UI] [Data] [Info]"
+      - "Scan tab selected by default"
+      - "All data fetched successfully from resources"
+
+  - name: "Switch between tabs and preserve unsaved changes"
+    when: "User modifies scan settings, then clicks UI tab"
+    then:
+      - "Dirty form indicator shown (e.g., asterisk in header)"
+      - "Switching tabs does not lose modified values"
+      - "Switching back to Scan shows modified state preserved"
+      - "Clicking [Cancel] discards unsaved changes"
+
+  - name: "Preset selection updates custom parameters"
+    when: "User selects 'Conservative' preset"
+    then:
+      - "phash_threshold set to 6 (more conservative)"
+      - "ssim_threshold set to 0.90 (stricter)"
+      - "enable_correction_detection disabled"
+      - "Custom param form updates without validation error"
+      - "User can override preset values individually"
+
+  - name: "Validate custom scan parameters within ranges"
+    when: "User enters phash_threshold = 20 (exceeds range)"
+    then:
+      - "Error message: 'Value must be between 4 and 16'"
+      - "Field highlighted in red"
+      - "[Save] button disabled until fixed"
+
+  - name: "Test scan settings with sample folder"
+    when: "User clicks [Test] button with custom params"
+    then:
+      - "Progress dialog shown: 'Running scan test...'"
+      - "Sample folder (e.g., 100 files) scanned with params"
+      - "Results dialog: 'Test complete: X duplicates found in Y seconds'"
+      - "Test params do not persist unless [Save] clicked"
+
+  - name: "Switch UI language and reload interface"
+    when: "User changes language from Korean to English"
+    then:
+      - "Language dropdown shows 'English' selected"
+      - "Interface reloads in English (all tabs, buttons, labels)"
+      - "Locale-specific formats applied (date, number format)"
+      - "Setting persisted across app restarts"
+
+  - name: "Apply theme changes in real-time"
+    when: "User selects 'Dark' theme"
+    then:
+      - "Theme radio button set to 'Dark'"
+      - "App background, text, and components switch to dark colors"
+      - "Change visible immediately without restart"
+      - "Setting persisted; next launch uses selected theme"
+
+  - name: "Configure trash retention and display space usage"
+    when: "Data tab loaded"
+    then:
+      - "Trash retention days slider shows current value (default 30)"
+      - "Trash location path displayed (read-only)"
+      - "Space usage bar shows: 500MB / 1GB (50%)"
+      - "next_cleanup_at date shown: 'Auto-cleanup scheduled for [date]'"
+
+  - name: "Optimize database and show result"
+    when: "User clicks [Database Optimize]"
+    then:
+      - "Confirmation dialog: 'This may take a few minutes. Continue?'"
+      - "On confirm: progress shown; optimization runs in background"
+      - "Result dialog: 'Database optimized. Recovered X MB.'"
+      - "db_size updated in form"
+
+  - name: "Export and import database backups"
+    when: "User clicks [Export Database]"
+    then:
+      - "File save dialog opens (default: OptiShot_backup_[date].db)"
+      - "On confirm: file exported successfully"
+      - "Success message: 'Database backed up to [path]'"
+      - "[Import Database] button reverses the operation"
+
+  - name: "Clear cache and show recovered space"
+    when: "User clicks [Clear Cache]"
+    then:
+      - "Confirmation: 'Delete X MB of cached thumbnails?'"
+      - "On confirm: cache cleared; progress shown"
+      - "cache_size field updated to show new value"
+      - "Success message with freed space displayed"
+
+  - name: "Display app version and build info"
+    when: "Info tab loaded"
+    then:
+      - "Version: v1.0.0 (Beta) shown"
+      - "Build: 20240415.001 displayed"
+      - "Platform information shown (OS, Electron version)"
+      - "License: MIT with link to license text"
+
+  - name: "Check for app updates"
+    when: "User clicks [Check for Updates]"
+    then:
+      - "Network request sent to version server"
+      - "If up-to-date: 'You are using the latest version'"
+      - "If update available: Dialog shows 'v1.1.0 available. [Download]'"
+      - "On download: opens release page"
+
+  - name: "Open external links from info panel"
+    when: "User clicks [Website], [GitHub], [Release Notes]"
+    then:
+      - "[Website] opens website_url in browser"
+      - "[GitHub] opens github_url in browser"
+      - "[Release Notes] opens release_notes_url in browser"
+      - "All external links valid and accessible"
+
+  - name: "Save all settings changes atomically"
+    when: "User modifies settings in multiple tabs and clicks [Save]"
+    then:
+      - "All form validations run"
+      - "If any validation fails: error shown; save cancelled"
+      - "If all valid: all resources updated simultaneously"
+      - "Success message shown; dirty indicators cleared"
+      - "Form state reverts to saved state"
+
+  - name: "Discard unsaved changes on cancel"
+    when: "User modifies settings and clicks [Cancel]"
+    then:
+      - "Confirmation dialog if changes exist: 'Discard unsaved changes?'"
+      - "On confirm: all forms revert to last saved state"
+      - "Screen closed; user returned to previous screen"
+      - "No changes persisted"
+
+  - name: "Handle missing or inaccessible database path"
+    when: "Database path in settings_data is invalid"
+    then:
+      - "Warning shown: 'Database path not accessible'"
+      - "[Browse] button provided to select new location"
+      - "User cannot [Save] until path resolved"

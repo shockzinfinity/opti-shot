@@ -1,0 +1,295 @@
+version: "2.0"
+screen:
+  name: "Group Review"
+  route: "/review"
+  layout: "sidebar-main"
+  description: "Master-detail view for reviewing duplicate groups, selecting master photos, and deciding keep/delete actions before export"
+  notes: "Virtual scrolling required for group list (5000+ items). Keyboard shortcuts: Arrow keys (navigate groups), Space (toggle selection), Delete (mark for deletion)"
+
+data_requirements:
+  - resource: "groups"
+    needs: [id, file_count, total_size, reclaimable_size, master_id, review_status]
+    filters:
+      review_status: ["pending", "reviewed"]
+  - resource: "photos"
+    needs: [id, filename, path, file_size, width, height, quality_score, taken_at, camera_model, lens_model, phash, is_master, group_id, thumbnail_path]
+  - resource: "review_decisions"
+    needs: [id, group_id, photo_id, decision, is_export_selected, decided_at]
+
+components:
+  # Sidebar: Group List
+  - id: "group_list"
+    type: "sidebar"
+    position: "left"
+    width: "250px"
+    function: "Display all duplicate groups with search/filter capabilities"
+    data_source:
+      resource: "groups"
+    properties:
+      scrollable: true
+      selectable: true
+    children:
+      - id: "group_search"
+        type: "search-input"
+        placeholder: "Search groups..."
+        function: "Filter groups by filename or folder path"
+        data_binding:
+          filter_field: ["filename", "path"]
+      - id: "group_items_list"
+        type: "list"
+        function: "Display group items with metadata"
+        item_template:
+          - icon: "check-circle"
+          - label: "Group {{group_id}}"
+          - metadata: "{{file_count}} files | {{total_size}} bytes"
+          - subtext: "{{reclaimable_size}} reclaimable"
+    events:
+      - on: "item-click"
+        do: "load-group-detail"
+        target: "group_detail"
+      - on: "item-selected"
+        do: "update-export-selection"
+        target: "review_decisions"
+
+  # Main Area: Group Detail
+  - id: "group_detail"
+    type: "panel"
+    position: "center"
+    function: "Display selected group with master card and duplicate cards"
+    data_source:
+      resource: "groups"
+    scrollable: true
+    sections:
+      - id: "master_card"
+        type: "card"
+        function: "Display selected master photo with metadata and action buttons"
+        data_source:
+          resource: "photos"
+          filter:
+            is_master: true
+        children:
+          - id: "master_title"
+            type: "label"
+            content: "Master (Selected)"
+          - id: "master_thumbnail"
+            type: "image"
+            source: "{{thumbnail_path}}"
+            width: "200px"
+            height: "150px"
+          - id: "master_filename"
+            type: "label"
+            content: "{{filename}}"
+            font_weight: "bold"
+          - id: "master_badge"
+            type: "badge"
+            content: "⭐ MASTER"
+            color: "gold"
+          - id: "quality_score"
+            type: "stat"
+            label: "Quality"
+            value: "{{quality_score}}/100"
+          - id: "file_size"
+            type: "stat"
+            label: "File Size"
+            value: "{{file_size}} bytes"
+          - id: "resolution"
+            type: "stat"
+            label: "Resolution"
+            value: "{{width}}x{{height}}"
+          - id: "taken_at"
+            type: "stat"
+            label: "Taken At"
+            value: "{{taken_at}}"
+          - id: "camera_model"
+            type: "stat"
+            label: "Camera"
+            value: "{{camera_model}}"
+          - id: "lens_model"
+            type: "stat"
+            label: "Lens"
+            value: "{{lens_model}}"
+          - id: "phash"
+            type: "stat"
+            label: "pHash"
+            value: "{{phash}}"
+          - id: "master_actions"
+            type: "button-group"
+            children:
+              - id: "view_original"
+                type: "button"
+                label: "View Original"
+                action: "open-preview"
+              - id: "mark_delete"
+                type: "button"
+                label: "Mark for Delete"
+                action: "toggle-delete-decision"
+        events:
+          - on: "mark_delete-click"
+            do: "record-decision"
+            value: "delete"
+            target: "review_decisions"
+
+      - id: "duplicate_cards"
+        type: "card-list"
+        function: "Display other photos in group that will be deleted"
+        data_source:
+          resource: "photos"
+          filter:
+            is_master: false
+        scrollable: true
+        item_template:
+          - id: "duplicate_item"
+            type: "card"
+            children:
+              - id: "duplicate_badge"
+                type: "badge"
+                content: "⚫"
+                color: "gray"
+              - id: "duplicate_filename"
+                type: "label"
+                content: "{{filename}}"
+              - id: "duplicate_quality"
+                type: "stat"
+                label: "Quality"
+                value: "{{quality_score}}/100"
+              - id: "duplicate_size"
+                type: "stat"
+                label: "Size"
+                value: "{{file_size}} bytes"
+              - id: "duplicate_actions"
+                type: "button-group"
+                children:
+                  - id: "select_as_master"
+                    type: "button"
+                    label: "Select as Master"
+                    action: "change-master"
+                  - id: "view_duplicate"
+                    type: "button"
+                    label: "View"
+                    action: "open-preview"
+        events:
+          - on: "select_as_master-click"
+            do: "update-master"
+            target: "groups"
+          - on: "select_as_master-click"
+            do: "reload-master-card"
+            target: "master_card"
+
+  # Bottom Bar: Action Summary
+  - id: "action_bar"
+    type: "action-bar"
+    position: "bottom"
+    function: "Display group progress and provide bulk actions"
+    height: "80px"
+    children:
+      - id: "progress_summary"
+        type: "text"
+        content: "Processed: {{processed_count}}/{{total_count}} groups | Selected: {{export_selected_count}} | Reclaimable: {{total_reclaimable}} bytes"
+      - id: "action_buttons"
+        type: "button-group"
+        children:
+          - id: "keep_all_button"
+            type: "button"
+            label: "✓ Keep All"
+            action: "bulk-keep-decision"
+          - id: "delete_all_button"
+            type: "button"
+            label: "Delete All"
+            action: "bulk-delete-decision"
+          - id: "export_button"
+            type: "button"
+            label: "Export ▶"
+            action: "navigate-to-export"
+            enabled: "{{export_selected_count > 0}}"
+          - id: "next_group_button"
+            type: "button"
+            label: "Next ▶"
+            action: "navigate-next-group"
+    events:
+      - on: "keep_all_button-click"
+        do: "record-bulk-decision"
+        decision: "keep"
+        target: "review_decisions"
+      - on: "delete_all_button-click"
+        do: "record-bulk-decision"
+        decision: "delete"
+        target: "review_decisions"
+      - on: "export_button-click"
+        do: "navigate"
+        destination: "/export"
+      - on: "next_group_button-click"
+        do: "load-next-group"
+        target: "group_list"
+
+connections:
+  navigations:
+    - from: "export_button"
+      to: "/export"
+    - from: "back_navigation"
+      to: "/dashboard"
+  shared_components:
+    - "header"
+    - "footer"
+  data_flow:
+    - source: "group_list"
+      target: "group_detail"
+      on: "item-click"
+    - source: "master_card"
+      target: "review_decisions"
+      on: "mark_delete-click"
+    - source: "duplicate_cards"
+      target: "groups"
+      on: "select_as_master-click"
+
+tests:
+  - name: "Load group review screen"
+    when: "User navigates to /review"
+    then:
+      - "Group list loads with all pending groups"
+      - "First group is automatically selected"
+      - "Master card displays with correct metadata"
+      - "Duplicate cards show all non-master photos"
+      - "Action bar shows correct progress count"
+
+  - name: "Search groups by filename"
+    when: "User enters search term in group_search"
+    then:
+      - "Group list filters in real-time"
+      - "Only matching groups are displayed"
+      - "Search is case-insensitive"
+
+  - name: "Change master photo"
+    when: "User clicks 'Select as Master' on a duplicate photo"
+    then:
+      - "New photo becomes master in the group"
+      - "Master card refreshes with new photo data"
+      - "Review decision is recorded"
+      - "Old master moves to duplicate list"
+
+  - name: "Mark master for deletion"
+    when: "User clicks 'Mark for Delete' on master card"
+    then:
+      - "System prompts for new master selection"
+      - "Decision is recorded in review_decisions"
+      - "Action bar updates reclaimable size"
+
+  - name: "Bulk delete all duplicates"
+    when: "User clicks 'Delete All' button"
+    then:
+      - "All non-master photos marked for delete"
+      - "Decision records created for each photo"
+      - "Export selection preserved"
+
+  - name: "Navigate to export"
+    when: "User clicks 'Export' button with selected groups"
+    then:
+      - "Navigation to /export screen"
+      - "Export screen loads with selected photos"
+      - "Export items reference correct review_decisions"
+
+  - name: "Display reclaimable size correctly"
+    when: "Group review loads"
+    then:
+      - "Reclaimable size = total_size - master_file_size"
+      - "Summary updates when master changes"
+      - "Progress bar reflects actual completion"

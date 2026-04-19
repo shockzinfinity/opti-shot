@@ -1,0 +1,41 @@
+appId: com.optishot.app
+productName: OptiShot
+copyright: Copyright © 2024 OptiShot
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - out/**/*
+  - "!**/*.map"
+
+extraResources:
+  - from: resources/icon.png
+    to: icon.png
+
+icon: build/icon.png
+
+mac:
+  category: public.app-category.photography
+  target:
+    - dmg
+    - zip
+
+win:
+  target:
+    - nsis
+
+linux:
+  target:
+    - AppImage
+  category: Graphics
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+publish:
+  provider: github
+  owner: optishot
+  repo: optishot

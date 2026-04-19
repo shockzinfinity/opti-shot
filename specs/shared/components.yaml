@@ -1,0 +1,63 @@
+version: "2.0"
+
+shared_components:
+  header_bar:
+    description: "앱 상단 헤더 (모든 화면 공유)"
+    design_component: HeaderBar
+    elements:
+      - logo_icon (aperture)
+      - app_title ("OptiShot")
+      - breadcrumb (현재 화면명)
+      - help_button
+      - settings_button
+    used_in: [dashboard, folder-select, scan-progress, group-review, export, trash, settings]
+
+  progress_bar:
+    description: "진행률 표시 바"
+    design_component: ProgressBar
+    elements:
+      - label_text
+      - percent_value
+      - track (background)
+      - fill (foreground)
+    used_in: [scan-progress, export]
+
+  stat_card:
+    description: "통계 카드 (아이콘 + 라벨 + 값 + 단위)"
+    design_component: StatCard
+    used_in: [dashboard]
+
+  dialog:
+    description: "확인/경고 다이얼로그"
+    design_component: Dialog
+    variants:
+      - confirm (경고 아이콘 + 메시지 + Cancel/Confirm)
+      - error (에러 아이콘 + 메시지 + OK)
+      - success (성공 아이콘 + 메시지 + OK)
+    used_in: [export, trash, settings]
+
+  empty_state:
+    description: "데이터 없음 상태"
+    design_component: EmptyState
+    elements:
+      - icon
+      - title
+      - description
+      - action_button (optional)
+    used_in: [dashboard, trash]
+
+  action_bar:
+    description: "하단 액션 버튼 바"
+    elements:
+      - summary_text (optional)
+      - cancel_button
+      - primary_action_button
+    used_in: [folder-select, group-review, export, trash]
+
+design_system:
+  file: design/design-system.pen
+  tokens:
+    colors: [--surface-primary, --surface-secondary, --accent-primary, --foreground-primary, --foreground-secondary, --foreground-muted, --color-success, --color-warning, --color-error, --border]
+    typography: [Geist (headings), Inter (body), Geist Mono (data)]
+    spacing: [xs(4), sm(8), md(16), lg(24), xl(32), 2xl(48)]
+    radius: [sm(4), md(8), lg(12), xl(16), full(9999)]

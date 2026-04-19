@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary: #0062FF;
+  --color-primary-hover: #0050D4;
+  --color-primary-light: #E8F0FE;
+  --color-surface-primary: #FFFFFF;
+  --color-surface-secondary: #F7F8FA;
+  --color-foreground-primary: #1A1A1A;
+  --color-foreground-secondary: #4B5563;
+  --color-foreground-muted: #9CA3AF;
+  --color-foreground-inverse: #FFFFFF;
+  --color-success: #22C55E;
+  --color-success-light: #DCFCE7;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+  --color-error: #EF4444;
+  --color-error-light: #FEE2E2;
+  --color-border: #E5E7EB;
+  --color-border-strong: #D1D5DB;
+
+  /* Typography */
+  --font-heading: 'Geist', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Consolas', monospace;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* Electron window drag */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Scrollbar: use OS native overlay scrollbar (macOS auto-hide) */
+
+/* Slide-in animation for panels */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.2s ease-out;
+}

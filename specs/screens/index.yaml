@@ -1,0 +1,42 @@
+version: "2.0"
+project: OptiShot
+
+screens:
+  - name: 대시보드
+    file: dashboard.yaml
+    route: /
+    layout: full-width
+
+  - name: 폴더 선택
+    file: folder-select.yaml
+    route: /folders
+    layout: full-width
+
+  - name: 스캔 진행
+    file: scan-progress.yaml
+    route: /scan
+    layout: full-width
+
+  - name: 그룹 리뷰
+    file: group-review.yaml
+    route: /review
+    layout: sidebar-main
+
+  - name: 내보내기
+    file: export.yaml
+    route: /export
+    layout: full-width
+
+  - name: 휴지통
+    file: trash.yaml
+    route: /trash
+    layout: full-width
+
+  - name: 설정
+    file: settings.yaml
+    route: /settings
+    layout: full-width
+
+navigation_flow:
+  primary: / → /folders → /scan → /review → /export → /
+  global: [/settings, /trash]

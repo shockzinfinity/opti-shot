@@ -1,0 +1,53 @@
+version: "2.0"
+
+enums:
+  scan_mode:
+    values: [full, date_range, folder_only, incremental]
+    used_in: [folder-select, settings]
+
+  scan_status:
+    values: [running, paused, completed, failed, cancelled]
+    used_in: [dashboard, scan-progress]
+
+  review_status:
+    values: [pending, reviewed, exported]
+    used_in: [group-review]
+
+  review_decision:
+    values: [keep, delete]
+    used_in: [group-review]
+
+  export_action:
+    values: [copy, move]
+    used_in: [export]
+
+  export_status:
+    values: [ready, running, paused, completed, failed]
+    used_in: [export]
+
+  conflict_strategy:
+    values: [skip, rename, overwrite]
+    used_in: [export]
+
+  trash_status:
+    values: [trashed, restored, purged]
+    used_in: [trash]
+
+  scan_preset:
+    values: [balanced, conservative, sensitive]
+    used_in: [settings]
+
+  language:
+    values: [ko, en, ja]
+    used_in: [settings]
+
+  theme:
+    values: [light, dark, auto]
+    used_in: [settings]
+
+units:
+  bytes: { format: "auto", display: "KB/MB/GB" }
+  seconds: { format: "duration", display: "mm:ss / hh:mm:ss" }
+  files_per_hour: { format: "number", display: "N files/hr" }
+  bytes_per_sec: { format: "auto", display: "MB/s" }
+  percent: { format: "number", display: "N%" }

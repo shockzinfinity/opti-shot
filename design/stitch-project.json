@@ -1,0 +1,43 @@
+{
+  "project_id": "977412230907375002",
+  "project_name": "OptiShot - Photo Duplicate Manager",
+  "stitch_url": "https://stitch.withgoogle.com/p/977412230907375002",
+  "generated_at": "2026-04-16",
+  "screens": {
+    "dashboard": {
+      "screen_id": "55e3db6d2f294b1a85d511b679e22074",
+      "title": "OptiShot Dashboard",
+      "route": "/"
+    },
+    "folder-select": {
+      "screen_id": "5100e89e84204c2ab73b8cb7ae416c30",
+      "title": "Folder Selection",
+      "route": "/folders"
+    },
+    "scan-progress": {
+      "screen_id": "5b6c5d1c427f42f2914f8c18ede6e9db",
+      "title": "Scan Progress",
+      "route": "/scan"
+    },
+    "group-review": {
+      "screen_id": "7ec29d2014b34e73a8cd72c3566c45ca",
+      "title": "Group Review",
+      "route": "/review"
+    },
+    "export": {
+      "screen_id": "641bad22b0714c938a7c718fbd29e4f3",
+      "title": "Export Photos",
+      "route": "/export"
+    },
+    "trash": {
+      "screen_id": "c8a13ca61b584d9e8481848c2a0b4bb7",
+      "title": "Trash",
+      "route": "/trash"
+    },
+    "settings": {
+      "screen_id": "3d0b9a930b33408eac01b3eeafb79fea",
+      "title": "Settings",
+      "route": "/settings"
+    }
+  }
+}

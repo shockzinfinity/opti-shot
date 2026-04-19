@@ -1,0 +1,134 @@
+version: "2.0"
+screen:
+  name: Folder Selection
+  route: /folders
+  layout: full-width
+data_requirements:
+  - resource: folders
+    needs: [id, path, include_subfolders, is_accessible, added_at]
+  - resource: scan_options
+    needs: [mode, date_start, date_end, phash_threshold, ssim_threshold, time_window_hours, parallel_threads, enable_correction_detection]
+components:
+  - id: header_bar
+    type: navigation
+    position: header
+    function: "Display breadcrumb navigation and access settings/help"
+    events:
+      - on: settings_click
+        do: navigate_to(/settings)
+      - on: help_click
+        do: show_help_modal()
+
+  - id: folder_list
+    type: list
+    position: main
+    function: "Display selected scan target folders with path, subfolder include status, and accessibility indicator"
+    data_source:
+      resource: folders
+    events:
+      - on: add_folder_click
+        do: open_folder_browser_dialog()
+      - on: remove_folder_click
+        do: remove_folder_from_list()
+      - on: reorder_folders
+        do: update_folder_order()
+
+  - id: scan_mode_selector
+    type: card
+    position: main
+    function: "Allow selection of scan mode: full, date_range, folder_only, or incremental"
+    data_source:
+      resource: scan_options
+    events:
+      - on: mode_changed
+        do: update_scan_mode()
+      - on: date_range_selected
+        do: validate_date_range()
+
+  - id: date_range_inputs
+    type: form
+    position: main
+    function: "Conditionally display date start/end inputs when date_range mode is selected"
+    data_source:
+      resource: scan_options
+    events:
+      - on: date_start_change
+        do: validate_date_start()
+      - on: date_end_change
+        do: validate_date_end()
+
+  - id: advanced_settings_toggle
+    type: card
+    position: main
+    function: "Expandable section for threshold and performance tuning parameters"
+    data_source:
+      resource: scan_options
+    events:
+      - on: phash_threshold_change
+        do: validate_phash_threshold()
+      - on: ssim_threshold_change
+        do: validate_ssim_threshold()
+      - on: time_window_change
+        do: validate_time_window()
+      - on: parallel_threads_change
+        do: validate_parallel_threads()
+      - on: correction_detection_toggle
+        do: update_correction_detection()
+
+  - id: action_bar
+    type: card
+    position: footer
+    function: "Provide cancel and start scan buttons with validation state"
+    events:
+      - on: cancel_click
+        do: navigate_to(/)
+      - on: start_scan_click
+        do: validate_and_start_scan()
+
+connections:
+  navigations:
+    - from: header_bar
+      to: /settings
+    - from: header_bar
+      to: /help
+    - from: action_bar
+      to: /
+    - from: action_bar
+      to: /scan
+  shared_components: [header_bar]
+
+tests:
+  - name: Folder Selection Validation
+    when: "User attempts to start scan without selecting any folders"
+    then:
+      - "Start Scan button remains disabled"
+      - "Error message 'Select at least one folder' is displayed"
+      - "Focus moved to folder_list component"
+
+  - name: Path Accessibility Check
+    when: "Selected folder path no longer exists or is inaccessible"
+    then:
+      - "Folder marked with warning icon"
+      - "Tooltip shows 'Path not accessible'"
+      - "Start Scan button remains enabled but shows warning"
+
+  - name: Date Range Validation
+    when: "Date range mode selected with date_start > date_end"
+    then:
+      - "Validation error displayed under date inputs"
+      - "Start Scan button disabled"
+      - "User must correct the date range to proceed"
+
+  - name: Advanced Settings Parameters
+    when: "User modifies phash_threshold outside valid range [4,16]"
+    then:
+      - "Input field highlights with validation error"
+      - "Tooltip shows valid range"
+      - "Value reverts to previous valid value on blur"
+
+  - name: Form State Persistence
+    when: "User navigates away and returns to folder selection"
+    then:
+      - "Previously selected folders are retained"
+      - "Last selected scan mode is restored"
+      - "Advanced settings values are preserved"

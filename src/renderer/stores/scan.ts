@@ -1,0 +1,111 @@
+import { create } from 'zustand'
+import type { ScanProgress } from '@shared/types'
+import { IPC } from '@shared/types'
+
+export interface Discovery {
+  groupNumber: number
+  fileCount: number
+  totalSize: string
+  masterFilename: string
+  timestamp: string
+}
+
+interface ScanState {
+  isScanning: boolean
+  isPaused: boolean
+  isComplete: boolean
+  progress: ScanProgress | null
+  discoveries: Discovery[]
+  // actions
+  startListening: () => () => void
+  startScan: (options: Record<string, unknown>) => Promise<void>
+  pauseScan: () => Promise<void>
+  cancelScan: () => Promise<void>
+  reset: () => void
+}
+
+export const useScanStore = create<ScanState>((set, get) => ({
+  isScanning: false,
+  isPaused: false,
+  isComplete: false,
+  progress: null,
+  discoveries: [],
+
+  startListening: () => {
+    const handler = (...args: unknown[]) => {
+      const progress = args[0] as ScanProgress
+      const current = get().progress
+      const prevGroups = current?.discoveredGroups ?? 0
+
+      set({ progress })
+
+      // Add a discovery entry when group count increases
+      if (progress.discoveredGroups > prevGroups) {
+        const newGroupNumber = progress.discoveredGroups
+        const discovery: Discovery = {
+          groupNumber: newGroupNumber,
+          fileCount: 2, // minimum group size
+          totalSize: '—',
+          masterFilename: progress.currentFile
+            ? progress.currentFile.split('/').pop() ?? progress.currentFile
+            : 'unknown',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        }
+        set((state) => ({ discoveries: [...state.discoveries, discovery] }))
+      }
+
+    }
+
+    const unsubscribe = window.electron.on(IPC.SCAN.PROGRESS, handler)
+    return unsubscribe
+  },
+
+  startScan: async (options: Record<string, unknown>) => {
+    set({ isScanning: true, isPaused: false, isComplete: false, progress: null, discoveries: [] })
+    try {
+      const response = await window.electron.invoke(IPC.SCAN.START, options)
+      if (response?.success) {
+        // IPC returns AFTER saveScanResults — DB is ready
+        set({ isComplete: true, isScanning: false })
+      } else {
+        console.error('Scan failed:', response?.error)
+        set({ isScanning: false })
+      }
+    } catch (err) {
+      console.error('Scan error:', err)
+      set({ isScanning: false })
+    }
+  },
+
+  pauseScan: async () => {
+    try {
+      const response = await window.electron.invoke(IPC.SCAN.PAUSE)
+      if (response?.success) {
+        set({ isPaused: true })
+      }
+    } catch (err) {
+      console.error('Failed to pause scan:', err)
+    }
+  },
+
+  cancelScan: async () => {
+    try {
+      const response = await window.electron.invoke(IPC.SCAN.CANCEL)
+      if (response?.success) {
+        set({ isScanning: false, isPaused: false })
+      }
+    } catch (err) {
+      console.error('Failed to cancel scan:', err)
+    }
+  },
+
+  reset: () => {
+    set({
+      isScanning: false,
+      isPaused: false,
+      isComplete: false,
+      progress: null,
+      discoveries: [],
+    })
+  },
+}))

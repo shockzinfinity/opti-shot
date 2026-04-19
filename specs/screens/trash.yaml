@@ -1,0 +1,182 @@
+version: "2.0"
+screen:
+  name: Trash
+  route: /trash
+  layout: full-width
+  description: "30-day trash retention and recovery for deleted photos"
+  notes: "Virtual scrolling required for trash list"
+
+data_requirements:
+  - resource: trash
+    needs:
+      - id
+      - photo_id
+      - original_path
+      - filename
+      - file_size
+      - status
+      - deleted_at
+      - expires_at
+      - restored_at
+    filters:
+      status: [trashed, restored, purged]
+      date_range: "deleted_at"
+
+  - resource: trash_summary
+    needs:
+      - total_files
+      - total_size
+      - next_cleanup_at
+    filters: {}
+
+components:
+  - id: header_bar
+    type: header-bar
+    position: top
+    function: "Display navigation breadcrumb and settings access"
+    data_source:
+      resource: null
+    events:
+      - on: settings_click
+        do: navigate_to_settings
+      - on: help_click
+        do: show_help_dialog
+
+  - id: trash_summary_card
+    type: card
+    position: main-top
+    function: "Display trash statistics and auto-cleanup schedule"
+    data_source:
+      resource: trash_summary
+    events:
+      - on: load
+        do: fetch_trash_summary
+      - on: refresh
+        do: reload_trash_summary
+
+  - id: trash_list
+    type: virtual-list
+    position: main-middle
+    function: "Render paginated list of trashed files with selection"
+    data_source:
+      resource: trash
+    events:
+      - on: item_checkbox_toggle
+        do: toggle_item_selection
+      - on: select_all_click
+        do: select_all_items
+      - on: deselect_all_click
+        do: deselect_all_items
+      - on: scroll_bottom
+        do: load_more_items
+
+  - id: action_bar
+    type: action-bar
+    position: main-bottom
+    function: "Provide bulk actions: restore, permanent delete, empty trash"
+    data_source:
+      resource: null
+    events:
+      - on: restore_click
+        do: restore_selected_items
+      - on: delete_permanent_click
+        do: confirm_permanent_delete
+      - on: empty_trash_click
+        do: confirm_empty_trash
+      - on: selection_changed
+        do: update_action_availability
+
+connections:
+  navigations:
+    - from: header_bar
+      to: /settings
+    - from: header_bar
+      to: /dashboard
+    - from: trash_list
+      to: /group-review
+
+  shared_components:
+    - header_bar
+
+tests:
+  - name: "Display trash summary with correct file count and size"
+    when: "Screen loads with trash data"
+    then:
+      - "Verify trash_summary_card shows total_files count"
+      - "Verify total_size is formatted in human-readable bytes (MB/GB)"
+      - "Verify next_cleanup_at displays formatted datetime"
+
+  - name: "List all trashed files with metadata"
+    when: "Trash list component renders"
+    then:
+      - "Each item displays filename, deleted_at, expires_at, original_path"
+      - "File size shows in human-readable format"
+      - "Expiry countdown shows 'X days remaining' before purge"
+      - "Icons indicate file type or status"
+
+  - name: "Enable/disable actions based on selection"
+    when: "User selects/deselects items"
+    then:
+      - "[Restore] button enabled only if items selected"
+      - "[Permanent Delete] button enabled only if items selected"
+      - "[Empty Trash] always available"
+      - "Selection count displayed at bottom"
+
+  - name: "Restore selected items to original paths"
+    when: "User clicks [Restore] with items selected"
+    then:
+      - "Confirm dialog shown with file count and total size"
+      - "On confirm: items moved from trash to original_path"
+      - "trash.status updated from 'trashed' to 'restored'"
+      - "trash.restored_at set to current timestamp"
+      - "Success message shown; items removed from list"
+
+  - name: "Permanently delete selected items"
+    when: "User clicks [Permanent Delete]"
+    then:
+      - "Confirm dialog shown: 'Permanently delete X items? Cannot undo.'"
+      - "On confirm: items physically deleted from disk"
+      - "trash.status updated to 'purged'"
+      - "Items removed from trash list"
+
+  - name: "Empty entire trash (auto-cleanup)"
+    when: "User clicks [Empty Trash]"
+    then:
+      - "Confirm dialog: 'Permanently delete all X files (Y total)? This action cannot be undone.'"
+      - "Timestamp shown: 'You have X days to restore before auto-cleanup on [date]'"
+      - "On confirm: all trashed items deleted; status set to 'purged'"
+
+  - name: "Display 30-day retention window"
+    when: "Trash items are displayed"
+    then:
+      - "Each item shows expiry countdown: 'Expires in X days'"
+      - "Items expiring within 3 days highlighted in orange"
+      - "Items expiring today highlighted in red"
+
+  - name: "Update selection state across list operations"
+    when: "[Select All] clicked with 100+ items"
+    then:
+      - "All visible items checked immediately"
+      - "Pagination: clicking [Select All] selects across all pages"
+      - "[Deselect All] clears all selections"
+
+  - name: "Handle restore path conflicts"
+    when: "Restored file exists at original_path"
+    then:
+      - "Dialog shown with options: [Skip], [Overwrite], [Rename]"
+      - "User chooses action; file restored accordingly"
+      - "Conflict count displayed in summary"
+
+  - name: "Refresh trash list after bulk operation"
+    when: "Restore or Delete completes"
+    then:
+      - "trash_list reloads from data source"
+      - "trash_summary updates with new counts"
+      - "Selections cleared"
+
+  - name: "Handle network/permission errors gracefully"
+    when: "Restore fails due to inaccessible path"
+    then:
+      - "Error dialog: 'Cannot restore to X - path inaccessible'"
+      - "[Retry], [Choose New Path], [Cancel] buttons shown"
+      - "Failed items remain in trash"

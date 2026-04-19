@@ -1,0 +1,130 @@
+version: "2.0"
+screen:
+  name: Scan Progress
+  route: /scan
+  layout: full-width
+  notes: "IPC throttling: 100-200ms batch updates for progress events"
+data_requirements:
+  - resource: scans
+    needs: [id, status, progress_percent, total_files, processed_files, discovered_groups, elapsed_seconds, estimated_remaining_seconds, scan_speed, current_file, error_message, started_at, ended_at]
+  - resource: scan_discoveries
+    needs: [group_id, file_count, total_size, master_filename, discovered_at]
+components:
+  - id: header_bar
+    type: navigation
+    position: header
+    function: "Display breadcrumb navigation and access settings/help"
+    events:
+      - on: settings_click
+        do: navigate_to(/settings)
+      - on: help_click
+        do: show_help_modal()
+
+  - id: progress_display
+    type: card
+    position: main
+    function: "Show real-time progress bar, percentages, file counts, elapsed time, and estimated remaining time"
+    data_source:
+      resource: scans
+    events:
+      - on: progress_update
+        do: refresh_progress_display()
+
+  - id: scan_stats
+    type: card
+    position: main
+    function: "Display current file being processed, scan speed in files/hour, and discovered groups count"
+    data_source:
+      resource: scans
+    events:
+      - on: stat_update
+        do: update_stat_display()
+
+  - id: discovery_feed
+    type: list
+    position: main
+    function: "Show real-time discoveries in reverse chronological order with auto-scroll and file preview"
+    data_source:
+      resource: scan_discoveries
+    events:
+      - on: new_discovery
+        do: prepend_to_feed_and_scroll()
+      - on: file_preview_click
+        do: show_preview_modal()
+
+  - id: scroll_to_top_button
+    type: card
+    position: main
+    function: "Allow user to quickly scroll to top of discovery feed"
+    events:
+      - on: scroll_top_click
+        do: scroll_discovery_feed_to_top()
+
+  - id: control_buttons
+    type: card
+    position: footer
+    function: "Provide pause, cancel, and minimize buttons with state-aware enabling"
+    events:
+      - on: pause_click
+        do: pause_scan()
+      - on: resume_click
+        do: resume_scan()
+      - on: cancel_click
+        do: confirm_cancel_scan()
+      - on: minimize_click
+        do: minimize_window()
+
+connections:
+  navigations:
+    - from: header_bar
+      to: /settings
+    - from: header_bar
+      to: /help
+    - from: control_buttons
+      to: /
+  shared_components: [header_bar]
+
+tests:
+  - name: Scan Running State
+    when: "Scan status=running and progress_percent < 100"
+    then:
+      - "Progress bar displays smooth animation"
+      - "Processed files count increments in real-time"
+      - "Pause button is enabled"
+      - "Cancel button is enabled"
+      - "Discovery feed auto-scrolls with new entries"
+      - "Estimated remaining time updates every second"
+
+  - name: Scan Paused State
+    when: "User clicks pause and scan status changes to paused"
+    then:
+      - "Progress bar freezes at current percentage"
+      - "Pause button label changes to Resume"
+      - "Resume button becomes enabled"
+      - "Discovery feed stops updating"
+      - "Current file display is frozen"
+
+  - name: Scan Error State
+    when: "Scan encounters error and status=failed with error_message populated"
+    then:
+      - "Error message displayed prominently in red"
+      - "Progress bar becomes red"
+      - "Pause button is disabled"
+      - "Cancel button label changes to Restart"
+      - "Discovery feed shows last successful discoveries before error"
+
+  - name: Discovery Feed Auto-Scroll
+    when: "New discoveries arrive during active scan"
+    then:
+      - "Feed prepends latest discovery at top"
+      - "Feed auto-scrolls to show newest entry"
+      - "Each entry shows group ID, file count, total size, and master filename"
+      - "File preview link is clickable"
+
+  - name: Scan Completion
+    when: "progress_percent reaches 100 and status=completed"
+    then:
+      - "Progress bar fills completely"
+      - "All control buttons are disabled"
+      - "Auto-navigate to results screen after 2 second delay"
+      - "Summary shows total discovered groups and total size"

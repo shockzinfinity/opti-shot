@@ -1,0 +1,200 @@
+version: "1.1"
+project: OptiShot
+description: "사진 중복 감지 및 정리 데스크톱 도구"
+
+# 네이밍 규칙: 컬렉션=복수, 싱글톤=단수
+
+resources:
+  # ─── 싱글톤 ───
+
+  stats:
+    description: "대시보드 요약 통계 (싱글톤)"
+    fields:
+      total_photos: { type: number }
+      total_groups: { type: number }
+      reclaimable_size: { type: number, unit: bytes }
+      last_scan_at: { type: datetime, nullable: true }
+      last_scan_duration_seconds: { type: number, nullable: true }
+      last_scan_photos: { type: number, nullable: true }
+      last_scan_groups: { type: number, nullable: true }
+
+  scan_options:
+    description: "스캔 설정 (싱글톤, scans에 내장)"
+    fields:
+      mode: { type: enum, values: [full, date_range, folder_only, incremental] }
+      date_start: { type: date, nullable: true }
+      date_end: { type: date, nullable: true }
+      phash_threshold: { type: number, default: 8, range: [4, 16] }
+      ssim_threshold: { type: number, default: 0.85, range: [0.5, 0.95] }
+      time_window_hours: { type: number, default: 1, range: [0, 24] }
+      parallel_threads: { type: number, default: 8, range: [2, 16] }
+      enable_correction_detection: { type: boolean, default: true }
+
+  trash_summary:
+    description: "휴지통 요약 (싱글톤)"
+    fields:
+      total_files: { type: number }
+      total_size: { type: number, unit: bytes }
+      next_cleanup_at: { type: datetime }
+
+  # ─── 컬렉션 ───
+
+  folders:
+    description: "스캔 대상 폴더"
+    fields:
+      id: { type: uuid }
+      path: { type: string }
+      include_subfolders: { type: boolean, default: true }
+      is_accessible: { type: boolean }
+      added_at: { type: datetime }
+
+  scans:
+    description: "스캔 세션"
+    fields:
+      id: { type: uuid }
+      status: { type: enum, values: [running, paused, completed, failed, cancelled] }
+      progress_percent: { type: number, range: [0, 100] }
+      total_files: { type: number }
+      processed_files: { type: number }
+      discovered_groups: { type: number }
+      elapsed_seconds: { type: number }
+      estimated_remaining_seconds: { type: number }
+      scan_speed: { type: number, unit: files_per_hour }
+      current_file: { type: string }
+      error_message: { type: string, nullable: true }
+      started_at: { type: datetime }
+      ended_at: { type: datetime, nullable: true }
+      options: { type: ref, ref: scan_options }
+
+  scan_discoveries:
+    description: "스캔 중 실시간 발견 피드"
+    fields:
+      group_id: { type: uuid, ref: groups }
+      file_count: { type: number }
+      total_size: { type: number, unit: bytes }
+      master_filename: { type: string }
+      discovered_at: { type: datetime }
+
+  groups:
+    description: "중복 그룹"
+    fields:
+      id: { type: uuid }
+      file_count: { type: number }
+      total_size: { type: number, unit: bytes }
+      reclaimable_size: { type: number, unit: bytes }
+      master_id: { type: uuid, ref: photos }
+      review_status: { type: enum, values: [pending, reviewed, exported] }
+      reviewed_at: { type: datetime, nullable: true }
+
+  photos:
+    description: "개별 사진 파일"
+    fields:
+      id: { type: uuid }
+      filename: { type: string }
+      path: { type: string }
+      file_size: { type: number, unit: bytes }
+      width: { type: number }
+      height: { type: number }
+      quality_score: { type: number, range: [0, 100] }
+      taken_at: { type: datetime, nullable: true }
+      camera_model: { type: string, nullable: true }
+      lens_model: { type: string, nullable: true }
+      phash: { type: string }
+      is_master: { type: boolean }
+      group_id: { type: uuid, ref: groups }
+      thumbnail_path: { type: string }
+
+  review_decisions:
+    description: "그룹 리뷰 사용자 판정"
+    fields:
+      id: { type: uuid }
+      group_id: { type: uuid, ref: groups }
+      photo_id: { type: uuid, ref: photos }
+      decision: { type: enum, values: [keep, delete] }
+      is_export_selected: { type: boolean, default: false }
+      decided_at: { type: datetime }
+
+  exports:
+    description: "내보내기 작업"
+    fields:
+      id: { type: uuid }
+      status: { type: enum, values: [ready, running, paused, completed, failed] }
+      action: { type: enum, values: [copy, move] }
+      target_path: { type: string }
+      total_files: { type: number }
+      processed_files: { type: number }
+      total_size: { type: number, unit: bytes }
+      transferred_size: { type: number, unit: bytes }
+      transfer_speed: { type: number, unit: bytes_per_sec }
+      conflict_strategy: { type: enum, values: [skip, rename, overwrite] }
+      auto_create_folder: { type: boolean, default: true }
+      failed_count: { type: number }
+      elapsed_seconds: { type: number }
+      estimated_remaining_seconds: { type: number }
+
+  export_items:
+    description: "내보내기 대상 항목"
+    fields:
+      export_id: { type: uuid, ref: exports }
+      photo_id: { type: uuid, ref: photos }
+      group_id: { type: uuid, ref: groups }
+
+  trash:
+    description: "휴지통 항목"
+    fields:
+      id: { type: uuid }
+      photo_id: { type: uuid, ref: photos }
+      original_path: { type: string }
+      filename: { type: string }
+      file_size: { type: number, unit: bytes }
+      status: { type: enum, values: [trashed, restored, purged] }
+      deleted_at: { type: datetime }
+      expires_at: { type: datetime }
+      restored_at: { type: datetime, nullable: true }
+
+  # ─── 설정 (섹션별 분리) ───
+
+  settings_scan:
+    description: "스캔 설정"
+    fields:
+      preset: { type: enum, values: [balanced, conservative, sensitive] }
+      phash_threshold: { type: number, default: 8, range: [4, 16] }
+      ssim_threshold: { type: number, default: 0.85, range: [0.5, 0.95] }
+      time_window_hours: { type: number, default: 1, range: [0, 24] }
+      parallel_threads: { type: number, default: 8, range: [2, 16] }
+      batch_size: { type: number, default: 100, range: [10, 500] }
+      enable_correction_detection: { type: boolean, default: true }
+      enable_exif_filter: { type: boolean, default: true }
+      enable_incremental: { type: boolean, default: true }
+
+  settings_ui:
+    description: "UI 설정"
+    fields:
+      language: { type: enum, values: [ko, en, ja] }
+      theme: { type: enum, values: [light, dark, auto] }
+      notify_on_complete: { type: boolean, default: true }
+      minimize_to_tray: { type: boolean, default: true }
+      restore_window_size: { type: boolean, default: true }
+
+  settings_data:
+    description: "데이터 관리 설정"
+    fields:
+      trash_retention_days: { type: number, default: 30 }
+      trash_location: { type: string }
+      trash_used_size: { type: number, unit: bytes }
+      trash_max_size: { type: number, unit: bytes }
+      db_location: { type: string }
+      db_size: { type: number, unit: bytes }
+      cache_size: { type: number, unit: bytes }
+      auto_cache_cleanup: { type: boolean, default: true }
+
+  settings_info:
+    description: "앱 정보 (읽기 전용)"
+    fields:
+      version: { type: string }
+      build: { type: string }
+      platform: { type: string }
+      license: { type: string }
+      website_url: { type: string }
+      github_url: { type: string }
+      release_notes_url: { type: string }
