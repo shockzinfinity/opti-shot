@@ -38,7 +38,7 @@ export function migrate(db: AppDatabase): void {
       option_date_start TEXT,
       option_date_end TEXT,
       option_phash_threshold INTEGER NOT NULL DEFAULT 8,
-      option_ssim_threshold REAL NOT NULL DEFAULT 0.85,
+      option_ssim_threshold REAL NOT NULL DEFAULT 0.82,
       option_time_window_hours INTEGER NOT NULL DEFAULT 1,
       option_parallel_threads INTEGER NOT NULL DEFAULT 8,
       option_enable_correction_detection INTEGER NOT NULL DEFAULT 1,

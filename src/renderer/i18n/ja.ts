@@ -296,6 +296,33 @@ export const ja = {
   // Discovery feed
   'scan.autoScroll': '自動スクロール',
 
+  // Scan Info Panel
+  'scanInfo.title': 'スキャン情報',
+  'scanInfo.noScan': 'スキャン履歴がありません',
+  'scanInfo.summary': 'サマリー',
+  'scanInfo.startedAt': '開始',
+  'scanInfo.endedAt': '終了',
+  'scanInfo.duration': '所要時間',
+  'scanInfo.mode': 'モード',
+  'scanInfo.totalFiles': '総ファイル',
+  'scanInfo.processedFiles': '処理済み',
+  'scanInfo.discoveredGroups': '発見グループ',
+  'scanInfo.skippedFiles': 'スキップ',
+  'scanInfo.parameters': '検出パラメータ',
+  'scanInfo.preset': 'プリセット',
+  'scanInfo.phashThreshold': 'pHash 閾値',
+  'scanInfo.ssimThreshold': 'SSIM 閾値',
+  'scanInfo.timeWindow': 'タイムウィンドウ',
+  'scanInfo.off': 'オフ',
+  'scanInfo.threads': 'スレッド',
+  'scanInfo.plugins': '検出アルゴリズム',
+  'scanInfo.noPlugins': 'アクティブなプラグインなし',
+  'scanInfo.custom': 'カスタム',
+  'scanInfo.mode.full': 'フルスキャン',
+  'scanInfo.mode.date_range': '日付範囲',
+  'scanInfo.mode.folder_only': 'フォルダのみ',
+  'scanInfo.mode.incremental': '増分スキャン',
+
   // Misc
   'scan.waitingForData': 'スキャンデータを待機中...',
 } as const

@@ -41,13 +41,15 @@ src/
 │   ├── db/            # Drizzle schema + migrations
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
-│   ├── components/    # Reusable UI components
+│   ├── components/    # Reusable UI components (SidePanel, PanelSection 등 공통 패턴)
 │   ├── pages/         # Route-based pages (7 screens)
 │   ├── stores/        # Zustand stores — command/query/subscribe API 사용
 │   ├── hooks/         # Custom hooks
 │   └── App.tsx
 ├── shared/            # Types shared between main/renderer
-│   ├── types.ts       # 도메인 타입, IpcResponse
+│   ├── types.ts       # 도메인 타입, IpcResponse, ScanRecord
+│   ├── constants.ts   # 단일 소스: SCAN_PRESETS, DEFAULT_*_SETTINGS, IMAGE_EXTENSIONS
+│   ├── utils.ts       # 공유 포맷 함수 (formatBytes, formatDuration, formatDateTime 등)
 │   ├── plugins.ts     # PluginInfo 타입 (UI-safe)
 │   └── cqrs/          # CQRS 타입 레지스트리
 │       ├── commands.ts  # CommandMap (22 commands)

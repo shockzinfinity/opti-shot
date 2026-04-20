@@ -67,6 +67,23 @@ export interface ScanProgress {
   skippedCount: number
 }
 
+/** Scan record from DB — used for scan info display */
+export interface ScanRecord {
+  status: ScanStatus
+  totalFiles: number
+  processedFiles: number
+  discoveredGroups: number
+  elapsedSeconds: number
+  skippedFiles: number
+  optionMode: ScanMode
+  optionPhashThreshold: number
+  optionSsimThreshold: number
+  optionTimeWindowHours: number
+  optionParallelThreads: number
+  startedAt: string
+  endedAt: string | null
+}
+
 export interface ExportProgress {
   processedFiles: number
   totalFiles: number

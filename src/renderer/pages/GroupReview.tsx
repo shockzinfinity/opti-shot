@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Layers } from 'lucide-react'
+import { Layers, Info } from 'lucide-react'
+import { ScanInfoPanel } from '@renderer/components/ScanInfoPanel'
 import { useReviewStore } from '@renderer/stores/review'
 import { PageCloseButton } from '@renderer/components/PageCloseButton'
 import { GroupList } from '@renderer/components/GroupList'
@@ -32,6 +33,7 @@ function ReviewActionBar() {
   const { groups, total, groupDetail, keepAll, markReviewed, pendingDeletions, executeDeletions, executing } = useReviewStore()
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [showScanInfo, setShowScanInfo] = useState(false)
 
   const reviewedCount = groups.filter((g) => g.reviewStatus === REVIEW_STATUS.REVIEWED).length
   const allReviewed = groups.length > 0 && reviewedCount === groups.length
@@ -50,15 +52,24 @@ function ReviewActionBar() {
   }
 
   return (
+    <>
+    {showScanInfo && <ScanInfoPanel onClose={() => setShowScanInfo(false)} />}
     <div className="absolute bottom-0 left-0 w-full bg-surface-primary/90 backdrop-blur-md px-8 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-border flex items-center justify-between z-10">
       {/* Left: stats */}
       <div className="flex items-center gap-6">
-        <div className="text-sm">
+        <div className="flex items-center gap-2 text-sm">
           <span className="text-foreground-muted">{t('review.reviewed')}: </span>
           <span className="font-mono font-semibold text-foreground-primary">
             {formatNumber(reviewedCount)}/{formatNumber(groups.length)}
           </span>
           <span className="text-foreground-muted"> {t('review.groups')}</span>
+          <button
+            onClick={() => setShowScanInfo(true)}
+            className="w-5 h-5 rounded-full border border-border text-foreground-muted hover:text-primary hover:border-primary flex items-center justify-center transition-colors"
+            aria-label={t('scanInfo.title')}
+          >
+            <Info className="w-3 h-3" />
+          </button>
         </div>
         {pendingDeletions.length > 0 && (
           <div className="text-sm">
@@ -113,6 +124,7 @@ function ReviewActionBar() {
         )}
       </div>
     </div>
+    </>
   )
 }
 

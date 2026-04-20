@@ -5,6 +5,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import type { ScanPreset } from '@shared/types'
+import { DEFAULT_SCAN_SETTINGS, DEFAULT_UI_SETTINGS, DEFAULT_DATA_SETTINGS } from '@shared/constants'
 
 // --- Interfaces ---
 
@@ -46,33 +47,9 @@ export type SettingsSection = keyof SettingsStore
 
 // --- Defaults ---
 
-const DEFAULT_SCAN: ScanSettings = {
-  preset: 'balanced',
-  phashThreshold: 8,
-  ssimThreshold: 0.82,
-  timeWindowHours: 1,
-  parallelThreads: 8,
-  batchSize: 100,
-  enableCorrectionDetection: true,
-  enableExifFilter: true,
-  enableIncremental: true,
-  enabledPlugins: { 'phash-ssim': true },
-}
-
-const DEFAULT_UI: UiSettings = {
-  language: 'ko',
-  theme: 'auto',
-  use24HourClock: true,
-  notifyOnComplete: true,
-  minimizeToTray: true,
-  restoreWindowSize: true,
-}
-
-const DEFAULT_DATA: DataSettings = {
-  trashRetentionDays: 30,
-  autoCacheCleanup: true,
-  useSystemTrash: true,
-}
+const DEFAULT_SCAN: ScanSettings = { ...DEFAULT_SCAN_SETTINGS }
+const DEFAULT_UI: UiSettings = { ...DEFAULT_UI_SETTINGS }
+const DEFAULT_DATA: DataSettings = { ...DEFAULT_DATA_SETTINGS }
 
 const DEFAULTS: SettingsStore = {
   scan: { ...DEFAULT_SCAN },

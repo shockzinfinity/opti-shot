@@ -16,14 +16,7 @@ import { join, extname, basename } from 'path'
 import type { ScanProgress } from '@shared/types'
 import { TRASH_FOLDER_NAME } from '@main/services/trash'
 import { SCAN_STATUS } from '@shared/types'
-
-// --- Constants ---
-
-/** Supported image file extensions for scanning. */
-const IMAGE_EXTENSIONS = new Set([
-  '.jpg', '.jpeg', '.png', '.webp', '.tiff', '.tif', '.bmp', '.gif',
-  '.heic', '.heif',
-])
+import { IMAGE_EXTENSIONS } from '@shared/constants'
 
 // --- Active scan state ---
 

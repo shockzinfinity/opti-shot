@@ -39,7 +39,7 @@ export const scans = sqliteTable('scans', {
   optionDateStart: text('option_date_start'), // ISO date, nullable
   optionDateEnd: text('option_date_end'),     // ISO date, nullable
   optionPhashThreshold: integer('option_phash_threshold').notNull().default(8),
-  optionSsimThreshold: real('option_ssim_threshold').notNull().default(0.85),
+  optionSsimThreshold: real('option_ssim_threshold').notNull().default(0.82),
   optionTimeWindowHours: integer('option_time_window_hours').notNull().default(1),
   optionParallelThreads: integer('option_parallel_threads').notNull().default(8),
   optionEnableCorrectionDetection: integer('option_enable_correction_detection', { mode: 'boolean' }).notNull().default(true),

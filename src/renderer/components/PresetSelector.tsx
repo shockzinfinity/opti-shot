@@ -1,40 +1,24 @@
 import { Wand2 } from 'lucide-react'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 import type { TranslationKey } from '@renderer/i18n'
-
-type Preset = 'balanced' | 'conservative' | 'sensitive'
+import type { ScanPreset } from '@shared/types'
+import { SCAN_PRESETS } from '@shared/constants'
 
 interface PresetInfo {
-  id: Preset
+  id: ScanPreset
   labelKey: TranslationKey
   descKey: TranslationKey
-  details: string
 }
 
 const PRESETS: PresetInfo[] = [
-  {
-    id: 'balanced',
-    labelKey: 'preset.balanced',
-    descKey: 'preset.balancedDesc',
-    details: 'pHash 8 · SSIM 0.85 · 8 threads',
-  },
-  {
-    id: 'conservative',
-    labelKey: 'preset.conservative',
-    descKey: 'preset.conservativeDesc',
-    details: 'pHash 6 · SSIM 0.90 · 4 threads',
-  },
-  {
-    id: 'sensitive',
-    labelKey: 'preset.sensitive',
-    descKey: 'preset.sensitiveDesc',
-    details: 'pHash 10 · SSIM 0.80 · 16 threads',
-  },
+  { id: 'balanced', labelKey: 'preset.balanced', descKey: 'preset.balancedDesc' },
+  { id: 'conservative', labelKey: 'preset.conservative', descKey: 'preset.conservativeDesc' },
+  { id: 'sensitive', labelKey: 'preset.sensitive', descKey: 'preset.sensitiveDesc' },
 ]
 
 interface PresetSelectorProps {
-  value: Preset
-  onChange: (preset: Preset) => void
+  value: ScanPreset
+  onChange: (preset: ScanPreset) => void
 }
 
 export function PresetSelector({ value, onChange }: PresetSelectorProps) {
@@ -61,7 +45,9 @@ export function PresetSelector({ value, onChange }: PresetSelectorProps) {
               </span>
             </div>
             <p className="text-xs text-foreground-secondary mb-1">{t(preset.descKey)}</p>
-            <p className="text-xs font-mono text-foreground-muted">{preset.details}</p>
+            <p className="text-xs font-mono text-foreground-muted">
+              pHash {SCAN_PRESETS[preset.id].phashThreshold} · SSIM {SCAN_PRESETS[preset.id].ssimThreshold.toFixed(2)} · {SCAN_PRESETS[preset.id].parallelThreads} threads
+            </p>
           </button>
         )
       })}

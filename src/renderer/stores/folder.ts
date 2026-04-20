@@ -1,6 +1,8 @@
 import { create } from 'zustand'
-import type { ScanMode } from '@shared/types'
+import type { ScanMode, ScanPreset } from '@shared/types'
 import type { ScanSettings } from '@main/services/settings'
+import { SCAN_PRESETS, DEFAULT_SCAN_SETTINGS, detectPreset } from '@shared/constants'
+import type { ScanPresetConfig } from '@shared/constants'
 
 export interface FolderEntry {
   id: string
@@ -20,13 +22,7 @@ export interface ScanOptions {
   enableCorrectionDetection: boolean
 }
 
-export type ScanPresetId = 'balanced' | 'conservative' | 'sensitive'
-
-export const SCAN_PRESET_VALUES: Record<ScanPresetId, Partial<ScanOptions>> = {
-  balanced: { phashThreshold: 8, ssimThreshold: 0.82, timeWindowHours: 1, parallelThreads: 8 },
-  conservative: { phashThreshold: 6, ssimThreshold: 0.9, timeWindowHours: 2, parallelThreads: 4 },
-  sensitive: { phashThreshold: 10, ssimThreshold: 0.8, timeWindowHours: 0, parallelThreads: 16 },
-}
+export type ScanPresetId = ScanPreset
 
 interface FolderState {
   folders: FolderEntry[]
@@ -43,16 +39,16 @@ interface FolderState {
   toggleAdvanced: () => void
 }
 
-/** Fallback defaults — only used until Settings loads */
+/** Fallback defaults — derived from shared constants, used until Settings loads */
 const FALLBACK_OPTIONS: ScanOptions = {
   mode: 'full',
   dateStart: null,
   dateEnd: null,
-  phashThreshold: 8,
-  ssimThreshold: 0.82,
-  timeWindowHours: 1,
-  parallelThreads: 8,
-  enableCorrectionDetection: true,
+  phashThreshold: DEFAULT_SCAN_SETTINGS.phashThreshold,
+  ssimThreshold: DEFAULT_SCAN_SETTINGS.ssimThreshold,
+  timeWindowHours: DEFAULT_SCAN_SETTINGS.timeWindowHours,
+  parallelThreads: DEFAULT_SCAN_SETTINGS.parallelThreads,
+  enableCorrectionDetection: DEFAULT_SCAN_SETTINGS.enableCorrectionDetection,
 }
 
 let nextLocalId = 1
@@ -137,7 +133,7 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   },
 
   applyPreset: (preset: ScanPresetId) => {
-    const values = SCAN_PRESET_VALUES[preset]
+    const values = SCAN_PRESETS[preset]
     set((state) => ({ options: { ...state.options, ...values } }))
   },
 

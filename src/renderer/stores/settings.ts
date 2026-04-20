@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { ScanSettings, UiSettings, DataSettings } from '@main/services/settings'
+import { SCAN_PRESETS, DEFAULT_SCAN_SETTINGS, DEFAULT_UI_SETTINGS, DEFAULT_DATA_SETTINGS } from '@shared/constants'
 
 export type { ScanSettings, UiSettings, DataSettings }
 
@@ -21,39 +22,9 @@ interface SettingsState {
   resetSection: (section: 'scan' | 'ui' | 'data') => Promise<void>
 }
 
-const DEFAULT_SCAN: ScanSettings = {
-  preset: 'balanced',
-  phashThreshold: 8,
-  ssimThreshold: 0.82,
-  timeWindowHours: 1,
-  parallelThreads: 8,
-  batchSize: 100,
-  enableCorrectionDetection: true,
-  enableExifFilter: true,
-  enableIncremental: true,
-  enabledPlugins: { 'phash-ssim': true },
-}
-
-const DEFAULT_UI: UiSettings = {
-  language: 'ko',
-  theme: 'auto',
-  use24HourClock: true,
-  notifyOnComplete: true,
-  minimizeToTray: true,
-  restoreWindowSize: true,
-}
-
-const DEFAULT_DATA: DataSettings = {
-  trashRetentionDays: 30,
-  autoCacheCleanup: true,
-  useSystemTrash: true,
-}
-
-const PRESET_VALUES: Record<'balanced' | 'conservative' | 'sensitive', Partial<ScanSettings>> = {
-  balanced: { phashThreshold: 8, ssimThreshold: 0.82, timeWindowHours: 1, parallelThreads: 8 },
-  conservative: { phashThreshold: 6, ssimThreshold: 0.9, timeWindowHours: 2, parallelThreads: 4 },
-  sensitive: { phashThreshold: 10, ssimThreshold: 0.8, timeWindowHours: 0, parallelThreads: 16 },
-}
+const DEFAULT_SCAN: ScanSettings = { ...DEFAULT_SCAN_SETTINGS }
+const DEFAULT_UI: UiSettings = { ...DEFAULT_UI_SETTINGS }
+const DEFAULT_DATA: DataSettings = { ...DEFAULT_DATA_SETTINGS }
 
 /** Save a single settings section to disk via IPC */
 async function persistSection(section: 'scan' | 'ui' | 'data', data: unknown): Promise<void> {
@@ -110,7 +81,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   applyPreset: (preset) => {
-    const presetValues = PRESET_VALUES[preset]
+    const presetValues = SCAN_PRESETS[preset]
     const scan = { ...get().scan, preset, ...presetValues }
     set({ scan })
     persistSection('scan', scan)

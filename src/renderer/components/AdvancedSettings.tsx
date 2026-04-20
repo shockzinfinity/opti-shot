@@ -1,20 +1,8 @@
 import { Settings2, ChevronDown, ChevronUp, Hash, Eye, Clock, Cpu, RefreshCcw, Filter, Zap } from 'lucide-react'
 import type { ScanOptions, ScanPresetId } from '../stores/folder'
-import { SCAN_PRESET_VALUES } from '../stores/folder'
+import { detectPreset } from '@shared/constants'
 import { PresetSelector } from './PresetSelector'
 import { useTranslation } from '@renderer/hooks/useTranslation'
-
-function detectPreset(options: ScanOptions): 'balanced' | 'conservative' | 'sensitive' {
-  for (const [id, values] of Object.entries(SCAN_PRESET_VALUES)) {
-    if (
-      options.phashThreshold === values.phashThreshold &&
-      options.ssimThreshold === values.ssimThreshold
-    ) {
-      return id as ScanPresetId
-    }
-  }
-  return 'balanced'
-}
 
 interface AdvancedSettingsProps {
   open: boolean
@@ -91,7 +79,7 @@ export function AdvancedSettings({ open, options, onToggle, onOptionChange, onPr
 
       {open && (
         <div className="px-6 pb-6 border-t border-border pt-6 space-y-6">
-          <PresetSelector value={detectPreset(options)} onChange={onPresetChange} />
+          <PresetSelector value={detectPreset(options.phashThreshold, options.ssimThreshold) ?? 'balanced'} onChange={onPresetChange} />
           <div className="grid grid-cols-2 gap-6">
             <SliderField
               icon={<Hash className="w-4 h-4" />}

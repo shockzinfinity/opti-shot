@@ -317,6 +317,33 @@ export const en = {
   // Discovery feed
   'scan.autoScroll': 'Auto-scroll',
 
+  // Scan Info Panel
+  'scanInfo.title': 'Scan Info',
+  'scanInfo.noScan': 'No scan history',
+  'scanInfo.summary': 'Summary',
+  'scanInfo.startedAt': 'Started',
+  'scanInfo.endedAt': 'Ended',
+  'scanInfo.duration': 'Duration',
+  'scanInfo.mode': 'Mode',
+  'scanInfo.totalFiles': 'Total Files',
+  'scanInfo.processedFiles': 'Processed',
+  'scanInfo.discoveredGroups': 'Groups Found',
+  'scanInfo.skippedFiles': 'Skipped',
+  'scanInfo.parameters': 'Detection Parameters',
+  'scanInfo.preset': 'Preset',
+  'scanInfo.phashThreshold': 'pHash Threshold',
+  'scanInfo.ssimThreshold': 'SSIM Threshold',
+  'scanInfo.timeWindow': 'Time Window',
+  'scanInfo.off': 'Off',
+  'scanInfo.threads': 'Threads',
+  'scanInfo.plugins': 'Detection Algorithms',
+  'scanInfo.noPlugins': 'No active plugins',
+  'scanInfo.custom': 'Custom',
+  'scanInfo.mode.full': 'Full Scan',
+  'scanInfo.mode.date_range': 'Date Range',
+  'scanInfo.mode.folder_only': 'Folder Only',
+  'scanInfo.mode.incremental': 'Incremental',
+
   // Misc
   'scan.waitingForData': 'Waiting for scan data...',
 } as const

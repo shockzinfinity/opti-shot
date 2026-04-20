@@ -296,6 +296,33 @@ export const ko = {
   // Discovery feed
   'scan.autoScroll': '자동 스크롤',
 
+  // Scan Info Panel
+  'scanInfo.title': '스캔 정보',
+  'scanInfo.noScan': '스캔 이력이 없습니다',
+  'scanInfo.summary': '스캔 요약',
+  'scanInfo.startedAt': '시작',
+  'scanInfo.endedAt': '종료',
+  'scanInfo.duration': '소요 시간',
+  'scanInfo.mode': '모드',
+  'scanInfo.totalFiles': '전체 파일',
+  'scanInfo.processedFiles': '처리 파일',
+  'scanInfo.discoveredGroups': '발견 그룹',
+  'scanInfo.skippedFiles': '건너뛴 파일',
+  'scanInfo.parameters': '감지 파라미터',
+  'scanInfo.preset': '프리셋',
+  'scanInfo.phashThreshold': 'pHash 임계값',
+  'scanInfo.ssimThreshold': 'SSIM 임계값',
+  'scanInfo.timeWindow': '시간 윈도우',
+  'scanInfo.off': '끄기',
+  'scanInfo.threads': '스레드',
+  'scanInfo.plugins': '감지 알고리즘',
+  'scanInfo.noPlugins': '활성화된 플러그인 없음',
+  'scanInfo.custom': 'Custom (사용자 지정)',
+  'scanInfo.mode.full': '전체 스캔',
+  'scanInfo.mode.date_range': '날짜 범위',
+  'scanInfo.mode.folder_only': '폴더만',
+  'scanInfo.mode.incremental': '증분 스캔',
+
   // Misc
   'scan.waitingForData': '스캔 데이터 대기 중...',
 } as const

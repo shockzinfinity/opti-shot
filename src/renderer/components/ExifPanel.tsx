@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { X, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { useTranslation } from '@renderer/hooks/useTranslation'
+import { SidePanel, PanelSection, PanelRow, PanelEmpty } from './SidePanel'
 
 interface ExifPanelProps {
   photoId: string
@@ -9,7 +10,6 @@ interface ExifPanelProps {
   onClose: () => void
 }
 
-// EXIF keys to display in a readable order with grouping
 const EXIF_GROUPS: Array<{ label: string; keys: string[] }> = [
   {
     label: 'Camera',
@@ -62,7 +62,6 @@ function formatExifValue(key: string, value: unknown): string {
 }
 
 function formatKeyLabel(key: string): string {
-  // Convert camelCase/PascalCase to readable
   return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
 }
 
@@ -81,16 +80,6 @@ export function ExifPanel({ photoId, filename, isMaster, onClose }: ExifPanelPro
     })
   }, [photoId])
 
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  // Categorize exif entries
   const groupedEntries: Array<{ label: string; entries: Array<[string, unknown]> }> = []
   const usedKeys = new Set<string>()
 
@@ -108,7 +97,6 @@ export function ExifPanel({ photoId, filename, isMaster, onClose }: ExifPanelPro
       }
     }
 
-    // Remaining uncategorized keys
     const otherEntries: Array<[string, unknown]> = []
     for (const [key, value] of Object.entries(exifData)) {
       if (!usedKeys.has(key) && value !== undefined && value !== null) {
@@ -120,74 +108,44 @@ export function ExifPanel({ photoId, filename, isMaster, onClose }: ExifPanelPro
     }
   }
 
+  const titleContent = (
+    <div className="flex items-center gap-2 min-w-0">
+      <h2 className="text-sm font-bold text-foreground-primary truncate">{filename}</h2>
+      <span className={`shrink-0 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+        isMaster
+          ? 'bg-primary text-white'
+          : 'bg-foreground-muted/15 text-foreground-muted'
+      }`}>
+        {isMaster ? t('review.master') : t('review.duplicate')}
+      </span>
+    </div>
+  )
+
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/40 z-40 transition-opacity"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div className="fixed top-0 right-0 h-full w-[400px] bg-surface-primary shadow-2xl z-50 flex flex-col animate-slide-in-right">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <Info className="w-4 h-4 text-primary shrink-0" />
-            <h2 className="text-sm font-bold text-foreground-primary truncate">
-              {filename}
-            </h2>
-            <span className={`shrink-0 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-              isMaster
-                ? 'bg-primary text-white'
-                : 'bg-foreground-muted/15 text-foreground-muted'
-            }`}>
-              {isMaster ? t('review.master') : t('review.duplicate')}
-            </span>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-foreground-muted hover:bg-surface-secondary transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <span className="text-sm text-foreground-muted">{t('common.loading')}</span>
-            </div>
-          ) : !exifData || Object.keys(exifData).length === 0 ? (
-            <div className="flex items-center justify-center h-32">
-              <span className="text-sm text-foreground-muted">{t('review.noExifData')}</span>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {groupedEntries.map((group) => (
-                <div key={group.label} className="px-5 py-3">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-foreground-muted mb-2">
-                    {group.label}
-                  </h3>
-                  <div className="space-y-1">
-                    {group.entries.map(([key, value]) => (
-                      <div key={key} className="flex justify-between gap-3 text-[11px]">
-                        <span className="text-foreground-muted shrink-0">
-                          {formatKeyLabel(key)}
-                        </span>
-                        <span className="font-mono text-foreground-primary text-right truncate" title={String(value)}>
-                          {formatExifValue(key, value)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+    <SidePanel
+      title={titleContent}
+      icon={<Info className="w-4 h-4" />}
+      onClose={onClose}
+    >
+      {loading ? (
+        <PanelEmpty message={t('common.loading')} />
+      ) : !exifData || Object.keys(exifData).length === 0 ? (
+        <PanelEmpty message={t('review.noExifData')} />
+      ) : (
+        <div className="divide-y divide-border">
+          {groupedEntries.map((group) => (
+            <PanelSection key={group.label} title={group.label}>
+              {group.entries.map(([key, value]) => (
+                <PanelRow
+                  key={key}
+                  label={formatKeyLabel(key)}
+                  value={formatExifValue(key, value)}
+                />
               ))}
-            </div>
-          )}
+            </PanelSection>
+          ))}
         </div>
-      </div>
-    </>
+      )}
+    </SidePanel>
   )
 }
