@@ -73,9 +73,9 @@ export function ExifPanel({ photoId, filename, isMaster, onClose }: ExifPanelPro
 
   useEffect(() => {
     setLoading(true)
-    window.electron.invoke('photos:exif', photoId).then((res: any) => {
-      if (res?.success) {
-        setExifData(res.data.exif)
+    window.electron.query('photo.exif', { photoId }).then((res) => {
+      if (res.success) {
+        setExifData((res.data as any).exif)
       }
       setLoading(false)
     })

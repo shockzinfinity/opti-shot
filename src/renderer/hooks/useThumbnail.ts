@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { IPC } from '@shared/types'
 
 // Simple in-memory cache
 const thumbnailCache = new Map<string, string>()
@@ -15,10 +14,10 @@ export function useThumbnail(photoId: string): string | null {
     }
 
     let cancelled = false
-    window.electron.invoke(IPC.PHOTOS.THUMBNAIL, photoId).then((result: any) => {
-      if (!cancelled && result?.success && result.data) {
-        thumbnailCache.set(photoId, result.data)
-        setSrc(result.data)
+    window.electron.query('photo.thumbnail', { photoId }).then((result) => {
+      if (!cancelled && result.success && result.data) {
+        thumbnailCache.set(photoId, result.data as string)
+        setSrc(result.data as string)
       }
     })
 

@@ -51,7 +51,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     set({ loading: true })
     try {
       const [statsResult, historyResult] = await Promise.all([
-        window.electron.invoke('stats:get') as Promise<{
+        window.electron.query('stats.dashboard') as Promise<{
           success: boolean
           data?: {
             totalPhotos: number
@@ -67,7 +67,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
             } | null
           }
         }>,
-        window.electron.invoke('scans:list') as Promise<{
+        window.electron.query('stats.scanHistory') as Promise<{
           success: boolean
           data?: ScanHistoryItem[]
         }>,

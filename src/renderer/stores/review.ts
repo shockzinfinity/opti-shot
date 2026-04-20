@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { IPC, REVIEW_STATUS } from '@shared/types'
+import { REVIEW_STATUS } from '@shared/types'
 
 export interface GroupListItem {
   id: string
@@ -97,12 +97,12 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set({ loading: true })
     try {
       const offset = (page - 1) * pageSize
-      const response = await window.electron.invoke(IPC.GROUPS.LIST, {
+      const response = await window.electron.query('group.list', {
         offset,
         limit: pageSize,
         search,
       })
-      const result = response?.success ? (response.data as { groups: GroupListItem[]; total: number }) : undefined
+      const result = response.success ? (response.data as unknown as { groups: GroupListItem[]; total: number }) : undefined
 
       if (result) {
         set({ groups: result.groups, total: result.total })
@@ -113,9 +113,9 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
 
       // Reconstruct pending deletions from DB
       try {
-        const pendingResponse = await window.electron.invoke(IPC.REVIEWS.GET_PENDING)
-        if (pendingResponse?.success && pendingResponse.data) {
-          set({ pendingDeletions: pendingResponse.data as PendingDeletion[] })
+        const pendingResponse = await window.electron.query('review.getPending')
+        if (pendingResponse.success && pendingResponse.data) {
+          set({ pendingDeletions: pendingResponse.data as unknown as PendingDeletion[] })
         }
       } catch (pendingErr) {
         console.error('Failed to reconstruct pending deletions:', pendingErr)
@@ -130,8 +130,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   selectGroup: async (id: string) => {
     set({ selectedGroupId: id, detailLoading: true })
     try {
-      const response = await window.electron.invoke(IPC.GROUPS.DETAIL, id)
-      const detail = response?.success ? (response.data as GroupDetail) : undefined
+      const response = await window.electron.query('group.detail', { groupId: id })
+      const detail = response.success ? (response.data as unknown as GroupDetail) : undefined
       if (detail) {
         set({ groupDetail: detail })
       }
@@ -167,8 +167,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const { selectedGroupId, groupDetail } = get()
     if (!selectedGroupId || !groupDetail) return
     try {
-      const response = await window.electron.invoke(IPC.GROUPS.CHANGE_MASTER, selectedGroupId, photoId)
-      if (!response?.success) return
+      const response = await window.electron.command('group.changeMaster', { groupId: selectedGroupId, newMasterId: photoId })
+      if (!response.success) return
       const updatedPhotos = groupDetail.photos.map((p) => ({
         ...p,
         isMaster: p.id === photoId,
@@ -193,11 +193,11 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
       // Restore trashed photos if this group was previously 'duplicates_deleted'
       const currentDecision = groups.find((g) => g.id === selectedGroupId)?.decision
       if (currentDecision === 'duplicates_deleted') {
-        await window.electron.invoke(IPC.TRASH.RESTORE_GROUP, selectedGroupId)
+        await window.electron.command('trash.restoreGroup', { groupId: selectedGroupId })
       }
 
-      const response = await window.electron.invoke(IPC.GROUPS.MARK_REVIEWED, selectedGroupId, 'kept_all')
-      if (!response?.success) return
+      const response = await window.electron.command('group.markReviewed', { groupId: selectedGroupId, decision: 'kept_all' })
+      if (!response.success) return
       set((state) => ({
         groups: state.groups.map((g) =>
           g.id === selectedGroupId ? { ...g, reviewStatus: REVIEW_STATUS.REVIEWED, decision: 'kept_all' } : g
@@ -218,8 +218,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     const { selectedGroupId, groupDetail } = get()
     if (!selectedGroupId || !groupDetail) return
     try {
-      const response = await window.electron.invoke(IPC.GROUPS.MARK_REVIEWED, selectedGroupId, 'duplicates_deleted')
-      if (!response?.success) return
+      const response = await window.electron.command('group.markReviewed', { groupId: selectedGroupId, decision: 'duplicates_deleted' })
+      if (!response.success) return
 
       // Add non-master photos to pending deletions
       const duplicates = groupDetail.photos
@@ -253,7 +253,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     set({ executing: true })
     try {
       for (const item of pendingDeletions) {
-        await window.electron.invoke(IPC.TRASH.MOVE, item.photoId)
+        await window.electron.command('trash.move', { photoId: item.photoId })
       }
       set({ pendingDeletions: [], executing: false })
       // Reload groups to reflect updated state

@@ -315,14 +315,14 @@ export function DataTab() {
   const [storageStats, setStorageStats] = useState<{ dbSize: number; cacheSize: number }>({ dbSize: 0, cacheSize: 0 })
 
   useEffect(() => {
-    window.electron.invoke('maintenance:storageStats').then((res: any) => {
-      if (res?.success) setStorageStats(res.data)
+    window.electron.query('maintenance.storageStats').then((res) => {
+      if (res.success) setStorageStats(res.data as { dbSize: number; cacheSize: number })
     })
   }, [])
 
   const handleClearCache = async () => {
-    const res = await window.electron.invoke('maintenance:clearCache') as { success: boolean }
-    if (res?.success) {
+    const res = await window.electron.command('maintenance.clearCache')
+    if (res.success) {
       setStorageStats((s) => ({ ...s, cacheSize: 0 }))
       alert(t('settings.cacheCleared'))
     }
@@ -330,8 +330,8 @@ export function DataTab() {
 
   const handleClearScanHistory = async () => {
     if (!confirm(t('settings.clearScanHistoryConfirm'))) return
-    const res = await window.electron.invoke('maintenance:clearScanHistory') as { success: boolean }
-    if (res?.success) {
+    const res = await window.electron.command('maintenance.clearScanHistory')
+    if (res.success) {
       clearThumbnailCache()
       setStorageStats({ dbSize: 0, cacheSize: 0 })
       alert(t('settings.scanHistoryCleared'))
@@ -419,8 +419,8 @@ export function InfoTab() {
   const [info, setInfo] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    window.electron.invoke('app:info')
-      .then((res) => { if (res.success) setInfo(res.data as Record<string, string>) })
+    window.electron.query('app.info')
+      .then((res) => { if (res.success) setInfo(res.data as unknown as Record<string, string>) })
       .catch(() => {})
   }, [])
 
