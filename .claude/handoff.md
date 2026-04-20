@@ -1,77 +1,54 @@
-# OptiShot Session Handoff — 2026-04-19
+# OptiShot Session Handoff — 2026-04-20
 
 ## 이번 세션 완료 작업
 
-### 이슈 해결 (4건)
-1. **HEIC/HEIF 지원** — `sharpFromPath` 래퍼, `heic-convert` 연동, 변환 캐시(per-path JPEG buffer), 스캔 후 캐시 클리어
-2. **리뷰 결정 영구 저장** — `photoGroups.decision` 기반 단순화 (reviewDecisions 테이블 의존 제거), `getPendingDeletions` = photoGroups.decision + photos.isMaster 조합
-3. **스캔 에러 피드백** — `SkippedFile[]` 수집, ScanProgress에 `skippedCount`, UI 배너
-4. **대시보드 스캔 이력** — `scans:list` 엔드포인트, ScanHistoryCard (이후 제거 — 최신 1건만 유지 구조)
+### CQRS 아키텍처 전환 (핵심)
+42개 개별 IPC 채널 → 3개 CQRS 버스로 전면 전환:
 
-### UX 플로우 정비
-- 리뷰 상태 배지: 미검토 / 삭제 대기 / 휴지통 이동 완료 / 영구 삭제됨
-- 사진 카드 배지: pending(주황) / trashed(빨강) / purged(회색+Ban아이콘)
-- `keepAll` → 이전에 trashed된 사진 자동 복원 (`restoreGroupFromTrash`)
-- purged 그룹: 모든 액션 버튼 disabled
-- `executeDeletions` 후 `loadGroups()` 리로드
-- GroupReview 페이지 진입 시 항상 fresh reload (selectedGroupId 리셋)
+- **Phase 1**: CommandBus(21)/QueryBus(16)/EventBus(5) 인프라 구축
+  - `src/shared/cqrs/` 타입 레지스트리 (CommandMap, QueryMap, EventMap)
+  - `src/main/cqrs/` 버스 클래스 + IpcBridge (이중 검증: allowlist + Zod)
+  - 11개 핸들러 모듈 (기존 서비스 래핑, try-catch는 Bridge에서 통합 처리)
+- **Phase 2**: Renderer 전환
+  - Preload: `command/query/subscribe` API 추가
+  - 7 stores + 4 components → 레거시 `invoke/on` 완전 제거
+  - `env.d.ts`: 제네릭 타입 (자동 완성 + 타입 추론)
+- **Phase 3**: 정리 (-1,137줄)
+  - `src/main/ipc/` 디렉토리 삭제 (14 파일)
+  - `shared/types.ts`에서 IPC 상수 제거
+  - Preload에서 레거시 invoke/on API 제거
 
-### 설정 정리
-- 즉시 저장 방식으로 전환 (saveAll/cancel 버튼 제거)
-- 스캔 탭 제거 → 폴더 선택 화면의 고급 설정으로 통합
-- 미구현 옵션 3개 "준비 중" disabled 표시 (보정감지, EXIF필터링, 증분스캔)
-- 시스템 휴지통 토글 추가 (`shell.trashItem`)
-- 24시간제 토글 추가
-- 캐시 지우기 버튼 제거 (스캔 이력 초기화에 포함)
+### 배포 사전 점검 (부분)
+- IpcResponse<T> 타입 정의 (TS 에러 34→0)
+- electron-builder.yml publish owner/repo 수정
+- package.json win 섹션 잘못된 속성 제거
+- DMG 빌드 성공 확인 (129MB)
 
-### 리팩토링
-- Dead code 제거: reviewDecisions 서비스 함수 4개 + IPC 3개 + 테스트 10개 (-580줄)
-- 공통 유틸 추출: `formatDuration`, `formatDateLine`, `formatTimeLine`, `formatDateTime`, `formatDateCompact` → `shared/utils.ts`
-- `StatusBadge` 공통 컴포넌트 추출
-- `formatStorageSize` → `formatBytes`로 통일
-- 미사용 i18n 키 5개 제거
-- 매직 스트링 → 상수 객체 (`SCAN_STATUS`, `REVIEW_STATUS`, `DECISION`, `TRASH_STATUS`)
-- 크로스플랫폼: titleBarStyle 분기, TRASH_FOLDER_NAME Windows 대응
-
-### 기능 구현
-- 창 크기 복원 (`window-bounds.json`)
-- 트레이 최소화 (Tray API + close 이벤트 가로채기)
-- 스캔 완료 알림 (Notification API, 포커스 없을 때만)
-- 영구 삭제 시 썸네일 캐시 함께 삭제
-- 대시보드 hero 문구 변경, 날짜/시간 2줄 분리
-
-### Repository 구조 변경
-- `opti-shot-dev` (private) — 개발 이력 보존
-- `opti-shot` (public) — 클린 단일 커밋, 앞으로 모든 작업 여기서
+### 설계 검증
+- Codex 2회 검증 → `docs/reports/cqrs-design-review-v2.md`
+- Haiku 테스트 검증 (stores/components 전환 후 매 단계)
+- 런타임 검증: `bun run dev` → main/renderer 에러 0건
 
 ## 현재 상태
-- **코드**: 202 테스트 통과, 0 TS 에러 (기존 IPC 응답 타입 26개 제외)
-- **Repository**: `origin` → `https://github.com/shockzinfinity/opti-shot.git` (public)
-- **커밋**: `115deb5` (클린 초기 커밋) → 이후 수정 미커밋
+- **코드**: 201 테스트 통과, 0 TS 에러
+- **IPC**: CQRS 패턴 완전 전환 (레거시 코드 0줄)
+- **커밋**: `c42d955` (CQRS merge on main)
+- **빌드**: main 80KB, preload 2KB, renderer 878KB
 
-## 다음 세션: 배포 마일스톤
+## 다음 작업
 
-### 배포 사전 점검 (계획 완료, 미실행)
-계획 파일: `.claude/plans/sharded-finding-squid.md`
+### 배포 (즉시)
+1. will-navigate 핸들러 추가 (보안)
+2. GitHub Actions release.yml 작성
+3. v0.1.0 태그 + Release (unsigned macOS DMG)
 
-**즉시 수정:**
-1. `electron-builder.yml` publish: `owner: shockzinfinity`, `repo: opti-shot`
-2. `package.json` homepage/repository 필드 추가, `build` 블록 제거
-3. copyright 연도 2025로 수정
-
-**결정 필요:**
-- macOS 코드사이닝: v0.1.0은 unsigned로, README에 보안 경고 안내 추가
-
-**이후:**
-- GitHub Actions 워크플로우 (`release.yml`) 작성
-- 로컬 빌드 테스트 (`bun run build:mac`)
-- 태그 push → Release 생성
+### 플러그인 아키텍처 (v0.2)
+1. PluginRegistry + DetectionPlugin 인터페이스 구현
+2. 기존 pHash+SSIM을 첫 번째 내장 플러그인으로 추출
+3. 설정 UI에 알고리즘 on/off 섹션 추가
 
 ## 미해결 이슈 (docs/ISSUES.md)
 - DB 스키마 경량화 (scanDiscoveries, reviewDecisions 테이블)
 - HEIC 성능 근본 해결 (네이티브 libheif 또는 디스크 캐시)
 - 스캔 고급 옵션 미구현 6개
 - Stage 3 중복 감지 (ORB/딥러닝)
-- 날짜별 사진 정리
-- EXIF 편집
-- Quick Start 가이드

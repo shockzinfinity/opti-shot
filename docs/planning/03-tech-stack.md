@@ -72,27 +72,48 @@ interface ScanState {
 
 ## 3. 백엔드 (Main Process)
 
-### 3.1 Electron Main Process + IPC
+### 3.1 Electron Main Process + CQRS
 
 ```
-Renderer (React)  ←─ IPC ─→  Main (Node.js)
-  UI/상태 관리                   파일 시스템
-  사용자 인터랙션                 이미지 처리
-  Tailwind 렌더링                SQLite
-                                네이티브 모듈
+Renderer (React)  ←─ CQRS ─→  Main (Node.js)
+  command/query                  CommandBus / QueryBus
+  subscribe                      EventBus
+  Zustand stores                 Services → DB/FS
 ```
 
-### 3.2 IPC 통신 패턴
+### 3.2 CQRS 통신 패턴
+
+42개 개별 `ipcMain.handle` 채널 → 3개 버스로 통합:
 
 ```typescript
-// main/ipc-handlers.ts
-ipcMain.handle('scan:start', async (_, options) => {
-  return scanService.startScan(options);
-});
+// main/cqrs/handlers/scan.ts — 핸들러 등록
+cmd.register('scan.start', async (input) => {
+  const db = getDb()
+  return await startScan(db, input, (progress) => {
+    evt.publish('scan.progress', progress)  // EventBus로 진행률 발행
+  })
+})
 
-// renderer
-const result = await window.electron.invoke('scan:start', options);
+// renderer/stores/scan.ts — 사용
+const response = await window.electron.command('scan.start', options)
+//                                      ^^^^^^^ 자동 완성 + 타입 체크
+
+const unsubscribe = window.electron.subscribe('scan.progress', (progress) => {
+  // progress: ScanProgress로 자동 추론
+})
 ```
+
+**IPC 보안 — 이중 검증**:
+1. Preload: `ALLOWED_COMMANDS/QUERIES/EVENTS` Set으로 type 필터링
+2. Main IpcBridge: type allowlist 재검증 + Zod payload 스키마 검증
+3. Handler 내부: 비즈니스 로직 검증
+
+**분류 (총 42개)**:
+- Commands (21): 상태 변경 — folder.add, scan.start, trash.move, settings.save, ...
+- Queries (16): 데이터 조회 — folder.list, group.detail, photo.thumbnail, stats.dashboard, ...
+- Events (5): Main→Renderer 알림 — scan.progress, export.progress, updater.*, ...
+
+> 상세 설계: `docs/planning/10-cqrs-architecture.md`
 
 ---
 
@@ -220,20 +241,23 @@ const metadata = await exifr.parse(imagePath, ['DateTimeOriginal', 'Make', 'Mode
 │  │ Dashboard │ FolderSelect│ ScanProgress│   │
 │  │ GroupReview│ Export     │ Settings   │   │
 │  └───────────┴────────────┴────────────┘   │
-│  State: Zustand    Style: Tailwind CSS     │
+│  Zustand stores: command/query/subscribe   │
 └──────────────────┬──────────────────────────┘
-                   │ IPC (contextBridge)
-┌──────────────────▼──────────────────────────┐
+                   │ contextBridge (CQRS API)
+              ┌────┼────┐
+         cqrs:cmd  cqrs:qry  cqrs:evt:*
+              │    │    │
+┌─────────────▼────▼────▼─────────────────────┐
 │         Main Process (Node.js)              │
 │  ┌────────────────────────────────────┐    │
-│  │ IPC Handlers                       │    │
-│  │ ├─ scan:start/pause/cancel        │    │
-│  │ ├─ groups:list/review             │    │
-│  │ ├─ export:start/progress          │    │
-│  │ └─ settings:get/save              │    │
+│  │ CQRS Buses                         │    │
+│  │ ├─ CommandBus (21 commands)       │    │
+│  │ ├─ QueryBus   (16 queries)        │    │
+│  │ └─ EventBus   (5 events)          │    │
+│  ├─ IpcBridge: allowlist + Zod 검증   │    │
 │  └────────────────────────────────────┘    │
 │  ┌────────────────────────────────────┐    │
-│  │ Services                           │    │
+│  │ Services (변경 없음)                │    │
 │  │ ├─ ScanEngine (pHash + BK-Tree)   │    │
 │  │ ├─ ScanService (orchestrator)     │    │
 │  │ ├─ GroupService                    │    │

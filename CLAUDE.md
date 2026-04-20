@@ -5,8 +5,9 @@
 
 ## Architecture
 - **Framework**: Electron (Main + Renderer process)
+- **IPC**: CQRS 패턴 — CommandBus(21) / QueryBus(16) / EventBus(5)
 - **Renderer**: React 19 + TypeScript + Tailwind CSS + Zustand
-- **Main**: Node.js + IPC handlers + Services
+- **Main**: Node.js + CQRS handlers + Services
 - **Database**: better-sqlite3 + Drizzle ORM
 - **Image Processing**: sharp (libvips)
 - **Bundler**: Vite
@@ -22,26 +23,49 @@ bun run build:mac   # .dmg
 bun run build:win   # .exe installer
 ```
 
-## Project Structure (planned)
+## Project Structure
 ```
 src/
 ├── main/              # Electron Main Process
-│   ├── ipc/           # IPC handlers
-│   ├── services/      # Business logic
+│   ├── cqrs/          # CQRS infrastructure
+│   │   ├── commandBus.ts    # Command 실행 (상태 변경)
+│   │   ├── queryBus.ts      # Query 실행 (데이터 조회)
+│   │   ├── eventBus.ts      # Event 발행 (Main→Renderer)
+│   │   ├── ipcBridge.ts     # IPC 진입점 (cqrs:cmd, cqrs:qry) + 이중 검증
+│   │   ├── schemas.ts       # Zod 스키마 (payload 검증)
+│   │   └── handlers/        # 도메인별 핸들러 (folder, scan, group, ...)
+│   ├── services/      # Business logic (변경 없음)
 │   ├── engine/        # ScanEngine, BK-Tree, pHash
 │   ├── db/            # Drizzle schema + migrations
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
 │   ├── components/    # Reusable UI components
 │   ├── pages/         # Route-based pages (7 screens)
-│   ├── stores/        # Zustand stores
+│   ├── stores/        # Zustand stores — command/query/subscribe API 사용
 │   ├── hooks/         # Custom hooks
 │   └── App.tsx
 ├── shared/            # Types shared between main/renderer
-│   └── types.ts
-└── preload/           # contextBridge
+│   ├── types.ts       # 도메인 타입, IpcResponse
+│   └── cqrs/          # CQRS 타입 레지스트리
+│       ├── commands.ts  # CommandMap (21 commands)
+│       ├── queries.ts   # QueryMap (16 queries)
+│       ├── events.ts    # EventMap (5 events)
+│       └── bus.ts       # 공통 타입, allowlist 배열
+└── preload/           # contextBridge — command/query/subscribe API
     └── index.ts
 ```
+
+## IPC Communication (CQRS)
+```
+Renderer                          Main
+  │                                │
+  ├─ command('scan.start', opts) ──►  CommandBus → handler → Service
+  ├─ query('group.list', params) ──►  QueryBus  → handler → Service
+  └─ subscribe('scan.progress') ◄──  EventBus  → BrowserWindow.send
+```
+- Preload: type allowlist 검증 (ALL_COMMAND_TYPES, ALL_QUERY_TYPES, ALL_EVENT_TYPES)
+- Main IpcBridge: type allowlist 재검증 + Zod payload 검증
+- 설계 문서: docs/planning/10-cqrs-architecture.md
 
 ## Domain
 - 16 resources: specs/domain/resources.yaml
