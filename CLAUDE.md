@@ -132,10 +132,11 @@ Renderer                          Main
 - Virtual lists for large datasets (react-window 적용)
 
 ## Current Status
-- 핵심 기능 완료 (P0~P5), Export 기능 제거 (v0.3)
-- 추가: EXIF 필터링, Plugin, HEIC, i18n(ko/en/ja), CI/CD, 알림 시스템
-- 미구현: Worker Threads (stub), Correction Detection, Incremental Scan
-- 테스트: 단위 16개, E2E 0개
+- 핵심 기능 완료 (P0~P5), Export 제거, 알림 시스템/크래시 방어 완료
+- 추가: EXIF 필터링, Plugin, HEIC, i18n, 알림(CQRS 미들웨어), 크래시 방어
+- 단기 논의 필요: Auto-updater 배포, Incremental Scan, 파일명 변경/날짜 정리
+- 중기: Worker Threads (stub), Correction Detection 정리, exifr 최적화
+- 테스트: 기능 구현 시 함께 작성 (별도 과제 아님)
 - 로드맵 상세: docs/ROADMAP.md
 
 ## Safety Rules
