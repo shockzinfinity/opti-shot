@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { ScanMode, ScanPreset } from '@shared/types'
 import type { ScanSettings } from '@main/services/settings'
+import type { PluginInfo } from '@shared/plugins'
 import { SCAN_PRESETS, DEFAULT_SCAN_SETTINGS, detectPreset } from '@shared/constants'
 import type { ScanPresetConfig } from '@shared/constants'
 
@@ -38,6 +39,7 @@ interface FolderState {
   folders: FolderEntry[]
   options: ScanOptions
   advancedOpen: boolean
+  enabledPlugins: PluginInfo[]
   addFolder: () => Promise<void>
   removeFolder: (id: string) => void
   commitFolders: () => Promise<void>
@@ -74,6 +76,7 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   folders: [],
   options: FALLBACK_OPTIONS,
   advancedOpen: false,
+  enabledPlugins: [],
 
   addFolder: async () => {
     const dialogResult = await window.electron.command('dialog.openDirectory')
@@ -115,7 +118,7 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   },
 
   reset: () => {
-    set({ folders: [], options: FALLBACK_OPTIONS, advancedOpen: false })
+    set({ folders: [], options: FALLBACK_OPTIONS, advancedOpen: false, enabledPlugins: [] })
     // Re-load from Settings so defaults match user's saved preferences
     get().loadDefaults()
   },
@@ -142,6 +145,15 @@ export const useFolderStore = create<FolderState>((set, get) => ({
       }
     } catch {
       // Keep fallback values
+    }
+    // Load enabled plugins
+    try {
+      const pluginRes = await window.electron.query('plugin.list') as unknown as { success: boolean; data: PluginInfo[] }
+      if (pluginRes.success) {
+        set({ enabledPlugins: pluginRes.data.filter((p) => p.enabled) })
+      }
+    } catch {
+      // Keep empty
     }
   },
 

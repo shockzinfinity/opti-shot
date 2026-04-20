@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pause, X, AlertTriangle, AlertCircle } from 'lucide-react'
+import { X, AlertTriangle, AlertCircle } from 'lucide-react'
 import { useScanStore } from '../stores/scan'
 import { useFolderStore } from '../stores/folder'
 import { ProgressBar } from '../components/ProgressBar'
@@ -11,7 +11,7 @@ import { useTranslation } from '@renderer/hooks/useTranslation'
 
 export function ScanProgress() {
   const navigate = useNavigate()
-  const { isScanning, isPaused, isComplete, errorMessage, progress, discoveries, startListening, startScan, pauseScan, cancelScan, reset: resetScan } =
+  const { isScanning, isPaused, isComplete, isCancelled, errorMessage, progress, discoveries, startListening, startScan, cancelScan, reset: resetScan } =
     useScanStore()
   const { t } = useTranslation()
 
@@ -41,6 +41,16 @@ export function ScanProgress() {
     }
   }, [isComplete, navigate])
 
+  // Navigate back to folders on cancel or error (after brief display)
+  useEffect(() => {
+    if (isCancelled || (!isScanning && !isComplete && errorMessage)) {
+      const timer = setTimeout(() => {
+        navigate('/folders')
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [isCancelled, isScanning, isComplete, errorMessage, navigate])
+
   const percent =
     progress && progress.totalFiles > 0
       ? Math.round((progress.processedFiles / progress.totalFiles) * 100)
@@ -48,8 +58,10 @@ export function ScanProgress() {
 
   const title = isComplete
     ? t('scan.complete')
-    : isPaused
-    ? t('scan.paused')
+    : isCancelled
+    ? t('scan.cancelled')
+    : errorMessage
+    ? t('scan.failed')
     : t('scan.inProgress')
 
   return (
@@ -121,24 +133,18 @@ export function ScanProgress() {
       <DiscoveryFeed discoveries={discoveries} />
 
       {/* Control buttons */}
-      <div className="flex items-center justify-center gap-4">
-        <button
-          onClick={pauseScan}
-          disabled={!isScanning || isPaused || isComplete}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-foreground-primary font-medium text-sm hover:bg-surface-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Pause className="w-4 h-4" />
-          {t('scan.pause')}
-        </button>
-        <button
-          onClick={cancelScan}
-          disabled={isComplete}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-error/20 text-error font-medium text-sm hover:bg-error-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <X className="w-4 h-4" />
-          {t('scan.cancel')}
-        </button>
-      </div>
+      {!isComplete && !isCancelled && !errorMessage && (
+        <div className="flex items-center justify-center">
+          <button
+            onClick={cancelScan}
+            disabled={!isScanning}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-error/20 text-error font-medium text-sm hover:bg-error-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <X className="w-4 h-4" />
+            {t('scan.cancel')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

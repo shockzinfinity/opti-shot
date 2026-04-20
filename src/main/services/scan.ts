@@ -505,7 +505,7 @@ export async function startScan(
  */
 export function pauseScan(): void {
   if (!activeScan) {
-    throw new Error('No active scan to pause')
+    return // Already finished — nothing to pause
   }
 
   activeScan.paused = true
@@ -518,7 +518,7 @@ export function pauseScan(): void {
  */
 export function cancelScan(): void {
   if (!activeScan) {
-    throw new Error('No active scan to cancel')
+    return // Already finished — nothing to cancel
   }
 
   activeScan.abortController.abort()

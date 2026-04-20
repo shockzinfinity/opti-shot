@@ -88,11 +88,23 @@ Renderer                          Main
 ## EXIF Pre-Scan Filtering
 - 4개 필터: 촬영날짜 범위, 카메라 모델, GPS 유/무, 최소 해상도
 - Pre-scan 단계에서 32 concurrent 배치로 파일 목록 필터링 (Stage 1 pHash 전)
+- FolderSelect 페이지에서 스캔 모드 아래 별도 섹션으로 표시 (설정 ON 시)
 - `exifr` 라이브러리 주의사항:
   - `GPSLatitude`는 `number`가 아닌 DMS 배열(`[도, 분, 초]`) 반환 → `!= null`로 체크
   - `latitude`/`longitude` (소수점 변환값)은 `pick`으로 선택 불가 → `exifr.gps()` 별도 호출
 - GPS 좌표 추출: `exifr.gps()` → `{ latitude: number, longitude: number }`
 - DB 저장: `photos.latitude`, `photos.longitude` (REAL)
+
+## FolderSelect Page Layout
+```
+1. 스캔 대상 폴더
+2. 스캔 모드
+3. EXIF 필터 섹션 (설정 ON 시만 표시)
+4. 고급 설정 — 활성 플러그인별 파라미터 (플러그인 ON 시만 표시)
+5. 액션 바
+```
+- 고급 설정: 플러그인별 섹션 분리 (PluginSection 컴포넌트)
+- 향후 기능(보정 감지, 증분 스캔 등)도 설정 ON 시 별도 섹션으로 추가 예정
 
 ## Performance Targets
 - 200K images Stage 1 scan: < 30 minutes

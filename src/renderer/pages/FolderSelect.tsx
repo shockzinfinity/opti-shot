@@ -6,12 +6,13 @@ import { PageCloseButton } from '../components/PageCloseButton'
 import { FolderList } from '../components/FolderList'
 import { ScanModeSelector } from '../components/ScanModeSelector'
 import { AdvancedSettings } from '../components/AdvancedSettings'
+import { ExifFilterSection } from '../components/ExifFilterSection'
 import { ActionBar } from '../components/ActionBar'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 
 export function FolderSelect() {
   const navigate = useNavigate()
-  const { folders, options, advancedOpen, addFolder, removeFolder, setMode, setOption, applyPreset, toggleAdvanced, reset } =
+  const { folders, options, advancedOpen, enabledPlugins, addFolder, removeFolder, setMode, setOption, applyPreset, toggleAdvanced, reset } =
     useFolderStore()
   const { t } = useTranslation()
 
@@ -61,14 +62,20 @@ export function FolderSelect() {
         />
       </div>
 
-      {/* Section 3: Advanced Settings */}
-      <AdvancedSettings
-        open={advancedOpen}
-        options={options}
-        onToggle={toggleAdvanced}
-        onOptionChange={setOption}
-        onPresetChange={applyPreset}
-      />
+      {/* Section 3: EXIF Filter (shown when enabled in settings) */}
+      <ExifFilterSection options={options} onOptionChange={setOption} />
+
+      {/* Section 4: Advanced Settings */}
+      {enabledPlugins.length > 0 && (
+        <AdvancedSettings
+          open={advancedOpen}
+          options={options}
+          plugins={enabledPlugins}
+          onToggle={toggleAdvanced}
+          onOptionChange={setOption}
+          onPresetChange={applyPreset}
+        />
+      )}
 
       {/* Section 4: Action Bar */}
       <ActionBar

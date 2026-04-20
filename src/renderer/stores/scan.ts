@@ -14,13 +14,13 @@ interface ScanState {
   isScanning: boolean
   isPaused: boolean
   isComplete: boolean
+  isCancelled: boolean
   errorMessage: string | null
   progress: ScanProgress | null
   discoveries: Discovery[]
   // actions
   startListening: () => () => void
   startScan: (options: ScanOptions) => Promise<void>
-  pauseScan: () => Promise<void>
   cancelScan: () => Promise<void>
   reset: () => void
 }
@@ -29,6 +29,7 @@ export const useScanStore = create<ScanState>((set, get) => ({
   isScanning: false,
   isPaused: false,
   isComplete: false,
+  isCancelled: false,
   errorMessage: null,
   progress: null,
   discoveries: [],
@@ -63,42 +64,39 @@ export const useScanStore = create<ScanState>((set, get) => ({
   },
 
   startScan: async (options: ScanOptions) => {
-    set({ isScanning: true, isPaused: false, isComplete: false, errorMessage: null, progress: null, discoveries: [] })
+    set({ isScanning: true, isPaused: false, isComplete: false, isCancelled: false, errorMessage: null, progress: null, discoveries: [] })
     try {
       const response = await window.electron.command('scan.start', options)
       if (response.success) {
         set({ isComplete: true, isScanning: false })
       } else {
-        console.error('Scan failed:', response.error)
-        set({ isScanning: false, errorMessage: response.error ?? 'Scan failed' })
+        const error = response.error ?? 'Scan failed'
+        // Abort/cancel errors are not failures — treat as cancellation
+        if (error === 'Scan aborted') {
+          set({ isScanning: false, isCancelled: true })
+        } else {
+          console.error('Scan failed:', error)
+          set({ isScanning: false, errorMessage: error })
+        }
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown scan error'
-      console.error('Scan error:', err)
-      set({ isScanning: false, errorMessage: msg })
-    }
-  },
-
-  pauseScan: async () => {
-    try {
-      const response = await window.electron.command('scan.pause')
-      if (response.success) {
-        set({ isPaused: true })
+      if (msg === 'Scan aborted') {
+        set({ isScanning: false, isCancelled: true })
+      } else {
+        console.error('Scan error:', err)
+        set({ isScanning: false, errorMessage: msg })
       }
-    } catch (err) {
-      console.error('Failed to pause scan:', err)
     }
   },
 
   cancelScan: async () => {
     try {
-      const response = await window.electron.command('scan.cancel')
-      if (response.success) {
-        set({ isScanning: false, isPaused: false })
-      }
-    } catch (err) {
-      console.error('Failed to cancel scan:', err)
+      await window.electron.command('scan.cancel')
+    } catch {
+      // Scan may already be finished — ignore
     }
+    set({ isScanning: false, isCancelled: true })
   },
 
   reset: () => {
@@ -106,6 +104,7 @@ export const useScanStore = create<ScanState>((set, get) => ({
       isScanning: false,
       isPaused: false,
       isComplete: false,
+      isCancelled: false,
       errorMessage: null,
       progress: null,
       discoveries: [],
