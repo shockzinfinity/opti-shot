@@ -11,6 +11,8 @@ export interface FolderEntry {
   isAccessible: boolean
 }
 
+export type ExifGpsFilter = 'all' | 'with_gps' | 'without_gps'
+
 export interface ScanOptions {
   mode: ScanMode
   dateStart: string | null
@@ -20,6 +22,14 @@ export interface ScanOptions {
   timeWindowHours: number
   parallelThreads: number
   enableCorrectionDetection: boolean
+  // EXIF filters
+  enableExifFilter: boolean
+  exifDateStart: string | null
+  exifDateEnd: string | null
+  exifCameraFilter: string
+  exifMinWidth: number
+  exifMinHeight: number
+  exifGpsFilter: ExifGpsFilter
 }
 
 export type ScanPresetId = ScanPreset
@@ -49,6 +59,13 @@ const FALLBACK_OPTIONS: ScanOptions = {
   timeWindowHours: DEFAULT_SCAN_SETTINGS.timeWindowHours,
   parallelThreads: DEFAULT_SCAN_SETTINGS.parallelThreads,
   enableCorrectionDetection: DEFAULT_SCAN_SETTINGS.enableCorrectionDetection,
+  enableExifFilter: DEFAULT_SCAN_SETTINGS.enableExifFilter,
+  exifDateStart: null,
+  exifDateEnd: null,
+  exifCameraFilter: '',
+  exifMinWidth: DEFAULT_SCAN_SETTINGS.exifMinWidth,
+  exifMinHeight: DEFAULT_SCAN_SETTINGS.exifMinHeight,
+  exifGpsFilter: DEFAULT_SCAN_SETTINGS.exifGpsFilter,
 }
 
 let nextLocalId = 1
@@ -116,6 +133,10 @@ export const useFolderStore = create<FolderState>((set, get) => ({
             timeWindowHours: s.timeWindowHours,
             parallelThreads: s.parallelThreads,
             enableCorrectionDetection: s.enableCorrectionDetection,
+            enableExifFilter: s.enableExifFilter,
+            exifMinWidth: s.exifMinWidth,
+            exifMinHeight: s.exifMinHeight,
+            exifGpsFilter: s.exifGpsFilter,
           },
         }))
       }

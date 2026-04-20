@@ -4,6 +4,8 @@
 
 import { ScanEngine, clearHeicCache } from '@main/engine'
 import type { ScanResult } from '@main/engine'
+import exifr from 'exifr'
+import { sharpFromPath } from '@main/engine/heic'
 import { pluginRegistry } from '@main/engine/plugin-registry'
 import { listFolders } from '@main/services/folder'
 import type { FolderRecord } from '@main/services/folder'
@@ -35,6 +37,140 @@ export interface ScanOptions {
   timeWindowHours: number
   parallelThreads: number
   batchSize?: number
+  // EXIF filters
+  enableExifFilter?: boolean
+  exifDateStart?: string | null   // ISO date
+  exifDateEnd?: string | null     // ISO date
+  exifCameraFilter?: string       // comma-separated camera model names (include)
+  exifMinWidth?: number           // 0 = disabled
+  exifMinHeight?: number          // 0 = disabled
+  exifGpsFilter?: string          // 'all' | 'with_gps' | 'without_gps'
+}
+
+// --- EXIF Filtering ---
+
+/** EXIF fields to pick per filter type. */
+const EXIF_PICK = {
+  date: ['DateTimeOriginal'],
+  camera: ['Make', 'Model'],
+  gps: ['GPSLatitude'],
+  dims: ['ExifImageWidth', 'ExifImageHeight', 'ImageWidth', 'ImageHeight'],
+} as const
+
+/**
+ * Check if a single file passes the active EXIF filters.
+ * Returns true if the file should be included in the scan.
+ */
+async function checkFileExif(
+  filePath: string,
+  pickList: string[],
+  filters: {
+    needDate: boolean; dateStart: Date | null; dateEnd: Date | null
+    needCamera: boolean; cameraKeywords: string[]
+    needGps: boolean; gpsFilter: string
+    needDimensions: boolean; minW: number; minH: number
+  },
+): Promise<boolean> {
+  try {
+    const exif = pickList.length > 0 ? await exifr.parse(filePath, { pick: pickList }) : null
+
+    if (filters.needDate && exif?.DateTimeOriginal instanceof Date) {
+      if (filters.dateStart && exif.DateTimeOriginal < filters.dateStart) return false
+      if (filters.dateEnd && exif.DateTimeOriginal > filters.dateEnd) return false
+    }
+
+    if (filters.needCamera) {
+      const model = [exif?.Make, exif?.Model].filter(Boolean).join(' ').toLowerCase()
+      if (!model || !filters.cameraKeywords.some((kw) => model.includes(kw))) return false
+    }
+
+    if (filters.needGps) {
+      const hasGps = exif?.GPSLatitude != null
+      if (filters.gpsFilter === 'with_gps' && !hasGps) return false
+      if (filters.gpsFilter === 'without_gps' && hasGps) return false
+    }
+
+    if (filters.needDimensions) {
+      let w = exif?.ExifImageWidth ?? exif?.ImageWidth ?? 0
+      let h = exif?.ExifImageHeight ?? exif?.ImageHeight ?? 0
+      if (w === 0 || h === 0) {
+        try {
+          const meta = await (await sharpFromPath(filePath)).metadata()
+          w = meta.width ?? 0
+          h = meta.height ?? 0
+        } catch { /* include on failure */ }
+      }
+      if (filters.minW > 0 && w > 0 && w < filters.minW) return false
+      if (filters.minH > 0 && h > 0 && h < filters.minH) return false
+    }
+
+    return true
+  } catch {
+    // EXIF unreadable → treat as no-EXIF file
+    if (filters.needCamera) return false
+    if (filters.needGps && filters.gpsFilter === 'with_gps') return false
+    return true
+  }
+}
+
+/** Concurrency limit for parallel EXIF reads. */
+const EXIF_CONCURRENCY = 32
+
+/**
+ * Apply EXIF-based filters to file list before scanning.
+ * Runs checks in parallel batches (32 concurrent) for speed.
+ * Only reads the minimal EXIF fields needed by active filters.
+ */
+async function applyExifFilters(
+  filePaths: string[],
+  options: ScanOptions,
+  onProgress?: (current: number, total: number) => void,
+): Promise<{ filtered: string[]; excludedCount: number }> {
+  if (!options.enableExifFilter) {
+    return { filtered: filePaths, excludedCount: 0 }
+  }
+
+  const dateStart = options.exifDateStart ? new Date(options.exifDateStart) : null
+  const dateEnd = options.exifDateEnd ? new Date(options.exifDateEnd) : null
+  const cameraKeywords = (options.exifCameraFilter ?? '')
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+  const minW = options.exifMinWidth ?? 0
+  const minH = options.exifMinHeight ?? 0
+  const gpsFilter = options.exifGpsFilter ?? 'all'
+
+  const needDate = !!(dateStart || dateEnd)
+  const needCamera = cameraKeywords.length > 0
+  const needGps = gpsFilter !== 'all'
+  const needDimensions = minW > 0 || minH > 0
+
+  if (!needDate && !needCamera && !needGps && !needDimensions) {
+    return { filtered: filePaths, excludedCount: 0 }
+  }
+
+  // Build minimal pick list
+  const pickList: string[] = [
+    ...(needDate ? EXIF_PICK.date : []),
+    ...(needCamera ? EXIF_PICK.camera : []),
+    ...(needGps ? EXIF_PICK.gps : []),
+    ...(needDimensions ? EXIF_PICK.dims : []),
+  ]
+
+  const filters = { needDate, dateStart, dateEnd, needCamera, cameraKeywords, needGps, gpsFilter, needDimensions, minW, minH }
+
+  // Process in parallel batches
+  const result: string[] = []
+  for (let i = 0; i < filePaths.length; i += EXIF_CONCURRENCY) {
+    const batch = filePaths.slice(i, i + EXIF_CONCURRENCY)
+    const checks = await Promise.all(
+      batch.map((fp) => checkFileExif(fp, pickList, filters)),
+    )
+    for (let j = 0; j < batch.length; j++) {
+      if (checks[j]) result.push(batch[j])
+    }
+    onProgress?.(Math.min(i + EXIF_CONCURRENCY, filePaths.length), filePaths.length)
+  }
+
+  return { filtered: result, excludedCount: filePaths.length - result.length }
 }
 
 // --- Exports ---
@@ -195,6 +331,8 @@ export function saveScanResults(
         shutterSpeed: photo.shutterSpeed ?? null,
         aperture: photo.aperture ?? null,
         focalLength: photo.focalLength ?? null,
+        latitude: photo.latitude ?? null,
+        longitude: photo.longitude ?? null,
         isMaster: photo.id === group.masterId,
         groupId: group.id,
       }).run()
@@ -239,9 +377,30 @@ export async function startScan(
   }
 
   // Collect all image file paths
-  const filePaths = collectImageFiles(folders)
-  if (filePaths.length === 0) {
+  const allFiles = collectImageFiles(folders)
+  if (allFiles.length === 0) {
     throw new Error('No image files found in registered folders')
+  }
+
+  // Apply EXIF filters (with progress feedback)
+  const { filtered: filePaths, excludedCount: filteredCount } = await applyExifFilters(
+    allFiles,
+    options,
+    (current, total) => {
+      onProgress({
+        processedFiles: 0,
+        totalFiles: total,
+        discoveredGroups: 0,
+        currentFile: `EXIF filtering... (${current}/${total})`,
+        elapsedSeconds: 0,
+        estimatedRemainingSeconds: 0,
+        scanSpeed: 0,
+        skippedCount: 0,
+      })
+    },
+  )
+  if (filePaths.length === 0) {
+    throw new Error('All files were excluded by EXIF filters')
   }
 
   // Create scan record in DB
@@ -258,6 +417,8 @@ export async function startScan(
     optionSsimThreshold: options.ssimThreshold,
     optionTimeWindowHours: options.timeWindowHours,
     optionParallelThreads: options.parallelThreads,
+    optionEnableExifFilter: options.enableExifFilter ?? false,
+    filteredFiles: filteredCount,
     startedAt: now,
   }).run()
 

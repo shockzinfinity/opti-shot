@@ -149,4 +149,10 @@ export function migrate(db: AppDatabase): void {
 
   // Scan error feedback (Issue 3)
   addColumnIfMissing('scans', 'skipped_files', 'INTEGER NOT NULL DEFAULT 0')
+
+  // EXIF filtering (v0.2)
+  addColumnIfMissing('photos', 'latitude', 'REAL')
+  addColumnIfMissing('photos', 'longitude', 'REAL')
+  addColumnIfMissing('scans', 'option_enable_exif_filter', 'INTEGER NOT NULL DEFAULT 0')
+  addColumnIfMissing('scans', 'filtered_files', 'INTEGER NOT NULL DEFAULT 0')
 }

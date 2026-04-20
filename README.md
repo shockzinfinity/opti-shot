@@ -1,37 +1,202 @@
-# OptiShot
+<p align="center">
+  <img src="resources/icon.png" alt="OptiShot" width="128" height="128" />
+</p>
 
-Photo duplicate detection and cleanup desktop app.
+<h1 align="center">OptiShot</h1>
 
-2-stage image hashing (pHash + SSIM) finds similar and duplicate photos, quality scoring selects the best version, and soft delete keeps originals safe. 100% local — no cloud, no network calls.
+<p align="center">
+  <strong>내 사진을 내 규칙으로, 안전하게 정리하는 로컬 데스크톱 도구</strong>
+</p>
 
-## Tech Stack
+<p align="center">
+  <img src="https://img.shields.io/badge/Electron-41-47848F?logo=electron&logoColor=white" alt="Electron" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-888" alt="Platform" />
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
+</p>
 
-- **Runtime**: Electron 41 (Node 22)
-- **Frontend**: React 19, TypeScript 6, Tailwind CSS 4, Zustand
-- **Backend**: better-sqlite3 + Drizzle ORM, sharp (libvips)
-- **Build**: Vite 7, electron-vite, electron-builder
-- **Test**: Vitest, Playwright
+---
 
-## Prerequisites
+## Why OptiShot?
+
+스마트폰, NAS, 외장 하드, 클라우드 백업... 수년간 쌓인 사진은 어느새 수만~수십만 장.
+같은 사진이 여러 곳에 복제되고, 보정본과 원본이 뒤섞이며, 어떤 것이 가장 좋은 버전인지 알 수 없게 됩니다.
+
+**OptiShot**은 이 문제를 해결합니다.
+
+- **2단계 이미지 해싱**으로 육안으로 구분 어려운 유사/중복 사진까지 감지
+- **품질 평가 알고리즘**으로 가장 선명한 버전을 자동 추천
+- **100% 로컬 처리** — 사진이 절대 외부 서버로 전송되지 않습니다
+- **Soft Delete 안전 정책** — 원본 파일을 직접 삭제하지 않으며, 30일간 복원 가능
+
+---
+
+## Key Features
+
+### Duplicate Detection (2-Stage)
+
+단순한 해시 비교가 아닌, **2단계 검증 파이프라인**으로 정밀도와 속도를 모두 확보합니다.
+
+| Stage | Algorithm | Purpose |
+|-------|-----------|---------|
+| **Stage 1** | pHash + BK-Tree | DCT 기반 Perceptual Hash로 빠른 후보 추출. BK-Tree 인덱싱으로 O(log n) 검색 |
+| **Stage 2** | SSIM | Structural Similarity 검증으로 오탐 제거. 휘도/대비/구조 3채널 비교 |
+
+- **pHash Threshold**: Hamming Distance 기반 (기본 8, 4~16 조절 가능)
+- **SSIM Threshold**: 구조적 유사도 (기본 0.82, 0.5~0.95 조절 가능)
+- **BK-Tree**: 해밍 거리 기반 메트릭 트리로 대규모 해시 집합에서 효율적 범위 검색
+
+### Quality Scoring
+
+중복 그룹 내에서 **가장 좋은 버전(Master)**을 자동 선별합니다.
+
+- **Laplacian Variance** — 이미지 선명도 평가 (blur 감지)
+- **해상도** — 높은 해상도 우선
+- **파일 크기** — 원본 품질 보존 여부 판단
+- **EXIF 메타데이터** — 촬영 정보 보존 여부 가점
+
+### EXIF Pre-Scan Filtering
+
+수십만 장의 사진을 스캔하기 전에, EXIF 메타데이터로 **대상 파일을 사전 필터링**하여 불필요한 연산을 줄입니다.
+
+| Filter | Description |
+|--------|-------------|
+| 촬영 날짜 범위 | 특정 기간의 사진만 스캔 |
+| 카메라 모델 | 특정 카메라로 촬영한 사진만 포함 |
+| GPS 유/무 | 위치 정보 포함/미포함 사진 선택 |
+| 최소 해상도 | 일정 크기 이하 이미지 제외 |
+
+- 32개 동시 배치 처리로 고속 필터링
+- 필요한 EXIF 필드만 선택적으로 읽어 I/O 최소화
+
+### Plugin Architecture
+
+감지 알고리즘을 **플러그인 방식으로 교체**할 수 있습니다.
+
+- `DetectionPlugin` 인터페이스 + `PluginRegistry`
+- 내장 플러그인: **pHash-SSIM** (기본)
+- 향후 dHash+MSE 등 커스텀 플러그인 확장 가능
+
+### Safety First
+
+사진은 되돌릴 수 없는 소중한 자산입니다. OptiShot은 **안전을 최우선**으로 설계되었습니다.
+
+- 원본 파일을 직접 수정하거나 삭제하지 않음
+- Soft Delete: 휴지통으로 이동 (복사 후 삭제)
+- 30일 보관 후 영구 삭제 (자동 정리 스케줄러)
+- 언제든 복원 가능
+- 100% 로컬 — 네트워크 호출 없음, 클라우드 전송 없음
+
+---
+
+## Screenshots
+
+> *Coming soon*
+
+---
+
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     OptiShot Pipeline                    │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  1. Folder Selection                                    │
+│     └─ 스캔 대상 폴더 선택 (다중, 하위폴더 포함 옵션)      │
+│                                                         │
+│  2. EXIF Pre-Filter (Optional)                          │
+│     └─ 날짜/카메라/GPS/해상도로 대상 파일 사전 축소         │
+│                                                         │
+│  3. Stage 1: pHash + BK-Tree                            │
+│     └─ DCT 기반 64-bit 해시 생성 → BK-Tree 범위 검색      │
+│     └─ Hamming Distance ≤ threshold → 후보 그룹 생성     │
+│                                                         │
+│  4. Stage 2: SSIM Verification                          │
+│     └─ 후보 그룹 내 구조적 유사도 정밀 검증               │
+│     └─ 오탐 제거, 최종 중복 그룹 확정                     │
+│                                                         │
+│  5. Quality Scoring                                     │
+│     └─ Laplacian 분산 + 해상도 + 메타데이터 기반 점수     │
+│     └─ 그룹 내 Master (최적 버전) 자동 선정               │
+│                                                         │
+│  6. Group Review                                        │
+│     └─ Side-by-side 비교, EXIF 상세, 키보드 단축키       │
+│     └─ 사용자 최종 판정 (Keep / Delete)                  │
+│                                                         │
+│  7. Export & Cleanup                                    │
+│     └─ 복사/이동 + 충돌 전략 (skip/rename/overwrite)     │
+│     └─ Soft Delete → 30일 보관 → 자동 정리              │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Supported Formats
+
+| Category | Extensions |
+|----------|-----------|
+| Standard | `.jpg`, `.jpeg`, `.png`, `.webp`, `.bmp`, `.gif` |
+| RAW-adjacent | `.tiff`, `.tif` |
+| Apple | `.heic`, `.heif` (자동 변환 + 캐싱) |
+
+---
+
+## Performance Targets
+
+| Metric | Target |
+|--------|--------|
+| 200K images full scan | < 30 minutes |
+| 1K images Stage 1 (pHash) | < 10 seconds |
+| 100 groups Stage 2 (SSIM) | < 5 seconds |
+| Detection rate | 95%+ |
+| False positive rate | < 5% |
+
+---
+
+## Getting Started
+
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 22
 - [Bun](https://bun.sh/) >= 1.3
 
-## Getting Started
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/shockzinfinity/opti-shot.git
+cd opti-shot
+
 # Install dependencies
 bun install
 
-# Start dev server
+# Start development server
 bun run dev
 ```
+
+### Build
+
+```bash
+# macOS (.dmg)
+bun run build:mac
+
+# Windows (.exe installer)
+bun run build:win
+
+# Linux (.AppImage)
+bun run build:linux
+```
+
+---
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `bun run dev` | Electron + Vite dev server |
+| `bun run dev` | Electron + Vite dev server (HMR) |
 | `bun run build` | Production build |
 | `bun run test` | Unit tests (Vitest) |
 | `bun run test:watch` | Unit tests in watch mode |
@@ -41,58 +206,205 @@ bun run dev
 | `bun run build:win` | Build .exe installer |
 | `bun run build:linux` | Build AppImage |
 
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Runtime** | Electron 41 (Node 22) | Cross-platform desktop |
+| **Frontend** | React 19 + TypeScript 6 | UI framework |
+| **Styling** | Tailwind CSS 4 | Utility-first CSS |
+| **State** | Zustand | Lightweight state management |
+| **Database** | better-sqlite3 + Drizzle ORM | Embedded SQL with type-safe ORM |
+| **Image** | sharp (libvips) | pHash, SSIM, thumbnails, HEIC conversion |
+| **EXIF** | exifr | Metadata extraction (GPS, camera, date) |
+| **Build** | Vite 7 + electron-vite | Fast HMR + production bundling |
+| **Package** | electron-builder | Cross-platform installers + auto-update |
+| **Test** | Vitest + Playwright | Unit + E2E testing |
+| **i18n** | Custom (ko/en/ja) | 3-language support |
+
+---
+
 ## Architecture
 
-IPC 통신은 CQRS 패턴으로 구성 — 42개 개별 채널 대신 3개 버스(CommandBus, QueryBus, EventBus)를 통해 통신합니다.
+### IPC: CQRS Pattern
+
+42개의 개별 IPC 채널 대신, **3개의 타입 안전한 버스**로 통신합니다.
 
 ```
-Renderer (React)                        Main (Node.js)
-  command('scan.start', opts) ──────►  CommandBus → Service
-  query('group.list', params) ──────►  QueryBus  → Service
-  subscribe('scan.progress')  ◄──────  EventBus  → broadcast
+Renderer (React)                          Main (Node.js)
+  │                                         │
+  ├── command('scan.start', opts) ────────► CommandBus (22) → Handler → Service
+  ├── query('group.list', params) ────────► QueryBus   (17) → Handler → Service
+  └── subscribe('scan.progress')  ◄──────── EventBus    (5) → BrowserWindow.send
 ```
 
-## Project Structure
+**이중 검증 보안:**
+1. **Preload**: Type allowlist 검증 (허용된 command/query/event만 통과)
+2. **Main IpcBridge**: Zod 스키마로 payload 구조 검증
+
+### Security
+
+| Feature | Status |
+|---------|--------|
+| `contextIsolation` | `true` — Renderer에서 Node.js API 접근 차단 |
+| `nodeIntegration` | `false` — 원격 코드 실행 방지 |
+| `sandbox` | `true` — Renderer 샌드박스 격리 |
+| Navigation guard | 외부 URL 이동 차단 |
+| Preload | `contextBridge`를 통한 선택적 API 노출 |
+
+### Project Structure
 
 ```
 src/
 ├── main/                # Electron Main Process
 │   ├── cqrs/            # CQRS infrastructure
-│   │   ├── commandBus.ts    # 21 commands (state changes)
-│   │   ├── queryBus.ts      # 16 queries (data reads)
+│   │   ├── commandBus.ts    # 22 commands (state changes)
+│   │   ├── queryBus.ts      # 17 queries (data reads)
 │   │   ├── eventBus.ts      # 5 events (Main→Renderer push)
-│   │   ├── ipcBridge.ts     # IPC entry (dual validation: allowlist + Zod)
+│   │   ├── ipcBridge.ts     # IPC entry (dual validation)
 │   │   ├── schemas.ts       # Zod payload schemas
-│   │   └── handlers/        # Domain handlers (folder, scan, group, ...)
+│   │   └── handlers/        # Domain handlers
 │   ├── db/              # Drizzle schema & migrations
 │   ├── engine/          # BK-Tree, pHash, SSIM, quality scoring
-│   └── services/        # Business logic
+│   │   └── plugins/     # DetectionPlugin implementations
+│   ├── services/        # Business logic (scan, group, export, trash, ...)
+│   └── scheduler/       # Trash cleanup scheduler
 ├── renderer/            # React App (Renderer Process)
-│   ├── components/      # UI components
+│   ├── components/      # Reusable UI components
 │   ├── pages/           # 7 route-based screens
-│   ├── stores/          # Zustand stores (command/query/subscribe)
+│   ├── stores/          # Zustand stores
 │   ├── hooks/           # Custom hooks
-│   └── i18n/            # ko, en, ja
+│   └── i18n/            # ko, en, ja translations
 ├── shared/              # Types shared between processes
-│   ├── types.ts         # Domain types, IpcResponse
-│   └── cqrs/            # CommandMap, QueryMap, EventMap type registries
-└── preload/             # contextBridge — command/query/subscribe API
+│   ├── types.ts         # Domain types
+│   ├── constants.ts     # Single-source constants
+│   ├── utils.ts         # Shared format functions
+│   └── cqrs/            # Type registries (CommandMap, QueryMap, EventMap)
+└── preload/             # contextBridge API
 ```
 
-## How It Works
+### Algorithms Deep Dive
 
-1. **Folder Select** — Choose directories to scan
-2. **Stage 1: pHash** — Fast perceptual hashing with BK-Tree indexing
-3. **Stage 2: SSIM** — Structural similarity on pHash candidates
-4. **Group Review** — Side-by-side comparison with quality scores
-5. **Soft Delete** — Move to trash (30-day retention), never delete originals
+#### pHash (Perceptual Hash)
 
-## Safety
+```
+Input Image → Grayscale → Resize 32x32 → DCT → Top-left 8x8 → Median → 64-bit Hash
+```
 
-- Original files are never modified or deleted directly
-- Soft delete only, with 30-day trash retention
-- All processing runs locally on your machine
+- DCT(Discrete Cosine Transform) 기반으로 이미지의 저주파 특성 추출
+- 크기 변경, 밝기 조절, 경미한 편집에도 유사한 해시 생성
+- 64-bit 해시 간 Hamming Distance로 유사도 측정
+
+#### BK-Tree (Burkhard-Keller Tree)
+
+- 메트릭 공간에서의 효율적 범위 검색 트리
+- 삽입: O(log n), 검색: O(log n) 평균
+- 200K 해시에서 threshold 이내의 모든 후보를 빠르게 검색
+
+#### SSIM (Structural Similarity Index)
+
+```
+SSIM(x, y) = [l(x,y)]^α · [c(x,y)]^β · [s(x,y)]^γ
+
+l = luminance comparison (휘도)
+c = contrast comparison (대비)
+s = structure comparison (구조)
+```
+
+- 인간의 시각 인지 모델 기반
+- 단순 픽셀 비교보다 체감 유사도에 가까운 결과
+- pHash 후보에 대해서만 실행하여 연산량 제어
+
+#### Quality Score
+
+```
+Score = w1 × LaplacianVariance + w2 × Resolution + w3 × FileSize + w4 × MetadataBonus
+```
+
+- **Laplacian Variance**: 엣지 강도 기반 선명도 (높을수록 선명)
+- **Resolution**: 픽셀 수 (가로 × 세로)
+- **FileSize**: 압축 품질 간접 지표
+- **Metadata Bonus**: EXIF 보존 여부 가점
+
+---
+
+## Design System
+
+| Token | Value |
+|-------|-------|
+| Primary | `#0062FF` (Electric Cobalt) |
+| Surface | `#F7F8FA` |
+| Text | `#1A1A1A` |
+| Heading Font | Geist (600+) |
+| Body Font | Inter (400-500) |
+| Mono Font | Geist Mono |
+| Icons | lucide-react |
+| Style | Soft Bento + Electric Cobalt |
+
+---
+
+## Internationalization
+
+3개 언어를 기본 지원합니다.
+
+| Language | Code | Status |
+|----------|------|--------|
+| 한국어 | `ko` | Default |
+| English | `en` | Complete |
+| 日本語 | `ja` | Complete |
+
+설정 페이지에서 실시간 전환 가능.
+
+---
+
+## Roadmap
+
+현재 핵심 기능 22/22 Task가 완료된 상태이며, 다음 항목들이 계획되어 있습니다.
+
+| Priority | Feature | Status |
+|----------|---------|--------|
+| 단기 | exifr 호출 최적화 | Planned |
+| 단기 | 트레이 메뉴 i18n | Planned |
+| 중기 | Worker Threads 병렬 처리 | Planned |
+| 중기 | E2E 테스트 (Playwright) | Planned |
+| 중기 | Correction Detection | Planned |
+| 중기 | Incremental Scan | Planned |
+| 장기 | 지도 기반 위치 필터링 | Planning |
+| 장기 | 메타데이터 편집 (F3) | Planning |
+| 장기 | 200K 이미지 벤치마크 | Planning |
+
+상세 로드맵: [docs/ROADMAP.md](docs/ROADMAP.md)
+
+---
+
+## Contributing
+
+```bash
+# Fork & Clone
+git clone https://github.com/YOUR_USERNAME/opti-shot.git
+cd opti-shot
+
+# Install
+bun install
+
+# Development
+bun run dev
+
+# Run tests before PR
+bun run test
+bun run lint
+```
+
+---
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+---
+
+<p align="center">
+  <sub>Built with Electron, React, and sharp. 100% local, zero cloud.</sub>
+</p>

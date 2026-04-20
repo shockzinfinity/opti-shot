@@ -18,6 +18,17 @@ export interface ExifData {
   shutterSpeed: string | null
   aperture: number | null
   focalLength: number | null
+  latitude: number | null
+  longitude: number | null
+}
+
+/** Lightweight EXIF data for pre-scan filtering (no sharp, exifr only). */
+export interface QuickExifData {
+  takenAt: Date | null
+  cameraModel: string | null
+  hasGps: boolean
+  width: number
+  height: number
 }
 
 const QUALITY_SIZE = 512
@@ -99,6 +110,9 @@ export async function getExifData(imagePath: string): Promise<ExifData> {
   let aperture: number | null = null
   let focalLength: number | null = null
 
+  let latitude: number | null = null
+  let longitude: number | null = null
+
   try {
     const exif = await exifr.parse(imagePath, {
       pick: [
@@ -121,6 +135,14 @@ export async function getExifData(imagePath: string): Promise<ExifData> {
       aperture = typeof exif.FNumber === 'number' ? exif.FNumber : null
       focalLength = typeof exif.FocalLength === 'number' ? exif.FocalLength : null
     }
+    // GPS: exifr.gps() returns converted decimal coordinates
+    try {
+      const gps = await exifr.gps(imagePath)
+      if (gps) {
+        latitude = gps.latitude ?? null
+        longitude = gps.longitude ?? null
+      }
+    } catch { /* no GPS data */ }
   } catch {
     // EXIF not available — skip
   }
@@ -137,5 +159,54 @@ export async function getExifData(imagePath: string): Promise<ExifData> {
     shutterSpeed,
     aperture,
     focalLength,
+    latitude,
+    longitude,
   }
+}
+
+/**
+ * Quick EXIF extraction for pre-scan filtering.
+ * Uses only exifr (no sharp) for speed. Falls back to sharp for dimensions if EXIF lacks them.
+ */
+export async function getQuickExifForFilter(imagePath: string): Promise<QuickExifData> {
+  let takenAt: Date | null = null
+  let cameraModel: string | null = null
+  let hasGps = false
+  let width = 0
+  let height = 0
+
+  try {
+    const exif = await exifr.parse(imagePath, {
+      pick: [
+        'DateTimeOriginal', 'Make', 'Model',
+        'GPSLatitude', 'ImageWidth', 'ImageHeight',
+        'ExifImageWidth', 'ExifImageHeight',
+      ],
+    })
+    if (exif) {
+      if (exif.DateTimeOriginal instanceof Date) {
+        takenAt = exif.DateTimeOriginal
+      }
+      cameraModel = [exif.Make, exif.Model].filter(Boolean).join(' ') || null
+      hasGps = exif.GPSLatitude != null
+      width = exif.ExifImageWidth ?? exif.ImageWidth ?? 0
+      height = exif.ExifImageHeight ?? exif.ImageHeight ?? 0
+    }
+  } catch {
+    // EXIF not available
+  }
+
+  // Fallback to sharp for dimensions if EXIF didn't provide them
+  if (width === 0 || height === 0) {
+    try {
+      const sharpInstance = await sharpFromPath(imagePath)
+      const meta = await sharpInstance.metadata()
+      width = meta.width ?? 0
+      height = meta.height ?? 0
+    } catch {
+      // Cannot read dimensions
+    }
+  }
+
+  return { takenAt, cameraModel, hasGps, width, height }
 }

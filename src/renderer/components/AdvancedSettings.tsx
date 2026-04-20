@@ -1,5 +1,6 @@
-import { Settings2, ChevronDown, ChevronUp, Hash, Eye, Clock, Cpu, RefreshCcw, Filter, Zap } from 'lucide-react'
-import type { ScanOptions, ScanPresetId } from '../stores/folder'
+import { Settings2, ChevronDown, ChevronUp, Hash, Eye, Clock, Cpu, RefreshCcw, Filter, Zap, Camera, Ruler, MapPin, Calendar } from 'lucide-react'
+import type { ScanOptions, ScanPresetId, ExifGpsFilter } from '../stores/folder'
+import type { TranslationKey } from '@renderer/i18n'
 import { detectPreset } from '@shared/constants'
 import { PresetSelector } from './PresetSelector'
 import { useTranslation } from '@renderer/hooks/useTranslation'
@@ -123,12 +124,123 @@ export function AdvancedSettings({ open, options, onToggle, onOptionChange, onPr
             />
           </div>
 
+          {/* EXIF Filtering */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-primary" />
+                <p className="text-sm font-semibold text-foreground-primary">{t('advanced.exifFiltering')}</p>
+              </div>
+              <button
+                onClick={() => onOptionChange('enableExifFilter', !options.enableExifFilter)}
+                className={`w-10 h-5 rounded-full relative flex items-center px-0.5 transition-colors ${options.enableExifFilter ? 'bg-primary' : 'bg-border'}`}
+                role="switch"
+                aria-checked={options.enableExifFilter}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${options.enableExifFilter ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            <p className="text-xs text-foreground-muted">{t('advanced.exifFilteringDesc')}</p>
+
+            {options.enableExifFilter && (
+              <div className="space-y-3 pl-1 border-l-2 border-primary/20 ml-2">
+                {/* Date range */}
+                <div className="pl-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary">
+                    <Calendar className="w-3 h-3" />
+                    {t('advanced.exifDateRange')}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={options.exifDateStart ?? ''}
+                      onChange={(e) => onOptionChange('exifDateStart', e.target.value || null)}
+                      className="flex-1 px-2 py-1.5 rounded-lg border border-border bg-surface-primary text-foreground-primary text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                    <span className="text-xs text-foreground-muted">~</span>
+                    <input
+                      type="date"
+                      value={options.exifDateEnd ?? ''}
+                      onChange={(e) => onOptionChange('exifDateEnd', e.target.value || null)}
+                      className="flex-1 px-2 py-1.5 rounded-lg border border-border bg-surface-primary text-foreground-primary text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/40"
+                    />
+                  </div>
+                </div>
+
+                {/* Camera model */}
+                <div className="pl-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary">
+                    <Camera className="w-3 h-3" />
+                    {t('advanced.exifCameraModel')}
+                  </div>
+                  <input
+                    type="text"
+                    value={options.exifCameraFilter}
+                    onChange={(e) => onOptionChange('exifCameraFilter', e.target.value)}
+                    placeholder={t('advanced.exifCameraPlaceholder')}
+                    className="w-full px-2 py-1.5 rounded-lg border border-border bg-surface-primary text-foreground-primary text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-foreground-muted/50"
+                  />
+                </div>
+
+                {/* Min resolution */}
+                <div className="pl-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary">
+                    <Ruler className="w-3 h-3" />
+                    {t('advanced.exifMinResolution')}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      value={options.exifMinWidth || ''}
+                      onChange={(e) => onOptionChange('exifMinWidth', Number(e.target.value) || 0)}
+                      placeholder="W"
+                      className="w-20 px-2 py-1.5 rounded-lg border border-border bg-surface-primary text-foreground-primary text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-foreground-muted/50"
+                    />
+                    <span className="text-xs text-foreground-muted">×</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={options.exifMinHeight || ''}
+                      onChange={(e) => onOptionChange('exifMinHeight', Number(e.target.value) || 0)}
+                      placeholder="H"
+                      className="w-20 px-2 py-1.5 rounded-lg border border-border bg-surface-primary text-foreground-primary text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-foreground-muted/50"
+                    />
+                    <span className="text-xs text-foreground-muted">px</span>
+                  </div>
+                </div>
+
+                {/* GPS filter */}
+                <div className="pl-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground-secondary">
+                    <MapPin className="w-3 h-3" />
+                    {t('advanced.exifGps')}
+                  </div>
+                  <div className="flex gap-2">
+                    {(['all', 'with_gps', 'without_gps'] as ExifGpsFilter[]).map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => onOptionChange('exifGpsFilter', val)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border ${
+                          options.exifGpsFilter === val
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border bg-surface-secondary text-foreground-muted hover:border-foreground-muted'
+                        }`}
+                      >
+                        {t(`advanced.exifGps.${val}` as TranslationKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Upcoming features — disabled with "준비 중" */}
           <div className="space-y-2 pt-2">
             <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">{t('advanced.upcoming')}</p>
             {[
               { icon: <RefreshCcw className="w-3.5 h-3.5" />, label: t('advanced.correctionDetection'), desc: t('advanced.correctionDetectionDesc') },
-              { icon: <Filter className="w-3.5 h-3.5" />, label: t('advanced.exifFiltering'), desc: t('advanced.exifFilteringDesc') },
               { icon: <Zap className="w-3.5 h-3.5" />, label: t('advanced.incrementalScan'), desc: t('advanced.incrementalScanDesc') },
             ].map(({ icon, label, desc }) => (
               <div key={label} className="flex items-center justify-between p-3 rounded-xl bg-surface-secondary/30 opacity-50">

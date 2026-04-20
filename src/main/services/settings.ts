@@ -19,6 +19,9 @@ export interface ScanSettings {
   enableCorrectionDetection: boolean
   enableExifFilter: boolean
   enableIncremental: boolean
+  exifMinWidth: number
+  exifMinHeight: number
+  exifGpsFilter: 'all' | 'with_gps' | 'without_gps'
   enabledPlugins: Record<string, boolean>
 }
 

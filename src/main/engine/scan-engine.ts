@@ -35,6 +35,8 @@ export interface PhotoResult {
   shutterSpeed: string | null
   aperture: number | null
   focalLength: number | null
+  latitude: number | null
+  longitude: number | null
 }
 
 /** A group of duplicate/near-duplicate photos. */
@@ -216,6 +218,8 @@ export class ScanEngine {
             shutterSpeed: exifData?.shutterSpeed ?? null,
             aperture: exifData?.aperture ?? null,
             focalLength: exifData?.focalLength ?? null,
+            latitude: exifData?.latitude ?? null,
+            longitude: exifData?.longitude ?? null,
           })
         }
 

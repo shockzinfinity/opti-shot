@@ -105,7 +105,7 @@ graph TD
 
 ---
 
-### [ ] P0-T0.1: Electron + Vite 프로젝트 스캐폴딩
+### [x] P0-T0.1: Electron + Vite 프로젝트 스캐폴딩
 - **담당**: frontend-specialist
 - **의존**: 없음
 - **설명**:
@@ -128,7 +128,7 @@ graph TD
 
 ---
 
-### [ ] P0-T0.2: 데이터베이스 스키마 & Drizzle ORM 설정
+### [x] P0-T0.2: 데이터베이스 스키마 & Drizzle ORM 설정
 - **담당**: backend-specialist
 - **의존**: 없음
 - **설명**:
@@ -155,7 +155,7 @@ graph TD
 
 ---
 
-### [ ] P0-T0.3: Tailwind CSS 설계 시스템 구성
+### [x] P0-T0.3: Tailwind CSS 설계 시스템 구성
 - **담당**: frontend-specialist
 - **의존**: 없음
 - **설명**:
@@ -194,7 +194,7 @@ graph TD
 
 ---
 
-### [ ] P1-R1: IPC 인프라 & Preload 보안 설정
+### [x] P1-R1: IPC 인프라 & Preload 보안 설정
 - **담당**: backend-specialist
 - **의존**: P0-T0.1, P0-T0.2
 - **설명**:
@@ -222,7 +222,7 @@ graph TD
 
 ---
 
-### [ ] P1-S0: App Shell & 라우팅
+### [x] P1-S0: App Shell & 라우팅
 - **담당**: frontend-specialist
 - **의존**: P0-T0.3, P1-R1
 - **설명**:
@@ -248,7 +248,7 @@ graph TD
 
 ---
 
-### [ ] P1-R2: Settings 서비스 (Main Process)
+### [x] P1-R2: Settings 서비스 (Main Process)
 - **담당**: backend-specialist
 - **의존**: P0-T0.2, P1-R1
 - **설명**:
@@ -292,7 +292,7 @@ graph TD
 
 ---
 
-### [ ] P2-R1: Folder 서비스
+### [x] P2-R1: Folder 서비스
 - **담당**: backend-specialist
 - **의존**: P1-R1, P1-R2
 - **설명**:
@@ -316,7 +316,7 @@ graph TD
 
 ---
 
-### [ ] P2-R2: Scan Engine (pHash + BK-Tree + SSIM) — CRITICAL
+### [x] P2-R2: Scan Engine (pHash + BK-Tree + SSIM) — CRITICAL
 - **담당**: backend-specialist
 - **의존**: P0-T0.2, P1-R1
 - **설명**:
@@ -366,7 +366,7 @@ graph TD
 
 ---
 
-### [ ] P2-R3: Scan 서비스 (오케스트레이터)
+### [x] P2-R3: Scan 서비스 (오케스트레이터)
 - **담당**: backend-specialist
 - **의존**: P2-R2, P1-R1
 - **설명**:
@@ -393,7 +393,7 @@ graph TD
 
 ---
 
-### [ ] P2-S1: Dashboard 페이지 (/)
+### [x] P2-S1: Dashboard 페이지 (/)
 - **담당**: frontend-specialist
 - **의존**: P1-S0, P2-R3
 - **설명**:
@@ -423,7 +423,7 @@ graph TD
 
 ---
 
-### [ ] P2-S2: 폴더 선택 페이지 (/folders)
+### [x] P2-S2: 폴더 선택 페이지 (/folders)
 - **담당**: frontend-specialist
 - **의존**: P1-S0, P2-R1
 - **설명**:
@@ -457,7 +457,7 @@ graph TD
 
 ---
 
-### [ ] P2-S3: 스캔 진행 페이지 (/scan)
+### [x] P2-S3: 스캔 진행 페이지 (/scan)
 - **담당**: frontend-specialist
 - **의존**: P1-S0, P2-R3
 - **설명**:
@@ -489,7 +489,7 @@ graph TD
 
 ---
 
-### [ ] P2-V: Phase 2 통합 검증
+### [ ] P2-V: Phase 2 통합 검증 ⚠️ E2E 미작성
 - **담당**: test-specialist
 - **의존**: P2-R1, P2-R2, P2-R3, P2-S1, P2-S2, P2-S3
 - **설명**:
@@ -519,7 +519,7 @@ graph TD
 
 ---
 
-### [ ] P3-R1: Group 서비스
+### [x] P3-R1: Group 서비스
 - **담당**: backend-specialist
 - **의존**: P2-V
 - **설명**:
@@ -546,7 +546,7 @@ graph TD
 
 ---
 
-### [ ] P3-R2: Photo 서비스 + Review 서비스
+### [x] P3-R2: Photo 서비스 + Review 서비스
 - **담당**: backend-specialist
 - **의존**: P2-V
 - **설명**:
@@ -575,7 +575,7 @@ graph TD
 
 ---
 
-### [ ] P3-S1: 그룹 리뷰 페이지 (/review)
+### [x] P3-S1: 그룹 리뷰 페이지 (/review)
 - **담당**: frontend-specialist
 - **의존**: P3-R1, P3-R2, P1-S0
 - **설명**:
@@ -613,7 +613,7 @@ graph TD
 
 ---
 
-### [ ] P3-V: Phase 3 검증
+### [ ] P3-V: Phase 3 검증 ⚠️ E2E 미작성
 - **담당**: test-specialist
 - **의존**: P3-R1, P3-R2, P3-S1
 - **설명**:
@@ -638,7 +638,7 @@ graph TD
 
 ---
 
-### [ ] P4-R1: Export 서비스
+### [x] P4-R1: Export 서비스
 - **담당**: backend-specialist
 - **의존**: P3-V
 - **설명**:
@@ -666,7 +666,7 @@ graph TD
 
 ---
 
-### [ ] P4-R2: Trash 서비스
+### [x] P4-R2: Trash 서비스
 - **담당**: backend-specialist
 - **의존**: P3-V
 - **설명**:
@@ -699,7 +699,7 @@ graph TD
 
 ---
 
-### [ ] P4-S1: 내보내기 페이지 (/export)
+### [x] P4-S1: 내보내기 페이지 (/export)
 - **담당**: frontend-specialist
 - **의존**: P4-R1, P1-S0
 - **설명**:
@@ -730,7 +730,7 @@ graph TD
 
 ---
 
-### [ ] P4-S2: 휴지통 페이지 (/trash)
+### [x] P4-S2: 휴지통 페이지 (/trash)
 - **담당**: frontend-specialist
 - **의존**: P4-R2, P1-S0
 - **설명**:
@@ -758,7 +758,7 @@ graph TD
 
 ---
 
-### [ ] P4-V: Phase 4 검증
+### [ ] P4-V: Phase 4 검증 ⚠️ E2E 미작성
 - **담당**: test-specialist
 - **의존**: P4-R1, P4-R2, P4-S1, P4-S2
 - **설명**:
@@ -783,7 +783,7 @@ graph TD
 
 ---
 
-### [ ] P5-S1: 설정 페이지 (/settings)
+### [x] P5-S1: 설정 페이지 (/settings)
 - **담당**: frontend-specialist
 - **의존**: P1-R2, P1-S0
 - **설명**:
@@ -819,7 +819,7 @@ graph TD
 
 ---
 
-### [ ] P5-R1: Auto-updater + 패키징
+### [x] P5-R1: Auto-updater + 패키징
 - **담당**: backend-specialist
 - **의존**: P5-S1
 - **설명**:
@@ -847,7 +847,7 @@ graph TD
 
 ---
 
-### [ ] P5-V: Phase 5 검증
+### [ ] P5-V: Phase 5 검증 ⚠️ E2E 미작성
 - **담당**: test-specialist
 - **의존**: P5-S1, P5-R1
 - **설명**:

@@ -14,6 +14,7 @@ interface ScanState {
   isScanning: boolean
   isPaused: boolean
   isComplete: boolean
+  errorMessage: string | null
   progress: ScanProgress | null
   discoveries: Discovery[]
   // actions
@@ -28,6 +29,7 @@ export const useScanStore = create<ScanState>((set, get) => ({
   isScanning: false,
   isPaused: false,
   isComplete: false,
+  errorMessage: null,
   progress: null,
   discoveries: [],
 
@@ -61,18 +63,19 @@ export const useScanStore = create<ScanState>((set, get) => ({
   },
 
   startScan: async (options: ScanOptions) => {
-    set({ isScanning: true, isPaused: false, isComplete: false, progress: null, discoveries: [] })
+    set({ isScanning: true, isPaused: false, isComplete: false, errorMessage: null, progress: null, discoveries: [] })
     try {
       const response = await window.electron.command('scan.start', options)
       if (response.success) {
         set({ isComplete: true, isScanning: false })
       } else {
         console.error('Scan failed:', response.error)
-        set({ isScanning: false })
+        set({ isScanning: false, errorMessage: response.error ?? 'Scan failed' })
       }
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown scan error'
       console.error('Scan error:', err)
-      set({ isScanning: false })
+      set({ isScanning: false, errorMessage: msg })
     }
   },
 
@@ -103,6 +106,7 @@ export const useScanStore = create<ScanState>((set, get) => ({
       isScanning: false,
       isPaused: false,
       isComplete: false,
+      errorMessage: null,
       progress: null,
       discoveries: [],
     })

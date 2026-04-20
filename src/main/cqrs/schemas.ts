@@ -19,6 +19,14 @@ export const COMMAND_SCHEMAS: Record<string, ZodSchema> = {
     timeWindowHours: z.number().min(0).max(24),
     parallelThreads: z.number().min(1).max(16),
     batchSize: z.number().optional(),
+    // EXIF filters
+    enableExifFilter: z.boolean().optional(),
+    exifDateStart: z.string().nullable().optional(),
+    exifDateEnd: z.string().nullable().optional(),
+    exifCameraFilter: z.string().optional(),
+    exifMinWidth: z.number().min(0).optional(),
+    exifMinHeight: z.number().min(0).optional(),
+    exifGpsFilter: z.enum(['all', 'with_gps', 'without_gps']).optional(),
   }),
 
   'group.changeMaster': z.object({

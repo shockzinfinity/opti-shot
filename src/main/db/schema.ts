@@ -43,6 +43,8 @@ export const scans = sqliteTable('scans', {
   optionTimeWindowHours: integer('option_time_window_hours').notNull().default(1),
   optionParallelThreads: integer('option_parallel_threads').notNull().default(8),
   optionEnableCorrectionDetection: integer('option_enable_correction_detection', { mode: 'boolean' }).notNull().default(true),
+  optionEnableExifFilter: integer('option_enable_exif_filter', { mode: 'boolean' }).notNull().default(false),
+  filteredFiles: integer('filtered_files').notNull().default(0),
 
   startedAt: text('started_at').notNull(),  // ISO datetime
   endedAt: text('ended_at'),                // ISO datetime, nullable
@@ -87,6 +89,8 @@ export const photos = sqliteTable('photos', {
   shutterSpeed: text('shutter_speed'),   // nullable, e.g. "1/60s"
   aperture: real('aperture'),            // nullable, e.g. 1.8
   focalLength: real('focal_length'),     // nullable, e.g. 3.0 (mm)
+  latitude: real('latitude'),              // nullable, GPS
+  longitude: real('longitude'),            // nullable, GPS
   phash: text('phash').notNull(),
   isMaster: integer('is_master', { mode: 'boolean' }).notNull().default(false),
   groupId: text('group_id').notNull().references(() => photoGroups.id, { onDelete: 'cascade' }),

@@ -85,10 +85,26 @@ Renderer                          Main
 - Icons: lucide-react
 - Stitch HTML can be directly used as React component templates
 
+## EXIF Pre-Scan Filtering
+- 4개 필터: 촬영날짜 범위, 카메라 모델, GPS 유/무, 최소 해상도
+- Pre-scan 단계에서 32 concurrent 배치로 파일 목록 필터링 (Stage 1 pHash 전)
+- `exifr` 라이브러리 주의사항:
+  - `GPSLatitude`는 `number`가 아닌 DMS 배열(`[도, 분, 초]`) 반환 → `!= null`로 체크
+  - `latitude`/`longitude` (소수점 변환값)은 `pick`으로 선택 불가 → `exifr.gps()` 별도 호출
+- GPS 좌표 추출: `exifr.gps()` → `{ latitude: number, longitude: number }`
+- DB 저장: `photos.latitude`, `photos.longitude` (REAL)
+
 ## Performance Targets
 - 200K images Stage 1 scan: < 30 minutes
-- Worker threads for parallel pHash computation
-- Virtual lists for large datasets
+- Worker threads for parallel pHash computation (현재 stub — 순차 실행)
+- Virtual lists for large datasets (react-window 적용)
+
+## Current Status
+- 핵심 기능 22/22 Task 완료 (P0~P5)
+- 추가: EXIF 필터링, Plugin, HEIC, i18n(ko/en/ja), CI/CD
+- 미구현: Worker Threads (stub), Correction Detection, Incremental Scan
+- 테스트: 단위 17개(3,391줄), E2E 0개
+- 로드맵 상세: docs/ROADMAP.md
 
 ## Safety Rules
 - 휴지통 이동 시 원본을 휴지통 디렉토리로 복사 후 원본 삭제 (copy + delete)

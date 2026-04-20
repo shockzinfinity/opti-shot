@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Pause, X, AlertTriangle } from 'lucide-react'
+import { Pause, X, AlertTriangle, AlertCircle } from 'lucide-react'
 import { useScanStore } from '../stores/scan'
 import { useFolderStore } from '../stores/folder'
 import { ProgressBar } from '../components/ProgressBar'
@@ -11,7 +11,7 @@ import { useTranslation } from '@renderer/hooks/useTranslation'
 
 export function ScanProgress() {
   const navigate = useNavigate()
-  const { isScanning, isPaused, isComplete, progress, discoveries, startListening, startScan, pauseScan, cancelScan, reset: resetScan } =
+  const { isScanning, isPaused, isComplete, errorMessage, progress, discoveries, startListening, startScan, pauseScan, cancelScan, reset: resetScan } =
     useScanStore()
   const { t } = useTranslation()
 
@@ -103,6 +103,16 @@ export function ScanProgress() {
             <p className="font-medium">
               {t('scan.skippedFiles').replace('{count}', String(progress.skippedCount))}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Scan error */}
+      {errorMessage && (
+        <div className="bg-error/10 border border-error/20 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
+          <div className="text-sm text-foreground-primary">
+            <p className="font-medium">{errorMessage}</p>
           </div>
         </div>
       )}

@@ -17,13 +17,18 @@ export const SCAN_PRESETS: Record<ScanPreset, ScanPresetConfig> = {
 
 // ─── Scan Default Settings ───
 
+export type ExifGpsFilter = 'all' | 'with_gps' | 'without_gps'
+
 export const DEFAULT_SCAN_SETTINGS = {
   preset: 'balanced' as ScanPreset,
   ...SCAN_PRESETS.balanced,
   batchSize: 100,
   enableCorrectionDetection: true,
-  enableExifFilter: true,
+  enableExifFilter: false,
   enableIncremental: true,
+  exifMinWidth: 0,
+  exifMinHeight: 0,
+  exifGpsFilter: 'all' as ExifGpsFilter,
   enabledPlugins: { 'phash-ssim': true } as Record<string, boolean>,
 } as const
 
