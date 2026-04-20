@@ -38,7 +38,7 @@
 ## 다음 작업
 
 ### 배포 (즉시)
-1. will-navigate 핸들러 추가 (보안)
+1. ~~will-navigate 핸들러 추가 (보안)~~ ✓ 완료 (2026-04-20)
 2. GitHub Actions release.yml 작성
 3. v0.1.0 태그 + Release (unsigned macOS DMG)
 

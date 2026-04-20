@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeImage, Tray, Menu } from 'electron'
+import { app, BrowserWindow, nativeImage, Tray, Menu, shell } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import { initCqrs } from './cqrs'
@@ -100,6 +100,26 @@ function createWindow(): void {
         mainWindow!.hide()
       }
     }
+  })
+
+  // Security: block navigation to unexpected origins
+  const allowedOrigin = process.env.ELECTRON_RENDERER_URL
+    ? new URL(process.env.ELECTRON_RENDERER_URL).origin
+    : null
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const { protocol, origin } = new URL(url)
+    if (protocol === 'file:') return
+    if (allowedOrigin && origin === allowedOrigin) return
+    event.preventDefault()
+  })
+
+  // Security: open external links in default browser instead of Electron
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      shell.openExternal(url)
+    }
+    return { action: 'deny' }
   })
 
   if (process.env.ELECTRON_RENDERER_URL) {
