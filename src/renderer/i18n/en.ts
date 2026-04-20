@@ -7,7 +7,6 @@ export const en = {
   'nav.folders': 'Folder Selection',
   'nav.scan': 'Scan Progress',
   'nav.review': 'Group Review',
-  'nav.export': 'Export',
   'nav.trash': 'Trash',
   'nav.settings': 'Settings',
 
@@ -89,31 +88,6 @@ export const en = {
   'review.reviewed': 'Reviewed',
   'review.progress': 'Progress',
   'review.savings': 'Savings',
-
-  // Export
-  'export.title': 'Export',
-  'export.subtitle': 'Configure and export your curated photos',
-  'export.summary': 'Export Summary',
-  'export.files': 'Files',
-  'export.size': 'Size',
-  'export.estTime': 'Est. Time',
-  'export.destination': 'Destination Folder',
-  'export.browse': 'Browse',
-  'export.createFolder': 'Create folder if not exists',
-  'export.action': 'Export Action',
-  'export.copy': 'Copy',
-  'export.copyDesc': 'Keep originals in place, copy best shots to destination',
-  'export.move': 'Move',
-  'export.moveDesc': 'Move best shots to destination, removing from source',
-  'export.moveWarning': 'Originals will be moved to trash (30-day retention). This operation cannot be undone immediately.',
-  'export.conflictStrategy': 'Conflict Strategy',
-  'export.skip': 'Skip',
-  'export.rename': 'Rename',
-  'export.overwrite': 'Overwrite',
-  'export.startExport': 'Start Export',
-  'export.complete': 'Export complete',
-  'export.completeDesc': 'Your photos have been successfully exported.',
-  'export.done': 'Done',
 
   // Trash
   'trash.title': 'Trash (30-day retention)',
@@ -295,17 +269,6 @@ export const en = {
   'review.noGroupsFound': 'No groups found',
   'review.groups': 'groups',
 
-  // Export details
-  'export.exporting': 'Exporting photos...',
-  'export.transferred': 'Transferred',
-  'export.speed': 'Speed',
-  'export.cancelExport': 'Cancel Export',
-  'export.noFolder': 'No folder selected...',
-  'export.conflictDesc': 'What to do when a file already exists at the destination.',
-  'export.skipDesc': 'Leave existing file untouched, skip the export for that file',
-  'export.renameDesc': 'Add a numeric suffix (e.g. photo_1.jpg) to avoid overwriting',
-  'export.overwriteDesc': 'Replace the existing file with the exported copy',
-
   // Trash details
   'trash.confirmEmpty': 'Permanently delete all items in trash? This cannot be undone.',
   'trash.confirmDelete': 'Permanently delete {count} item(s)? This cannot be undone.',
@@ -357,4 +320,10 @@ export const en = {
 
   // Misc
   'scan.waitingForData': 'Waiting for scan data...',
+
+  // Notifications
+  'notification.title': 'Notifications',
+  'notification.markAllRead': 'Mark all read',
+  'notification.clearAll': 'Clear all',
+  'notification.empty': 'No notifications',
 } as const

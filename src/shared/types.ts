@@ -12,11 +12,8 @@ export interface IpcResponse<T = unknown> {
 // Enums
 export type ScanMode = 'full' | 'date_range' | 'folder_only' | 'incremental'
 export type ScanStatus = 'running' | 'paused' | 'completed' | 'failed' | 'cancelled'
-export type ReviewStatus = 'pending' | 'reviewed' | 'exported'
+export type ReviewStatus = 'pending' | 'reviewed'
 export type Decision = 'keep' | 'delete'
-export type ExportStatus = 'ready' | 'running' | 'paused' | 'completed' | 'failed'
-export type ExportAction = 'copy' | 'move'
-export type ConflictStrategy = 'skip' | 'rename' | 'overwrite'
 export type TrashStatus = 'trashed' | 'restored' | 'purged'
 export type ScanPreset = 'balanced' | 'conservative' | 'sensitive'
 
@@ -45,14 +42,6 @@ export const TRASH_STATUS = {
   TRASHED: 'trashed',
   RESTORED: 'restored',
   PURGED: 'purged',
-} as const
-
-export const EXPORT_STATUS = {
-  READY: 'ready',
-  RUNNING: 'running',
-  PAUSED: 'paused',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
 } as const
 
 // Progress event types
@@ -84,11 +73,17 @@ export interface ScanRecord {
   endedAt: string | null
 }
 
-export interface ExportProgress {
-  processedFiles: number
-  totalFiles: number
-  transferredSize: number
-  totalSize: number
-  speed: number
-  currentFile: string
+// Notification types
+export type NotificationLevel = 'info' | 'success' | 'warning' | 'error'
+export type NotificationCategory = 'scan' | 'export' | 'trash' | 'system'
+
+export interface NotificationEntry {
+  id: string
+  timestamp: string
+  level: NotificationLevel
+  category: NotificationCategory
+  title: string
+  message: string
+  details?: string
 }
+

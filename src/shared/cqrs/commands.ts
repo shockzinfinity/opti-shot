@@ -1,4 +1,4 @@
-import type { ScanMode, ScanProgress, ExportProgress } from '../types'
+import type { ScanMode } from '../types'
 
 // 리뷰 결정 타입 — 실제 핸들러 기준 (레거시 Decision과 구분)
 export type ReviewDecision = 'kept_all' | 'duplicates_deleted'
@@ -37,19 +37,6 @@ export interface CommandMap {
     result: void
   }
 
-  // Export
-  'export.start': {
-    input: {
-      targetPath: string
-      action: 'copy' | 'move'
-      conflictStrategy: 'skip' | 'rename' | 'overwrite'
-      autoCreateFolder: boolean
-    }
-    result: { processedFiles: number; totalSize: number }
-  }
-  'export.pause': { input: void; result: void }
-  'export.cancel': { input: void; result: void }
-
   // Trash
   'trash.move': { input: { photoId: string }; result: { trashId: string; timestamp: string } }
   'trash.restore': { input: { trashId: string }; result: void }
@@ -76,6 +63,10 @@ export interface CommandMap {
   // Maintenance
   'maintenance.clearCache': { input: void; result: void }
   'maintenance.clearScanHistory': { input: void; result: void }
+
+  // Notification
+  'notification.markRead': { input: { ids: string[] }; result: void }
+  'notification.clear': { input: void; result: void }
 
   // Dialog — OS 다이얼로그 부수효과
   'dialog.openDirectory': { input: void; result: string | null }

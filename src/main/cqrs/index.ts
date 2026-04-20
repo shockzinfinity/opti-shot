@@ -3,6 +3,7 @@ import { QueryBus } from './queryBus'
 import { EventBus } from './eventBus'
 import { registerCqrsBridge } from './ipcBridge'
 import { registerAllCqrsHandlers } from './handlers/register'
+import { applyNotificationMiddleware } from './notificationMiddleware'
 import { pluginRegistry } from '@main/engine/plugin-registry'
 import { phashSsimPlugin } from '@main/engine/plugins/phash-ssim'
 import { getSettings } from '@main/services/settings'
@@ -28,6 +29,9 @@ export function initCqrs(): void {
 
   // Register all handlers on the buses
   registerAllCqrsHandlers(commandBus, queryBus, eventBus)
+
+  // Apply notification middleware (intercepts command results/errors)
+  applyNotificationMiddleware(commandBus)
 
   // Bridge buses to IPC (cqrs:cmd, cqrs:qry channels)
   registerCqrsBridge(commandBus, queryBus)

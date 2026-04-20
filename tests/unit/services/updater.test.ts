@@ -33,6 +33,10 @@ vi.mock('electron', () => ({
   },
 }))
 
+vi.mock('@main/services/notification', () => ({
+  sendNotification: vi.fn(),
+}))
+
 describe('UpdaterService', () => {
   beforeEach(() => {
     vi.clearAllMocks()

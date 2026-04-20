@@ -6,7 +6,6 @@ import { registerFolderHandlers } from './folder'
 import { registerScanHandlers } from './scan'
 import { registerGroupHandlers } from './group'
 import { registerPhotoHandlers } from './photo'
-import { registerExportHandlers } from './export'
 import { registerTrashHandlers } from './trash'
 import { registerSettingsHandlers } from './settings'
 import { registerStatsHandlers } from './stats'
@@ -14,6 +13,7 @@ import { registerMaintenanceHandlers } from './maintenance'
 import { registerAppHandlers } from './app'
 import { registerUpdaterHandlers } from './updater'
 import { registerPluginHandlers } from './plugin'
+import { registerNotificationHandlers } from './notification'
 
 export function registerAllCqrsHandlers(
   cmd: CommandBus,
@@ -24,7 +24,6 @@ export function registerAllCqrsHandlers(
   registerScanHandlers(cmd, qry, evt)
   registerGroupHandlers(cmd, qry)
   registerPhotoHandlers(qry)
-  registerExportHandlers(cmd, evt)
   registerTrashHandlers(cmd, qry)
   registerSettingsHandlers(cmd, qry)
   registerStatsHandlers(qry)
@@ -32,4 +31,5 @@ export function registerAllCqrsHandlers(
   registerAppHandlers(cmd, qry)
   registerUpdaterHandlers(cmd)
   registerPluginHandlers(cmd, qry)
+  registerNotificationHandlers(cmd, qry, evt)
 }

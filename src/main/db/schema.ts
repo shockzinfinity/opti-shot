@@ -63,7 +63,7 @@ export const photoGroups = sqliteTable('photo_groups', {
   reclaimableSize: integer('reclaimable_size').notNull().default(0), // bytes
   masterId: text('master_id'), // UUID, nullable — circular ref to photos
   reviewStatus: text('review_status', {
-    enum: ['pending', 'reviewed', 'exported'],
+    enum: ['pending', 'reviewed'],
   }).notNull().default('pending'),
   reviewedAt: text('reviewed_at'), // ISO datetime, nullable
   decision: text('decision', {
@@ -99,40 +99,6 @@ export const photos = sqliteTable('photos', {
   index('idx_photos_phash').on(t.phash),
   index('idx_photos_group_id').on(t.groupId),
 ])
-
-// ─── Export Jobs ───
-
-export const exportJobs = sqliteTable('export_jobs', {
-  id: text('id').primaryKey(), // UUID
-  status: text('status', {
-    enum: ['ready', 'running', 'paused', 'completed', 'failed'],
-  }).notNull().default('ready'),
-  action: text('action', {
-    enum: ['copy', 'move'],
-  }).notNull(),
-  targetPath: text('target_path').notNull(),
-  totalFiles: integer('total_files').notNull().default(0),
-  processedFiles: integer('processed_files').notNull().default(0),
-  totalSize: integer('total_size').notNull().default(0),       // bytes
-  transferredSize: integer('transferred_size').notNull().default(0), // bytes
-  transferSpeed: real('transfer_speed').notNull().default(0),  // bytes_per_sec
-  conflictStrategy: text('conflict_strategy', {
-    enum: ['skip', 'rename', 'overwrite'],
-  }).notNull().default('skip'),
-  autoCreateFolder: integer('auto_create_folder', { mode: 'boolean' }).notNull().default(true),
-  failedCount: integer('failed_count').notNull().default(0),
-  elapsedSeconds: real('elapsed_seconds').notNull().default(0),
-  estimatedRemainingSeconds: real('estimated_remaining_seconds').notNull().default(0),
-})
-
-// ─── Export Items ───
-
-export const exportItems = sqliteTable('export_items', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  exportId: text('export_id').notNull().references(() => exportJobs.id, { onDelete: 'cascade' }),
-  photoId: text('photo_id').notNull().references(() => photos.id, { onDelete: 'cascade' }),
-  groupId: text('group_id').notNull().references(() => photoGroups.id, { onDelete: 'cascade' }),
-})
 
 // ─── Trash Items ───
 

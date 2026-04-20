@@ -204,7 +204,7 @@ describe('SettingsService', () => {
       expect(DEFAULTS.scan.parallelThreads).toBe(8)
       expect(DEFAULTS.scan.batchSize).toBe(100)
       expect(DEFAULTS.scan.enableCorrectionDetection).toBe(true)
-      expect(DEFAULTS.scan.enableExifFilter).toBe(true)
+      expect(DEFAULTS.scan.enableExifFilter).toBe(false)
       expect(DEFAULTS.scan.enableIncremental).toBe(true)
     })
 

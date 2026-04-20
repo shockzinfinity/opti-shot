@@ -4,7 +4,6 @@ export const ko = {
   'nav.folders': '폴더 선택',
   'nav.scan': '스캔 진행',
   'nav.review': '그룹 검토',
-  'nav.export': '내보내기',
   'nav.trash': '휴지통',
   'nav.settings': '설정',
   'dashboard.welcome': '사진 라이브러리 현황',
@@ -76,29 +75,6 @@ export const ko = {
   'review.reviewed': '검토됨',
   'review.progress': '진행률',
   'review.savings': '절약',
-  'export.title': '내보내기',
-  'export.subtitle': '선별된 사진을 설정하고 내보냅니다',
-  'export.summary': '내보내기 요약',
-  'export.files': '파일',
-  'export.size': '크기',
-  'export.estTime': '예상 시간',
-  'export.destination': '대상 폴더',
-  'export.browse': '찾아보기',
-  'export.createFolder': '폴더가 없으면 생성',
-  'export.action': '내보내기 동작',
-  'export.copy': '복사',
-  'export.copyDesc': '원본 유지, 선별된 사진을 대상 폴더에 복사',
-  'export.move': '이동',
-  'export.moveDesc': '선별된 사진을 대상 폴더로 이동, 원본 위치에서 제거',
-  'export.moveWarning': '원본은 휴지통으로 이동됩니다 (30일 보관). 즉시 되돌릴 수 없습니다.',
-  'export.conflictStrategy': '충돌 전략',
-  'export.skip': '건너뛰기',
-  'export.rename': '이름 변경',
-  'export.overwrite': '덮어쓰기',
-  'export.startExport': '내보내기 시작',
-  'export.complete': '내보내기 완료',
-  'export.completeDesc': '사진이 성공적으로 내보내졌습니다.',
-  'export.done': '완료',
   'trash.title': '휴지통 (30일 보관)',
   'trash.files': '개 파일',
   'trash.nextCleanup': '다음 자동 정리',
@@ -274,17 +250,6 @@ export const ko = {
   'review.noGroupsFound': '그룹을 찾을 수 없습니다',
   'review.groups': '그룹',
 
-  // Export details
-  'export.exporting': '사진 내보내는 중...',
-  'export.transferred': '전송됨',
-  'export.speed': '속도',
-  'export.cancelExport': '내보내기 취소',
-  'export.noFolder': '폴더가 선택되지 않았습니다...',
-  'export.conflictDesc': '대상 위치에 파일이 이미 존재할 때 처리 방법입니다.',
-  'export.skipDesc': '기존 파일을 그대로 두고 해당 파일 내보내기를 건너뜁니다',
-  'export.renameDesc': '덮어쓰기를 피하기 위해 숫자 접미사를 추가합니다 (예: photo_1.jpg)',
-  'export.overwriteDesc': '기존 파일을 내보낸 사본으로 교체합니다',
-
   // Trash details
   'trash.confirmEmpty': '휴지통의 모든 항목을 영구적으로 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.',
   'trash.confirmDelete': '{count}개 항목을 영구적으로 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.',
@@ -336,4 +301,10 @@ export const ko = {
 
   // Misc
   'scan.waitingForData': '스캔 데이터 대기 중...',
+
+  // Notifications
+  'notification.title': '알림',
+  'notification.markAllRead': '모두 읽음',
+  'notification.clearAll': '모두 지우기',
+  'notification.empty': '알림이 없습니다',
 } as const

@@ -29,15 +29,13 @@ describe('Database Schema & Migration', () => {
     db.$client.close()
   })
 
-  it('should create all 8 tables', () => {
+  it('should create all 6 tables', () => {
     const tables = db.$client
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
       .all() as { name: string }[]
 
     const tableNames = tables.map((t) => t.name).sort()
     expect(tableNames).toEqual([
-      'export_items',
-      'export_jobs',
       'photo_groups',
       'photos',
       'scan_folders',
@@ -145,44 +143,6 @@ describe('CRUD Operations', () => {
     const photo = db.select().from(schema.photos).all()
     expect(photo[0].isMaster).toBe(true)
     expect(photo[0].qualityScore).toBe(85.5)
-  })
-
-  it('should insert export jobs and items', () => {
-    db.insert(schema.exportJobs).values({
-      id: 'export-001',
-      status: 'ready',
-      action: 'copy',
-      targetPath: '/Users/test/Export',
-      totalFiles: 10,
-      totalSize: 50000000,
-      conflictStrategy: 'rename',
-    }).run()
-
-    // Setup: group + photo for export item
-    db.insert(schema.photoGroups).values({
-      id: 'group-e1',
-      fileCount: 1,
-      totalSize: 1000,
-      reclaimableSize: 0,
-    }).run()
-
-    db.insert(schema.photos).values({
-      id: 'photo-e1',
-      filename: 'export.jpg',
-      path: '/export.jpg',
-      phash: 'aaa111',
-      groupId: 'group-e1',
-    }).run()
-
-    db.insert(schema.exportItems).values({
-      exportId: 'export-001',
-      photoId: 'photo-e1',
-      groupId: 'group-e1',
-    }).run()
-
-    const items = db.select().from(schema.exportItems).all()
-    expect(items).toHaveLength(1)
-    expect(items[0].exportId).toBe('export-001')
   })
 
   it('should insert trash items', () => {

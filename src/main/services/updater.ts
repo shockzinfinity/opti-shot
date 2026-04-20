@@ -4,6 +4,7 @@
 import pkg from 'electron-updater'
 const { autoUpdater } = pkg
 import { BrowserWindow } from 'electron'
+import { sendNotification } from '@main/services/notification'
 
 /**
  * Initialize the auto-updater.
@@ -25,6 +26,12 @@ export function initAutoUpdater(): void {
         releaseDate: info.releaseDate,
       })
     })
+    sendNotification({
+      level: 'info',
+      category: 'system',
+      title: 'notification.system.updateAvailable',
+      message: `Version ${info.version} is available`,
+    })
   })
 
   autoUpdater.on('download-progress', (progress: { percent: number; transferred: number; total: number }) => {
@@ -45,6 +52,12 @@ export function initAutoUpdater(): void {
 
   autoUpdater.on('error', (error: Error) => {
     console.error('Auto-update error:', error.message)
+    sendNotification({
+      level: 'error',
+      category: 'system',
+      title: 'notification.system.updateError',
+      message: error.message,
+    })
   })
 
   // Check for updates after 5 seconds

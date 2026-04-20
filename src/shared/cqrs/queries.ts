@@ -1,5 +1,6 @@
 import type { SettingsSection } from './commands'
 import type { PluginInfo } from '../plugins'
+import type { NotificationEntry } from '../types'
 
 export interface QueryMap {
   // Folder
@@ -69,6 +70,12 @@ export interface QueryMap {
 
   // Plugin
   'plugin.list': { input: void; result: PluginInfo[] }
+
+  // Notification
+  'notification.list': {
+    input: { limit?: number }
+    result: Array<NotificationEntry & { isRead: boolean }>
+  }
 
   // App
   'app.info': {

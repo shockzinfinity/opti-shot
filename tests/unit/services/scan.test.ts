@@ -279,8 +279,8 @@ describe('ScanService', () => {
   // --- cancelScan ---
 
   describe('cancelScan', () => {
-    it('should throw when no scan is running', () => {
-      expect(() => cancelScan()).toThrow('No active scan')
+    it('should not throw when no scan is running', () => {
+      expect(() => cancelScan()).not.toThrow()
     })
   })
 

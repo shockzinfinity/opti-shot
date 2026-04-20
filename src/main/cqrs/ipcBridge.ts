@@ -28,8 +28,13 @@ export function registerCqrsBridge(
       const result = await commandBus.execute(type, payload)
       return { success: true, data: result ?? null }
     } catch (err) {
+      const message = (err as Error).message
+      // User-initiated abort is not an error — log at debug level only
+      if (message === 'Scan aborted') {
+        return { success: false, error: message }
+      }
       console.error(`Command [${type}] failed:`, err)
-      return { success: false, error: (err as Error).message }
+      return { success: false, error: message }
     }
   })
 

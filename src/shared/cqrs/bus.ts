@@ -26,11 +26,11 @@ export const ALL_COMMAND_TYPES: CommandType[] = [
   'folder.add', 'folder.remove',
   'scan.start', 'scan.pause', 'scan.cancel',
   'group.changeMaster', 'group.markReviewed',
-  'export.start', 'export.pause', 'export.cancel',
   'trash.move', 'trash.restore', 'trash.restoreGroup', 'trash.delete', 'trash.empty',
   'plugin.toggle',
   'settings.save', 'settings.reset',
   'maintenance.clearCache', 'maintenance.clearScanHistory',
+  'notification.markRead', 'notification.clear',
   'dialog.openDirectory', 'shell.openPath',
   'updater.check', 'updater.download', 'updater.install',
 ]
@@ -43,6 +43,7 @@ export const ALL_QUERY_TYPES: QueryType[] = [
   'review.getPending',
   'trash.list', 'trash.summary',
   'plugin.list',
+  'notification.list',
   'settings.get',
   'stats.dashboard', 'stats.scanHistory',
   'maintenance.storageStats',
@@ -50,6 +51,7 @@ export const ALL_QUERY_TYPES: QueryType[] = [
 ]
 
 export const ALL_EVENT_TYPES: EventType[] = [
-  'scan.progress', 'export.progress',
+  'scan.progress',
   'updater.available', 'updater.progress', 'updater.downloaded',
+  'notification.new',
 ]

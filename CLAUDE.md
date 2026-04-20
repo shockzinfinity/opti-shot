@@ -5,7 +5,7 @@
 
 ## Architecture
 - **Framework**: Electron (Main + Renderer process)
-- **IPC**: CQRS 패턴 — CommandBus(22) / QueryBus(17) / EventBus(5)
+- **IPC**: CQRS 패턴 — CommandBus(20) / QueryBus(17) / EventBus(5)
 - **Plugin**: DetectionPlugin 인터페이스 + PluginRegistry (감지 알고리즘 교체 가능)
 - **Renderer**: React 19 + TypeScript + Tailwind CSS + Zustand
 - **Main**: Node.js + CQRS handlers + Services
@@ -42,7 +42,7 @@ src/
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
 │   ├── components/    # Reusable UI components (SidePanel, PanelSection 등 공통 패턴)
-│   ├── pages/         # Route-based pages (7 screens)
+│   ├── pages/         # Route-based pages (6 screens)
 │   ├── stores/        # Zustand stores — command/query/subscribe API 사용
 │   ├── hooks/         # Custom hooks
 │   └── App.tsx
@@ -64,17 +64,37 @@ src/
 ```
 Renderer                          Main
   │                                │
-  ├─ command('scan.start', opts) ──►  CommandBus → handler → Service
+  ├─ command('scan.start', opts) ──►  CommandBus → notificationMiddleware → handler → Service
   ├─ query('group.list', params) ──►  QueryBus  → handler → Service
   └─ subscribe('scan.progress') ◄──  EventBus  → BrowserWindow.send
 ```
 - Preload: type allowlist 검증 (ALL_COMMAND_TYPES, ALL_QUERY_TYPES, ALL_EVENT_TYPES)
 - Main IpcBridge: type allowlist 재검증 + Zod payload 검증
+- 알림 미들웨어: CommandBus.execute 래핑, 정책 기반 자동 알림 생성
 - 설계 문서: docs/planning/10-cqrs-architecture.md
+
+## Notification System
+- 3계층: 로그 파일(영구) + EventBus(실시간) + 인메모리 store(세션)
+- 로그: `~/Library/Logs/OptiShot/optishot-YYYY-MM-DD.log` (JSON Lines)
+- 읽음 상태: `notification-state.json` (세션 간 유지, 앱 시작 시 초기화)
+- CQRS 미들웨어: `notification-policy.ts`에서 명령별 알림 규칙 관리
+  - 정책에 등록된 명령만 알림 발생 (미등록 = 사일런트)
+  - 새 명령 추가 시 정책만 추가하면 자동 적용
+- 비-CQRS 이벤트(스케줄러, updater): `sendNotification()` 직접 호출
+- UI: HeaderBar 벨 아이콘 + 배지 + 드롭다운 패널
+- 읽음 처리: 패널 닫을 때 전체 읽음 / "모두 읽음" 버튼
+- 레벨: info, success, warning, error (LEVEL_BEHAVIOR로 동작 제어)
+
+## Error Handling & Robustness
+- ipcBridge: 모든 명령/쿼리를 try/catch → `{ success: false }` 반환 (절대 크래시 안 함)
+- abort 에러(스캔 취소): console.error 미출력, 조용히 반환
+- 알림 미들웨어: `safeSendNotification()` — 알림 실패가 원래 에러를 가리지 않음
+- sendNotification: 로그 쓰기/EventBus emit 각각 try/catch
+- 글로벌 핸들러: `uncaughtException` + `unhandledRejection` → 로그만, 앱 유지
 
 ## Domain
 - 16 resources: specs/domain/resources.yaml
-- 7 screens: specs/screens/*.yaml
+- 6 screens: /, /folders, /scan, /review, /trash, /settings
 - Design system: design/design-system.pen (Pencil)
 - Stitch mockups: design/stitch-project.json (project 977412230907375002)
 
@@ -112,10 +132,10 @@ Renderer                          Main
 - Virtual lists for large datasets (react-window 적용)
 
 ## Current Status
-- 핵심 기능 22/22 Task 완료 (P0~P5)
-- 추가: EXIF 필터링, Plugin, HEIC, i18n(ko/en/ja), CI/CD
+- 핵심 기능 완료 (P0~P5), Export 기능 제거 (v0.3)
+- 추가: EXIF 필터링, Plugin, HEIC, i18n(ko/en/ja), CI/CD, 알림 시스템
 - 미구현: Worker Threads (stub), Correction Detection, Incremental Scan
-- 테스트: 단위 17개(3,391줄), E2E 0개
+- 테스트: 단위 16개, E2E 0개
 - 로드맵 상세: docs/ROADMAP.md
 
 ## Safety Rules

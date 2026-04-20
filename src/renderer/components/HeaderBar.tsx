@@ -1,4 +1,5 @@
 import { Aperture, HelpCircle, Settings } from 'lucide-react'
+import { NotificationBell } from './NotificationBell'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 import type { TranslationKey } from '@renderer/i18n'
@@ -8,7 +9,6 @@ const routeNames: Record<string, TranslationKey> = {
   '/folders': 'nav.folders',
   '/scan': 'nav.scan',
   '/review': 'nav.review',
-  '/export': 'nav.export',
   '/trash': 'nav.trash',
   '/settings': 'nav.settings',
 }
@@ -39,6 +39,7 @@ export function HeaderBar() {
         )}
       </div>
       <div className="flex items-center gap-1 app-no-drag">
+        <NotificationBell />
         <button
           className="p-2 rounded-xl hover:bg-surface-secondary hover:text-primary cursor-pointer transition-colors"
           title="Info"

@@ -82,32 +82,6 @@ export function migrate(db: AppDatabase): void {
     CREATE INDEX IF NOT EXISTS idx_photos_phash ON photos(phash);
     CREATE INDEX IF NOT EXISTS idx_photos_group_id ON photos(group_id);
 
-    -- Export Jobs
-    CREATE TABLE IF NOT EXISTS export_jobs (
-      id TEXT PRIMARY KEY NOT NULL,
-      status TEXT NOT NULL DEFAULT 'ready',
-      action TEXT NOT NULL,
-      target_path TEXT NOT NULL,
-      total_files INTEGER NOT NULL DEFAULT 0,
-      processed_files INTEGER NOT NULL DEFAULT 0,
-      total_size INTEGER NOT NULL DEFAULT 0,
-      transferred_size INTEGER NOT NULL DEFAULT 0,
-      transfer_speed REAL NOT NULL DEFAULT 0,
-      conflict_strategy TEXT NOT NULL DEFAULT 'skip',
-      auto_create_folder INTEGER NOT NULL DEFAULT 1,
-      failed_count INTEGER NOT NULL DEFAULT 0,
-      elapsed_seconds REAL NOT NULL DEFAULT 0,
-      estimated_remaining_seconds REAL NOT NULL DEFAULT 0
-    );
-
-    -- Export Items
-    CREATE TABLE IF NOT EXISTS export_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      export_id TEXT NOT NULL REFERENCES export_jobs(id) ON DELETE CASCADE,
-      photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
-      group_id TEXT NOT NULL REFERENCES photo_groups(id) ON DELETE CASCADE
-    );
-
     -- Trash Items
     CREATE TABLE IF NOT EXISTS trash_items (
       id TEXT PRIMARY KEY NOT NULL,
@@ -134,6 +108,8 @@ export function migrate(db: AppDatabase): void {
   sqlite.exec(`
     DROP TABLE IF EXISTS review_decisions;
     DROP TABLE IF EXISTS scan_discoveries;
+    DROP TABLE IF EXISTS export_items;
+    DROP TABLE IF EXISTS export_jobs;
   `)
 
   // Incremental migrations for existing DBs

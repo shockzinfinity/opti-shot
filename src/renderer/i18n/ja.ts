@@ -4,7 +4,6 @@ export const ja = {
   'nav.folders': 'フォルダ選択',
   'nav.scan': 'スキャン中',
   'nav.review': 'グループレビュー',
-  'nav.export': 'エクスポート',
   'nav.trash': 'ゴミ箱',
   'nav.settings': '設定',
   'dashboard.welcome': 'フォトライブラリ概要',
@@ -76,29 +75,6 @@ export const ja = {
   'review.reviewed': 'レビュー済み',
   'review.progress': '進捗',
   'review.savings': '削減量',
-  'export.title': 'エクスポート',
-  'export.subtitle': '厳選した写真を設定してエクスポートします',
-  'export.summary': 'エクスポート概要',
-  'export.files': 'ファイル',
-  'export.size': 'サイズ',
-  'export.estTime': '予想時間',
-  'export.destination': '保存先フォルダ',
-  'export.browse': '参照',
-  'export.createFolder': 'フォルダが存在しない場合は作成',
-  'export.action': 'エクスポート操作',
-  'export.copy': 'コピー',
-  'export.copyDesc': '原本を保持し、選択した写真を保存先にコピー',
-  'export.move': '移動',
-  'export.moveDesc': '選択した写真を保存先に移動し、元の場所から削除',
-  'export.moveWarning': '原本はゴミ箱に移動されます（30日間保持）。すぐに元に戻すことはできません。',
-  'export.conflictStrategy': '競合戦略',
-  'export.skip': 'スキップ',
-  'export.rename': '名前変更',
-  'export.overwrite': '上書き',
-  'export.startExport': 'エクスポート開始',
-  'export.complete': 'エクスポート完了',
-  'export.completeDesc': '写真が正常にエクスポートされました。',
-  'export.done': '完了',
   'trash.title': 'ゴミ箱（30日間保持）',
   'trash.files': 'ファイル',
   'trash.nextCleanup': '次回の自動クリーンアップ',
@@ -274,17 +250,6 @@ export const ja = {
   'review.noGroupsFound': 'グループが見つかりません',
   'review.groups': 'グループ',
 
-  // Export details
-  'export.exporting': '写真をエクスポート中...',
-  'export.transferred': '転送済み',
-  'export.speed': '速度',
-  'export.cancelExport': 'エクスポートをキャンセル',
-  'export.noFolder': 'フォルダが選択されていません...',
-  'export.conflictDesc': '保存先にファイルが既に存在する場合の処理方法です。',
-  'export.skipDesc': '既存のファイルをそのままにし、そのファイルのエクスポートをスキップします',
-  'export.renameDesc': '上書きを避けるために数字サフィックスを追加します（例：photo_1.jpg）',
-  'export.overwriteDesc': '既存のファイルをエクスポートしたコピーで置き換えます',
-
   // Trash details
   'trash.confirmEmpty': 'ゴミ箱のすべてのアイテムを完全に削除しますか？この操作は元に戻せません。',
   'trash.confirmDelete': '{count}件のアイテムを完全に削除しますか？この操作は元に戻せません。',
@@ -336,4 +301,10 @@ export const ja = {
 
   // Misc
   'scan.waitingForData': 'スキャンデータを待機中...',
+
+  // Notifications
+  'notification.title': '通知',
+  'notification.markAllRead': 'すべて既読',
+  'notification.clearAll': 'すべてクリア',
+  'notification.empty': '通知はありません',
 } as const

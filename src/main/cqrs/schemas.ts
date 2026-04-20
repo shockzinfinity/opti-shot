@@ -38,13 +38,6 @@ export const COMMAND_SCHEMAS: Record<string, ZodSchema> = {
     decision: z.enum(['kept_all', 'duplicates_deleted']).optional(),
   }),
 
-  'export.start': z.object({
-    targetPath: z.string().min(1),
-    action: z.enum(['copy', 'move']),
-    conflictStrategy: z.enum(['skip', 'rename', 'overwrite']),
-    autoCreateFolder: z.boolean(),
-  }),
-
   'trash.move': z.object({ photoId: stringId }),
   'trash.restore': z.object({ trashId: stringId }),
   'trash.restoreGroup': z.object({ groupId: stringId }),
@@ -63,6 +56,10 @@ export const COMMAND_SCHEMAS: Record<string, ZodSchema> = {
 
   'shell.openPath': z.object({
     filePath: z.string().min(1),
+  }),
+
+  'notification.markRead': z.object({
+    ids: z.array(z.string()),
   }),
 }
 
@@ -88,4 +85,8 @@ export const QUERY_SCHEMAS: Record<string, ZodSchema> = {
   }).optional().default({}),
 
   'settings.get': z.object({ section }),
+
+  'notification.list': z.object({
+    limit: z.number().optional(),
+  }).optional().default({}),
 }

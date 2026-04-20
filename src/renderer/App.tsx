@@ -4,7 +4,6 @@ import { Dashboard } from './pages/Dashboard'
 import { FolderSelect } from './pages/FolderSelect'
 import { ScanProgress } from './pages/ScanProgress'
 import { GroupReview } from './pages/GroupReview'
-import { Export } from './pages/Export'
 import { Trash } from './pages/Trash'
 import { Settings } from './pages/Settings'
 
@@ -23,7 +22,6 @@ export default function App() {
             <Route path="/folders" element={<ScrollPage><FolderSelect /></ScrollPage>} />
             <Route path="/scan" element={<ScrollPage><ScanProgress /></ScrollPage>} />
             <Route path="/review" element={<FullPage><GroupReview /></FullPage>} />
-            <Route path="/export" element={<ScrollPage><Export /></ScrollPage>} />
             <Route path="/trash" element={<ScrollPage><Trash /></ScrollPage>} />
             <Route path="/settings" element={<ScrollPage><Settings /></ScrollPage>} />
           </Routes>

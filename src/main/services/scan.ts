@@ -10,7 +10,7 @@ import { pluginRegistry } from '@main/engine/plugin-registry'
 import { listFolders } from '@main/services/folder'
 import type { FolderRecord } from '@main/services/folder'
 import type { AppDatabase } from '@main/db'
-import { scans, photos, photoGroups, trashItems, exportItems, exportJobs } from '@main/db/schema'
+import { scans, photos, photoGroups, trashItems } from '@main/db/schema'
 import { eq } from 'drizzle-orm'
 import { randomUUID } from 'crypto'
 import { readdirSync, statSync, existsSync } from 'fs'
@@ -267,8 +267,6 @@ export function saveScanResults(
 ): void {
   // Clear previous scan results (respect FK order: children → parents)
   db.delete(trashItems).run()
-  db.delete(exportItems).run()
-  db.delete(exportJobs).run()
   db.delete(photos).run()
   db.delete(photoGroups).run()
 

@@ -5,6 +5,16 @@ import { initCqrs } from './cqrs'
 import { initAutoUpdater } from './services/updater'
 import { getSettings } from './services/settings'
 
+// --- Global error handlers (prevent crash on unhandled errors) ---
+
+process.on('uncaughtException', (error) => {
+  console.error('[uncaughtException]', error)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason)
+})
+
 // --- Window bounds persistence ---
 
 interface WindowBounds {
