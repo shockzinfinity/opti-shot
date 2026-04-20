@@ -130,6 +130,12 @@ export function migrate(db: AppDatabase): void {
     );
   `)
 
+  // Drop legacy tables (removed in v0.2, data migrated to photo_groups.decision)
+  sqlite.exec(`
+    DROP TABLE IF EXISTS review_decisions;
+    DROP TABLE IF EXISTS scan_discoveries;
+  `)
+
   // Incremental migrations for existing DBs
   const addColumnIfMissing = (table: string, column: string, type: string) => {
     const cols = sqlite.pragma(`table_info(${table})`) as Array<{ name: string }>

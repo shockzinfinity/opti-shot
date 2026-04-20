@@ -129,15 +129,24 @@ function createWindow(): void {
   }
 }
 
+const TRAY_LABELS: Record<string, { open: string; quit: string }> = {
+  ko: { open: 'OptiShot 열기', quit: '종료' },
+  en: { open: 'Open OptiShot', quit: 'Quit' },
+  ja: { open: 'OptiShot を開く', quit: '終了' },
+}
+
 function createTray(): void {
   const iconPath = getIconPath()
   const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 })
   tray = new Tray(trayIcon)
   tray.setToolTip('OptiShot')
 
+  const lang = getSettings('ui').language ?? 'ko'
+  const labels = TRAY_LABELS[lang] ?? TRAY_LABELS.ko
+
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'OptiShot 열기',
+      label: labels.open,
       click: () => {
         if (mainWindow) {
           mainWindow.show()
@@ -147,7 +156,7 @@ function createTray(): void {
     },
     { type: 'separator' },
     {
-      label: '종료',
+      label: labels.quit,
       click: () => {
         isQuitting = true
         app.quit()
