@@ -1,4 +1,5 @@
 import type { SettingsSection } from './commands'
+import type { PluginInfo } from '../plugins'
 
 export interface QueryMap {
   // Folder
@@ -65,6 +66,9 @@ export interface QueryMap {
 
   // Maintenance
   'maintenance.storageStats': { input: void; result: { dbSize: number; cacheSize: number } }
+
+  // Plugin
+  'plugin.list': { input: void; result: PluginInfo[] }
 
   // App
   'app.info': {

@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Palette, Database, Info, RotateCcw } from 'lucide-react'
+import { Palette, Database, Info, RotateCcw, ScanSearch } from 'lucide-react'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { PageCloseButton } from '@renderer/components/PageCloseButton'
-import { UITab, DataTab, InfoTab } from '@renderer/components/SettingsTabs'
+import { ScanTab, UITab, DataTab, InfoTab } from '@renderer/components/SettingsTabs'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 import type { TranslationKey } from '@renderer/i18n'
 
-type TabId = 'ui' | 'data' | 'info'
+type TabId = 'scan' | 'ui' | 'data' | 'info'
 
 interface TabConfig {
   id: TabId
@@ -16,6 +16,7 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
+  { id: 'scan', labelKey: 'settings.tabScan', icon: <ScanSearch className="w-4 h-4" /> },
   { id: 'ui', labelKey: 'settings.tabUi', icon: <Palette className="w-4 h-4" /> },
   { id: 'data', labelKey: 'settings.tabData', icon: <Database className="w-4 h-4" /> },
   { id: 'info', labelKey: 'settings.tabInfo', icon: <Info className="w-4 h-4" /> },
@@ -32,7 +33,7 @@ export function Settings() {
 
   useEffect(() => {
     const tab = (location.state as { tab?: string })?.tab
-    if (tab === 'ui' || tab === 'data' || tab === 'info') {
+    if (tab === 'scan' || tab === 'ui' || tab === 'data' || tab === 'info') {
       setTab(tab)
     }
   }, [location.state, setTab])
@@ -85,6 +86,7 @@ export function Settings() {
         </div>
       ) : (
         <div>
+          {activeTab === 'scan' && <ScanTab />}
           {activeTab === 'ui' && <UITab />}
           {activeTab === 'data' && <DataTab />}
           {activeTab === 'info' && <InfoTab />}

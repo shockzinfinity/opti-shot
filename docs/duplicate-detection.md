@@ -392,10 +392,9 @@ BK-Tree와 Union-Find를 결합하여 연결된 그룹을 구성:
 export function groupByDistance(
   items: Array<{ id: string; hash: string }>,
   threshold: number,
+  distFn: DistanceFunction,  // v0.2: 플러그인에서 주입
 ): string[][] {
   if (items.length < 2) return []
-
-  const distFn: DistanceFunction = hammingDistance
 
   // Build BK-tree
   const tree = new BKTree(distFn)
@@ -892,7 +891,7 @@ export async function getExifData(imagePath: string): Promise<ExifData> {
 
 ### 5.3 프리셋 비교표
 
-OptiShot에서 제공하는 3가지 프리셋:
+OptiShot에서 제공하는 3가지 프리셋 (활성 플러그인의 기본 임계값을 오버라이드):
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -931,57 +930,174 @@ OptiShot에서 제공하는 3가지 프리셋:
 
 ---
 
-## 6. ScanEngine 오케스트레이션
+## 6. 플러그인 아키텍처
 
-### 6.1 전체 플로우
+### 6.1 DetectionPlugin 인터페이스
+
+v0.2부터 감지 알고리즘은 플러그인 구조로 설계됩니다. 각 플러그인은 완전한 감지 전략(Stage 1 해싱 + Stage 2 검증)을 캡슐화합니다.
+
+```typescript
+// src/main/engine/plugin-registry.ts
+
+interface DetectionPlugin {
+  readonly id: string            // 고유 식별자 (e.g., 'phash-ssim')
+  readonly name: string          // 표시 이름 (e.g., 'pHash + SSIM')
+  readonly description: string   // 설명
+  readonly version: string       // 버전
+  readonly builtIn: boolean      // 내장 플러그인 여부
+
+  // Stage 1 (필수): 해시 계산 + 거리 메트릭
+  computeHash(imagePath: string): Promise<string>
+  computeDistance(hash1: string, hash2: string): number
+  readonly defaultHashThreshold: number
+
+  // Stage 2 (선택): 후보 그룹 검증
+  verify?(imagePaths: string[], threshold: number): Promise<string[][]>
+  readonly defaultVerifyThreshold?: number
+}
+```
+
+**설계 원칙**:
+- Stage 1은 필수 — 해시 계산과 거리 메트릭이 없으면 BK-Tree 그룹화 불가
+- Stage 2는 선택 — verify가 없으면 Stage 1 그룹이 그대로 최종 결과
+- 각 플러그인이 기본 임계값을 제공 — 사용자가 오버라이드 가능
+
+### 6.2 PluginRegistry
+
+```typescript
+// src/main/engine/plugin-registry.ts
+
+class PluginRegistry {
+  register(plugin: DetectionPlugin): void     // 플러그인 등록
+  get(id: string): DetectionPlugin | undefined
+  getEnabled(): DetectionPlugin[]             // 활성화된 플러그인 목록
+  setEnabled(id: string, enabled: boolean)    // on/off 토글
+  list(): PluginInfo[]                        // UI용 정보 목록
+
+  loadState(enabledPlugins: Record<string, boolean>): void  // 설정 복원
+  exportState(): Record<string, boolean>                    // 설정 저장
+}
+
+// 싱글턴
+export const pluginRegistry = new PluginRegistry()
+```
+
+**초기화 흐름**:
+```
+app.whenReady()
+  → initCqrs()
+    → pluginRegistry.register(phashSsimPlugin)   // 내장 플러그인 등록
+    → pluginRegistry.loadState(settings.scan.enabledPlugins)  // 설정 복원
+    → registerAllCqrsHandlers(...)
+```
+
+### 6.3 내장 플러그인: pHash + SSIM
+
+```typescript
+// src/main/engine/plugins/phash-ssim.ts
+
+export const phashSsimPlugin: DetectionPlugin = {
+  id: 'phash-ssim',
+  name: 'pHash + SSIM',
+  description: 'DCT 기반 지각 해시(Stage 1) + 구조적 유사도(Stage 2) 검증',
+  version: '1.0.0',
+  builtIn: true,
+  defaultHashThreshold: 8,
+  defaultVerifyThreshold: 0.82,
+
+  computeHash: computePhash,        // 기존 phash.ts 재사용
+  computeDistance: hammingDistance,  // 기존 phash.ts 재사용
+  verify: verifySsimGroup,          // 기존 ssim.ts 재사용
+}
+```
+
+기존 알고리즘 코드(phash.ts, ssim.ts, bk-tree.ts)는 변경 없이 그대로 유지됩니다. 플러그인은 이들을 조합하는 **어댑터** 역할만 합니다.
+
+### 6.4 CQRS 연동
+
+```
+Renderer                              Main
+  │                                    │
+  ├─ query('plugin.list') ──────────►  PluginRegistry.list() → PluginInfo[]
+  ├─ command('plugin.toggle', {       
+  │     pluginId, enabled }) ────────►  PluginRegistry.setEnabled()
+  │                                    + saveSettings('scan', { enabledPlugins })
+  └─ command('scan.start', opts) ───►  pluginRegistry.getEnabled()[0]
+                                       → new ScanEngine({ plugin, ... })
+```
+
+### 6.5 확장 가이드 (새 플러그인 추가)
+
+향후 ORB, dHash, 딥러닝 등 새 알고리즘을 추가하려면:
+
+1. `src/main/engine/plugins/` 아래에 새 파일 생성
+2. `DetectionPlugin` 인터페이스 구현
+3. `initCqrs()`에서 `pluginRegistry.register()` 호출
+4. 끝 — UI에 자동으로 나타남 (Settings > 스캔 > 감지 알고리즘)
+
+```typescript
+// 예시: dHash + MSE 플러그인
+export const dhashMsePlugin: DetectionPlugin = {
+  id: 'dhash-mse',
+  name: 'dHash + MSE',
+  description: '차이 해시(Stage 1) + 평균 제곱 오차(Stage 2) 검증',
+  version: '1.0.0',
+  builtIn: true,
+  defaultHashThreshold: 10,
+  defaultVerifyThreshold: 0.05,
+
+  computeHash: computeDhash,
+  computeDistance: hammingDistance,
+  verify: verifyMseGroup,
+}
+```
+
+## 7. ScanEngine 오케스트레이션
+
+### 7.1 전체 플로우
 
 ```typescript
 /**
  * ScanEngine: Orchestrates the 2-stage duplicate detection pipeline.
+ * v0.2: Plugin-based — 알고리즘을 DetectionPlugin으로 주입받음
  *
- * Stage 1: pHash computation + BK-Tree grouping
- * Stage 2: SSIM verification of candidate groups
- * Quality scoring + master selection per group
+ * Stage 1: plugin.computeHash() + BK-Tree grouping (plugin.computeDistance)
+ * Stage 2: plugin.verify() (선택, 없으면 Stage 1 그룹 그대로 사용)
+ * Quality scoring + master selection per group (품질 평가는 플러그인 독립)
  */
 export class ScanEngine {
-  private phashThreshold: number
-  private ssimThreshold: number
+  private plugin: DetectionPlugin
+  private hashThreshold: number
+  private verifyThreshold: number
   private batchSize: number
 
-  constructor(options: ScanEngineOptions = {}) {
-    this.phashThreshold = options.phashThreshold ?? 8
-    this.ssimThreshold = options.ssimThreshold ?? 0.82
+  constructor(options: ScanEngineOptions) {
+    this.plugin = options.plugin
+    this.hashThreshold = options.hashThreshold ?? options.plugin.defaultHashThreshold
+    this.verifyThreshold = options.verifyThreshold ?? options.plugin.defaultVerifyThreshold ?? 0.82
     this.batchSize = options.batchSize ?? 100
-  }
-
-  async scanFiles(
-    filePaths: string[],
-    onProgress: ProgressCallback,
-    signal?: AbortSignal,
-  ): Promise<ScanResult> {
-    // ... (전체 파이프라인 구현)
   }
 }
 ```
 
-### 6.2 실행 흐름도
+### 7.2 실행 흐름도
 
 ```
 scanFiles(filePaths[], onProgress, signal?)
     │
-    ├─ Stage 1: pHash 계산 (배치 처리)
+    ├─ Stage 1: 해시 계산 (배치 처리)
     │   for each 100 files:
-    │     └─ computePhash(filePath) → hash
+    │     └─ plugin.computeHash(filePath) → hash
     │        └─ emit progress(processedFiles, groups=0)
     │
     ├─ Stage 1b: BK-Tree 그룹화
-    │   └─ groupByDistance(items, phashThreshold)
+    │   └─ groupByDistance(items, hashThreshold, plugin.computeDistance)
     │      └─ [candidateIds[], ...]
     │
-    └─ Stage 2: SSIM 검증 + 품질 평가
+    └─ Stage 2: 검증 + 품질 평가
         for each candidateGroup:
-            ├─ verifySsimGroup(paths[], ssimThreshold)
-            │   └─ [subGroupPaths[], ...]
+            ├─ plugin.verify?.(paths[], verifyThreshold)
+            │   └─ 없으면 [candidatePaths] 그대로 사용
             │
             ├─ for each subGroup:
             │   ├─ computeQualityScore(path) → score (0-100)
@@ -1147,11 +1263,12 @@ export const scanStartSchema = z.object({
 
 ```typescript
 import { ScanEngine } from '@main/engine/scan-engine'
+import { phashSsimPlugin } from '@main/engine/plugins/phash-ssim'
 
-// 기본 설정으로 스캔 엔진 생성
+// 플러그인 기반 스캔 엔진 생성
 const engine = new ScanEngine({
-  phashThreshold: 8,
-  ssimThreshold: 0.82,
+  plugin: phashSsimPlugin,
+  // hashThreshold, verifyThreshold는 플러그인 기본값 사용 (8, 0.82)
   batchSize: 100
 })
 
@@ -1190,9 +1307,10 @@ for (const group of result.groups) {
 
 ```typescript
 const engine = new ScanEngine({
-  phashThreshold: 6,     // 더 엄격한 1차 선별
-  ssimThreshold: 0.90,   // 더 엄격한 2차 검증
-  batchSize: 50          // 더 작은 배치
+  plugin: phashSsimPlugin,
+  hashThreshold: 6,      // 플러그인 기본값(8) 오버라이드
+  verifyThreshold: 0.90, // 플러그인 기본값(0.82) 오버라이드
+  batchSize: 50
 })
 ```
 
@@ -1230,12 +1348,15 @@ try {
 - **zod**: Schema validation
 
 ### OptiShot 소스 파일
+- `/src/main/engine/plugin-registry.ts` - DetectionPlugin 인터페이스 + PluginRegistry
+- `/src/main/engine/plugins/phash-ssim.ts` - 내장 pHash+SSIM 플러그인
 - `/src/main/engine/phash.ts` - pHash 계산 및 DCT
-- `/src/main/engine/bk-tree.ts` - BK-Tree 구현
+- `/src/main/engine/bk-tree.ts` - BK-Tree 구현 (distanceFn 주입)
 - `/src/main/engine/ssim.ts` - SSIM 계산
 - `/src/main/engine/quality.ts` - Laplacian variance 기반 품질 점수
-- `/src/main/engine/scan-engine.ts` - 전체 오케스트레이션
-- `/src/main/ipc/validators.ts` - IPC 설정 검증
+- `/src/main/engine/scan-engine.ts` - 플러그인 기반 오케스트레이션
+- `/src/main/cqrs/handlers/plugin.ts` - plugin.list / plugin.toggle CQRS 핸들러
+- `/src/shared/plugins.ts` - PluginInfo UI 타입
 
 ---
 
@@ -1290,17 +1411,18 @@ ssimThreshold: 0.88
 
 ## 최종 정리
 
-OptiShot의 2-Stage 파이프라인은 다음과 같이 요약됩니다:
+OptiShot의 감지 파이프라인은 v0.2부터 **플러그인 아키텍처**로 설계됩니다:
 
-1. **Stage 1 (pHash + BK-Tree)**: 빠른 1차 선별, O(N log N)
-2. **Stage 2 (SSIM + Greedy Clustering)**: 정확한 2차 검증, O(M × P²)
-3. **품질 평가**: Laplacian variance 기반 스코어링
-4. **마스터 선택**: 그룹 내 최고 품질 사진 자동 선택
+1. **DetectionPlugin**: 감지 알고리즘을 캡슐화 (Stage 1 해싱 + Stage 2 검증)
+2. **PluginRegistry**: 플러그인 등록/활성화/상태 관리 (싱글턴)
+3. **ScanEngine**: 플러그인을 주입받아 2-Stage 파이프라인 실행
+4. **품질 평가**: Laplacian variance 기반 (플러그인 독립)
+5. **설정 UI**: Settings > 스캔 탭에서 알고리즘 on/off 토글
 
-**기본 설정** (균형잡힌 혼합):
-- `phashThreshold: 8` (Hamming distance)
-- `ssimThreshold: 0.82` (SSIM score)
-- `batchSize: 100` (파일 배치)
+**내장 플러그인** (phash-ssim):
+- Stage 1: DCT 기반 pHash + Hamming distance + BK-Tree 그룹화
+- Stage 2: SSIM + Greedy Clustering 검증
+- 기본값: hashThreshold=8, verifyThreshold=0.82
 
 **성능 목표**:
 - 200K 이미지: < 30분

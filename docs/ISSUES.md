@@ -199,6 +199,85 @@ Stage 2에서 탈락한 후보 중 pHash distance가 낮은 쌍만 Stage 3으로
 
 ---
 
+## 감지 플러그인 후보군
+
+**우선순위**: 중간  
+**상태**: 기획 (플러그인 인프라 구현 완료, 개별 구현 대기)  
+**참조**: `docs/plugin-development.md` — 구현 가이드
+
+### 현재 내장 플러그인
+- **pHash + SSIM** (`phash-ssim`) — DCT 기반 지각 해시 + 구조적 유사도 검증. 기본 내장.
+
+### 후보 1: dHash + MSE (`dhash-mse`)
+
+**난이도**: 낮음 | **구현 가이드에 예제 코드 포함**
+
+- Stage 1: Difference Hash — 인접 픽셀 밝기 차이로 64-bit 해시 생성
+- Stage 2: Mean Squared Error — 픽셀 단위 오차 평균
+- 특성: pHash보다 계산 빠름, 색상 보정 사진에 효과적, 회전 변형에 약함
+- 용도: 대량 라이브러리 빠른 스캔, pHash 대안
+
+### 후보 2: aHash (Average Hash) (`ahash`)
+
+**난이도**: 낮음
+
+- Stage 1: 이미지를 8×8 축소 → 전체 평균보다 밝은 픽셀 = 1 → 64-bit 해시
+- Stage 2: 없음 (Stage 1만으로 충분할 수 있음)
+- 특성: 가장 단순하고 빠름, 정확도는 낮음
+- 용도: 빠른 사전 필터링, 정확한 복제본 감지
+
+### 후보 3: 다중 회전 pHash (`phash-rotated`)
+
+**난이도**: 중간
+
+- Stage 1: 원본 + 90°/180°/270° 회전 + 좌우반전 → 각각 pHash 계산 → 최소 거리 채택
+- Stage 2: SSIM (기존 재사용)
+- 특성: 회전/반전된 사진 커버, 추가 비용 5배 (해시 5개 계산)
+- 용도: 스마트폰 자동 회전 보정된 사진, 편집된 사진
+
+### 후보 4: ORB 특징점 매칭 (`orb-bf`)
+
+**난이도**: 높음 | **외부 의존성: OpenCV**
+
+- Stage 1: ORB(Oriented FAST and Rotated BRIEF)로 특징점 추출 → 특징 벡터 해시화
+- Stage 2: BFMatcher(Brute-Force Matcher)로 특징점 매칭 비율 계산
+- 특성: 기하학적 변환(각도, 크기, 시점)에 강함, 느림
+- 의존성: `opencv4nodejs` 또는 `@pdfjs/opencv-wasm`
+- 용도: 같은 피사체 다른 각도 사진 감지 (기존 Stage 3 이슈 해결)
+
+### 후보 5: 딥러닝 임베딩 (`neural-embedding`)
+
+**난이도**: 높음 | **외부 의존성: ONNX Runtime**
+
+- Stage 1: ResNet/EfficientNet으로 특징 벡터(1024-d) 추출 → 코사인 거리
+- Stage 2: 없음 (임베딩 자체가 충분히 정확)
+- 특성: 의미적 유사성 감지 (같은 장면, 다른 촬영 조건), 모델 크기 수십~수백MB
+- 의존성: `onnxruntime-node` + 사전 학습 모델
+- 용도: 의미적 중복 감지, 유사 장면 그룹화
+- 주의: 앱 크기 증가 (모델 번들링), 초기 로딩 시간
+
+### 후보 6: 색상 히스토그램 (`color-histogram`)
+
+**난이도**: 낮음
+
+- Stage 1: RGB/HSV 히스토그램 추출 → 히스토그램 해시 문자열 생성
+- Stage 2: 히스토그램 교차(Intersection) 또는 상관(Correlation) 비교
+- 특성: 색상 분포 기반이라 구도 변화에 강함, 색상이 유사한 다른 피사체에 약함
+- 용도: 색 보정 전후 사진, 필터 적용 사진
+
+### 우선순위 추천
+
+| 순서 | 플러그인 | 이유 |
+|------|---------|------|
+| 1 | `dhash-mse` | 구현 가이드에 예제 있음, 바로 추가 가능 |
+| 2 | `ahash` | 가장 단순, 빠른 사전 필터 용도 |
+| 3 | `phash-rotated` | 기존 pHash/SSIM 재사용, 회전 문제 해결 |
+| 4 | `color-histogram` | 순수 JS 구현 가능, 외부 의존 없음 |
+| 5 | `orb-bf` | OpenCV 의존, 기존 Stage 3 이슈 해결 |
+| 6 | `neural-embedding` | 모델 번들링 필요, v1.0 이후 검토 |
+
+---
+
 ## DB 스키마 경량화
 
 **우선순위**: 낮음  

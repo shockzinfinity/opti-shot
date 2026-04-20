@@ -3,6 +3,9 @@ import { QueryBus } from './queryBus'
 import { EventBus } from './eventBus'
 import { registerCqrsBridge } from './ipcBridge'
 import { registerAllCqrsHandlers } from './handlers/register'
+import { pluginRegistry } from '@main/engine/plugin-registry'
+import { phashSsimPlugin } from '@main/engine/plugins/phash-ssim'
+import { getSettings } from '@main/services/settings'
 
 // Singleton instances
 let commandBus: CommandBus
@@ -13,6 +16,15 @@ export function initCqrs(): void {
   commandBus = new CommandBus()
   queryBus = new QueryBus()
   eventBus = new EventBus()
+
+  // Register built-in detection plugins
+  pluginRegistry.register(phashSsimPlugin)
+
+  // Restore plugin enabled state from settings
+  const scanSettings = getSettings('scan')
+  if (scanSettings.enabledPlugins) {
+    pluginRegistry.loadState(scanSettings.enabledPlugins)
+  }
 
   // Register all handlers on the buses
   registerAllCqrsHandlers(commandBus, queryBus, eventBus)

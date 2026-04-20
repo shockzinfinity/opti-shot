@@ -42,6 +42,11 @@ export const COMMAND_SCHEMAS: Record<string, ZodSchema> = {
   'trash.restoreGroup': z.object({ groupId: stringId }),
   'trash.delete': z.object({ trashId: stringId }),
 
+  'plugin.toggle': z.object({
+    pluginId: z.string().min(1),
+    enabled: z.boolean(),
+  }),
+
   'settings.save': z.object({
     section,
     data: z.record(z.string(), z.unknown()),

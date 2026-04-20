@@ -1,19 +1,20 @@
 // @TASK P2-R2 - ScanEngine orchestrator
-// @SPEC CLAUDE.md#Architecture — 2-Stage pipeline
+// @SPEC CLAUDE.md#Architecture — 2-Stage pipeline (plugin-based)
 
-import { computePhash, hammingDistance } from './phash'
 import { groupByDistance } from './bk-tree'
-import { verifySsimGroup } from './ssim'
 import { computeQualityScore, getExifData } from './quality'
+import type { DetectionPlugin } from './plugin-registry'
 import type { ScanProgress } from '@shared/types'
 import { randomUUID } from 'crypto'
 
 /** Configuration options for the scan engine. */
 export interface ScanEngineOptions {
-  /** Hamming distance threshold for pHash stage (default: 8) */
-  phashThreshold?: number
-  /** SSIM threshold for verification stage (default: 0.9) */
-  ssimThreshold?: number
+  /** Detection plugin to use for hashing/verification. */
+  plugin: DetectionPlugin
+  /** Distance threshold for Stage 1 grouping (overrides plugin default). */
+  hashThreshold?: number
+  /** Threshold for Stage 2 verification (overrides plugin default). */
+  verifyThreshold?: number
   /** Number of files to process per batch (default: 100) */
   batchSize?: number
 }
@@ -69,13 +70,15 @@ export type ProgressCallback = (progress: ScanProgress) => void
  * Quality scoring + master selection per group
  */
 export class ScanEngine {
-  private phashThreshold: number
-  private ssimThreshold: number
+  private plugin: DetectionPlugin
+  private hashThreshold: number
+  private verifyThreshold: number
   private batchSize: number
 
-  constructor(options: ScanEngineOptions = {}) {
-    this.phashThreshold = options.phashThreshold ?? 8
-    this.ssimThreshold = options.ssimThreshold ?? 0.82
+  constructor(options: ScanEngineOptions) {
+    this.plugin = options.plugin
+    this.hashThreshold = options.hashThreshold ?? options.plugin.defaultHashThreshold
+    this.verifyThreshold = options.verifyThreshold ?? options.plugin.defaultVerifyThreshold ?? 0.82
     this.batchSize = options.batchSize ?? 100
   }
 
@@ -132,7 +135,7 @@ export class ScanEngine {
         this.checkAborted(signal)
 
         try {
-          const hash = await computePhash(filePath)
+          const hash = await this.plugin.computeHash(filePath)
           const id = randomUUID()
 
           hashMap.set(filePath, hash)
@@ -158,9 +161,13 @@ export class ScanEngine {
         hash: hashMap.get(path)!,
       }))
 
-    const candidateGroups = groupByDistance(items, this.phashThreshold)
+    const candidateGroups = groupByDistance(
+      items,
+      this.hashThreshold,
+      this.plugin.computeDistance,
+    )
 
-    // --- Stage 2: SSIM verification for each candidate group ---
+    // --- Stage 2: Verification for each candidate group ---
     const finalGroups: GroupResult[] = []
 
     for (const candidateIds of candidateGroups) {
@@ -168,12 +175,12 @@ export class ScanEngine {
 
       const candidatePaths = candidateIds.map((id) => pathById.get(id)!)
 
-      const ssimSubGroups = await verifySsimGroup(
-        candidatePaths,
-        this.ssimThreshold,
-      )
+      // Use plugin verification if available, otherwise treat entire group as verified
+      const verifiedSubGroups = this.plugin.verify
+        ? await this.plugin.verify(candidatePaths, this.verifyThreshold)
+        : [candidatePaths]
 
-      for (const subGroupPaths of ssimSubGroups) {
+      for (const subGroupPaths of verifiedSubGroups) {
         if (subGroupPaths.length < 2) continue
 
         // --- Compute quality scores ---

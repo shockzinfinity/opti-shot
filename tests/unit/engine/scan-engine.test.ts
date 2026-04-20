@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { rmSync } from 'fs'
 import { ScanEngine } from '@main/engine/scan-engine'
+import { phashSsimPlugin } from '@main/engine/plugins/phash-ssim'
 import type { ScanProgress } from '@shared/types'
 import {
   generateSolidImage,
@@ -50,21 +51,22 @@ describe('ScanEngine', () => {
   })
 
   it('should create engine with default options', () => {
-    const engine = new ScanEngine()
+    const engine = new ScanEngine({ plugin: phashSsimPlugin })
     expect(engine).toBeDefined()
   })
 
   it('should create engine with custom options', () => {
     const engine = new ScanEngine({
-      phashThreshold: 10,
-      ssimThreshold: 0.85,
+      plugin: phashSsimPlugin,
+      hashThreshold: 10,
+      verifyThreshold: 0.85,
       batchSize: 50,
     })
     expect(engine).toBeDefined()
   })
 
   it('should scan files and return results', async () => {
-    const engine = new ScanEngine()
+    const engine = new ScanEngine({ plugin: phashSsimPlugin })
     const result = await engine.scanFiles(
       [redPath, redDup1Path, gradientPath, noisePath],
       () => {},
@@ -76,7 +78,7 @@ describe('ScanEngine', () => {
   })
 
   it('should detect duplicate group among similar images', async () => {
-    const engine = new ScanEngine({ phashThreshold: 8, ssimThreshold: 0.85 })
+    const engine = new ScanEngine({ plugin: phashSsimPlugin, hashThreshold: 8, verifyThreshold: 0.85 })
     const result = await engine.scanFiles(
       [redPath, redDup1Path, redDup2Path, gradientPath, noisePath],
       () => {},
@@ -100,7 +102,7 @@ describe('ScanEngine', () => {
   })
 
   it('should select master with highest quality score', async () => {
-    const engine = new ScanEngine({ phashThreshold: 8, ssimThreshold: 0.85 })
+    const engine = new ScanEngine({ plugin: phashSsimPlugin, hashThreshold: 8, verifyThreshold: 0.85 })
     const result = await engine.scanFiles(
       [redPath, redDup1Path, redDup2Path],
       () => {},
@@ -118,7 +120,7 @@ describe('ScanEngine', () => {
   })
 
   it('should report progress via callback', async () => {
-    const engine = new ScanEngine()
+    const engine = new ScanEngine({ plugin: phashSsimPlugin })
     const progressUpdates: ScanProgress[] = []
 
     await engine.scanFiles(
@@ -134,7 +136,7 @@ describe('ScanEngine', () => {
   })
 
   it('should support cancellation via AbortSignal', async () => {
-    const engine = new ScanEngine()
+    const engine = new ScanEngine({ plugin: phashSsimPlugin })
     const controller = new AbortController()
 
     // Abort immediately
@@ -146,7 +148,7 @@ describe('ScanEngine', () => {
   })
 
   it('should include phash in photo results', async () => {
-    const engine = new ScanEngine()
+    const engine = new ScanEngine({ plugin: phashSsimPlugin })
     const result = await engine.scanFiles([redPath, gradientPath], () => {})
 
     // Check all photos have hashes

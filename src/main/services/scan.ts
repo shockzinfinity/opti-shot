@@ -3,7 +3,8 @@
 // @TEST tests/unit/services/scan.test.ts
 
 import { ScanEngine, clearHeicCache } from '@main/engine'
-import type { ScanResult, GroupResult } from '@main/engine'
+import type { ScanResult } from '@main/engine'
+import { pluginRegistry } from '@main/engine/plugin-registry'
 import { listFolders } from '@main/services/folder'
 import type { FolderRecord } from '@main/services/folder'
 import type { AppDatabase } from '@main/db'
@@ -273,10 +274,18 @@ export async function startScan(
     paused: false,
   }
 
-  // Create engine with user options
+  // Get active detection plugin
+  const enabledPlugins = pluginRegistry.getEnabled()
+  if (enabledPlugins.length === 0) {
+    throw new Error('No detection plugin enabled')
+  }
+  const activePlugin = enabledPlugins[0]
+
+  // Create engine with plugin + user options
   const engine = new ScanEngine({
-    phashThreshold: options.phashThreshold,
-    ssimThreshold: options.ssimThreshold,
+    plugin: activePlugin,
+    hashThreshold: options.phashThreshold,
+    verifyThreshold: options.ssimThreshold,
     batchSize: options.batchSize,
   })
 

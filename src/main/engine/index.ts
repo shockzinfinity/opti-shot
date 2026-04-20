@@ -18,3 +18,8 @@ export type {
   ProgressCallback,
 } from './scan-engine'
 export { computePhashBatch } from './worker'
+
+// Plugin system
+export { pluginRegistry } from './plugin-registry'
+export type { DetectionPlugin } from './plugin-registry'
+export { phashSsimPlugin } from './plugins/phash-ssim'

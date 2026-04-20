@@ -13,6 +13,7 @@ import { registerStatsHandlers } from './stats'
 import { registerMaintenanceHandlers } from './maintenance'
 import { registerAppHandlers } from './app'
 import { registerUpdaterHandlers } from './updater'
+import { registerPluginHandlers } from './plugin'
 
 export function registerAllCqrsHandlers(
   cmd: CommandBus,
@@ -30,4 +31,5 @@ export function registerAllCqrsHandlers(
   registerMaintenanceHandlers(cmd, qry)
   registerAppHandlers(cmd, qry)
   registerUpdaterHandlers(cmd)
+  registerPluginHandlers(cmd, qry)
 }

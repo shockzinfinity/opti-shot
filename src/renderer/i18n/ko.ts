@@ -125,6 +125,11 @@ export const ko = {
   'settings.tabData': '데이터',
   'settings.tabInfo': '정보',
 
+  // Settings - Detection Algorithms
+  'settings.detectionAlgorithms': '감지 알고리즘',
+  'settings.detectionAlgorithmsDesc': '중복 탐지에 사용할 알고리즘을 선택합니다. 최소 하나 이상 활성화해야 합니다.',
+  'settings.builtIn': '내장',
+
   // Settings - Scan Tab
   'settings.scanPresets': '스캔 프리셋',
   'settings.scanPresetsDesc': '프리셋을 선택하여 감지 민감도를 빠르게 설정하세요.',

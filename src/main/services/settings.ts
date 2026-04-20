@@ -18,6 +18,7 @@ export interface ScanSettings {
   enableCorrectionDetection: boolean
   enableExifFilter: boolean
   enableIncremental: boolean
+  enabledPlugins: Record<string, boolean>
 }
 
 export interface UiSettings {
@@ -55,6 +56,7 @@ const DEFAULT_SCAN: ScanSettings = {
   enableCorrectionDetection: true,
   enableExifFilter: true,
   enableIncremental: true,
+  enabledPlugins: { 'phash-ssim': true },
 }
 
 const DEFAULT_UI: UiSettings = {

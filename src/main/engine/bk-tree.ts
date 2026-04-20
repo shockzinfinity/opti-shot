@@ -1,8 +1,6 @@
 // @TASK P2-R2 - BK-Tree for efficient similarity grouping
 // @SPEC CLAUDE.md#Architecture — BK-Tree: Group images by Hamming distance
 
-import { hammingDistance } from './phash'
-
 /** Distance function type: computes metric distance between two items. */
 export type DistanceFunction = (a: string, b: string) => number
 
@@ -103,10 +101,9 @@ export class BKTree {
 export function groupByDistance(
   items: Array<{ id: string; hash: string }>,
   threshold: number,
+  distFn: DistanceFunction,
 ): string[][] {
   if (items.length < 2) return []
-
-  const distFn: DistanceFunction = hammingDistance
 
   // Build BK-tree
   const tree = new BKTree(distFn)

@@ -93,7 +93,7 @@ describe('groupByDistance', () => {
       { id: 'c', hash: 'ffffffffffffffff' },
     ]
 
-    const groups = groupByDistance(items, 0)
+    const groups = groupByDistance(items, 0, hammingDistance)
     expect(groups.length).toBeGreaterThanOrEqual(1)
 
     // a and b should be in the same group
@@ -113,7 +113,7 @@ describe('groupByDistance', () => {
       { id: 'c', hash: 'ffffffffffffffff' }, // distance 64 from a
     ]
 
-    const groups = groupByDistance(items, 8)
+    const groups = groupByDistance(items, 8, hammingDistance)
     const groupWithA = groups.find((g) => g.includes('a'))
     expect(groupWithA).toContain('b')
     if (groupWithA) {
@@ -129,7 +129,7 @@ describe('groupByDistance', () => {
     ]
 
     // With threshold 0, no two items are identical
-    const groups = groupByDistance(items, 0)
+    const groups = groupByDistance(items, 0, hammingDistance)
     // Groups should only contain items with matches (size >= 2)
     groups.forEach((g) => {
       expect(g.length).toBeGreaterThanOrEqual(2)
@@ -137,7 +137,7 @@ describe('groupByDistance', () => {
   })
 
   it('should handle empty input', () => {
-    const groups = groupByDistance([], 8)
+    const groups = groupByDistance([], 8, hammingDistance)
     expect(groups).toHaveLength(0)
   })
 
@@ -145,6 +145,7 @@ describe('groupByDistance', () => {
     const groups = groupByDistance(
       [{ id: 'a', hash: '0000000000000000' }],
       8,
+      hammingDistance,
     )
     // Single item cannot form a group of >= 2
     expect(groups).toHaveLength(0)

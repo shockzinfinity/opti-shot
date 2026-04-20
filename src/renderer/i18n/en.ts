@@ -146,6 +146,11 @@ export const en = {
   'settings.tabData': 'Data',
   'settings.tabInfo': 'Info',
 
+  // Settings - Detection Algorithms
+  'settings.detectionAlgorithms': 'Detection Algorithms',
+  'settings.detectionAlgorithmsDesc': 'Select algorithms for duplicate detection. At least one must be enabled.',
+  'settings.builtIn': 'Built-in',
+
   // Settings - Scan Tab
   'settings.scanPresets': 'Scanning Presets',
   'settings.scanPresetsDesc': 'Choose a preset to quickly configure detection sensitivity.',

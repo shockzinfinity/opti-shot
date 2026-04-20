@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { ScanMode } from '@shared/types'
+import type { ScanSettings } from '@main/services/settings'
 
 export interface FolderEntry {
   id: string
@@ -27,12 +28,14 @@ interface FolderState {
   removeFolder: (id: string) => void
   commitFolders: () => Promise<void>
   reset: () => void
+  loadDefaults: () => Promise<void>
   setMode: (mode: ScanMode) => void
   setOption: <K extends keyof ScanOptions>(key: K, value: ScanOptions[K]) => void
   toggleAdvanced: () => void
 }
 
-const DEFAULT_OPTIONS: ScanOptions = {
+/** Fallback defaults — only used until Settings loads */
+const FALLBACK_OPTIONS: ScanOptions = {
   mode: 'full',
   dateStart: null,
   dateEnd: null,
@@ -47,7 +50,7 @@ let nextLocalId = 1
 
 export const useFolderStore = create<FolderState>((set, get) => ({
   folders: [],
-  options: DEFAULT_OPTIONS,
+  options: FALLBACK_OPTIONS,
   advancedOpen: false,
 
   addFolder: async () => {
@@ -90,7 +93,30 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   },
 
   reset: () => {
-    set({ folders: [], options: DEFAULT_OPTIONS, advancedOpen: false })
+    set({ folders: [], options: FALLBACK_OPTIONS, advancedOpen: false })
+    // Re-load from Settings so defaults match user's saved preferences
+    get().loadDefaults()
+  },
+
+  loadDefaults: async () => {
+    try {
+      const res = await window.electron.query('settings.get', { section: 'scan' }) as unknown as { success: boolean; data: ScanSettings }
+      if (res.success) {
+        const s = res.data
+        set((state) => ({
+          options: {
+            ...state.options,
+            phashThreshold: s.phashThreshold,
+            ssimThreshold: s.ssimThreshold,
+            timeWindowHours: s.timeWindowHours,
+            parallelThreads: s.parallelThreads,
+            enableCorrectionDetection: s.enableCorrectionDetection,
+          },
+        }))
+      }
+    } catch {
+      // Keep fallback values
+    }
   },
 
   setMode: (mode: ScanMode) => {

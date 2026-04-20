@@ -67,6 +67,12 @@ export interface CommandMap {
     result: Record<string, unknown>
   }
 
+  // Plugin
+  'plugin.toggle': {
+    input: { pluginId: string; enabled: boolean }
+    result: void
+  }
+
   // Maintenance
   'maintenance.clearCache': { input: void; result: void }
   'maintenance.clearScanHistory': { input: void; result: void }

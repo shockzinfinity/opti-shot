@@ -2,56 +2,62 @@
 
 ## 이번 세션 완료 작업
 
-### CQRS 아키텍처 전환 (핵심)
-42개 개별 IPC 채널 → 3개 CQRS 버스로 전면 전환:
+### 보안 핸들러
+- `will-navigate` + `setWindowOpenHandler` 추가 (`src/main/index.ts`)
+- `ELECTRON_RENDERER_URL` 환경변수에서 동적 origin 추출 (매직 스트링 없음)
+- 외부 링크는 OS 기본 브라우저로 열기, Electron 내부 새 창 거부
 
-- **Phase 1**: CommandBus(21)/QueryBus(16)/EventBus(5) 인프라 구축
-  - `src/shared/cqrs/` 타입 레지스트리 (CommandMap, QueryMap, EventMap)
-  - `src/main/cqrs/` 버스 클래스 + IpcBridge (이중 검증: allowlist + Zod)
-  - 11개 핸들러 모듈 (기존 서비스 래핑, try-catch는 Bridge에서 통합 처리)
-- **Phase 2**: Renderer 전환
-  - Preload: `command/query/subscribe` API 추가
-  - 7 stores + 4 components → 레거시 `invoke/on` 완전 제거
-  - `env.d.ts`: 제네릭 타입 (자동 완성 + 타입 추론)
-- **Phase 3**: 정리 (-1,137줄)
-  - `src/main/ipc/` 디렉토리 삭제 (14 파일)
-  - `shared/types.ts`에서 IPC 상수 제거
-  - Preload에서 레거시 invoke/on API 제거
+### 플러그인 아키텍처 (v0.2)
 
-### 배포 사전 점검 (부분)
-- IpcResponse<T> 타입 정의 (TS 에러 34→0)
-- electron-builder.yml publish owner/repo 수정
-- package.json win 섹션 잘못된 속성 제거
-- DMG 빌드 성공 확인 (129MB)
+**새 파일 6개**:
+- `src/shared/plugins.ts` — PluginInfo UI 타입
+- `src/main/engine/plugin-registry.ts` — DetectionPlugin 인터페이스 + PluginRegistry 클래스
+- `src/main/engine/plugins/phash-ssim.ts` — 내장 pHash+SSIM 플러그인
+- `src/main/cqrs/handlers/plugin.ts` — plugin.list/plugin.toggle CQRS 핸들러
 
-### 설계 검증
-- Codex 2회 검증 → `docs/reports/cqrs-design-review-v2.md`
-- Haiku 테스트 검증 (stores/components 전환 후 매 단계)
-- 런타임 검증: `bun run dev` → main/renderer 에러 0건
+**수정 파일 16개**:
+- `src/main/engine/bk-tree.ts` — `groupByDistance`에 `distanceFn` 파라미터 추가
+- `src/main/engine/scan-engine.ts` — plugin 기반 리팩토링 (ScanEngineOptions.plugin 필수)
+- `src/main/engine/index.ts` — 플러그인 관련 export 추가
+- `src/main/services/scan.ts` — pluginRegistry에서 활성 플러그인 가져와 ScanEngine에 주입
+- `src/main/services/settings.ts` — ScanSettings에 enabledPlugins 필드 추가
+- `src/main/cqrs/index.ts` — 앱 시작 시 내장 플러그인 등록 + 설정 복원
+- `src/main/cqrs/handlers/register.ts` — registerPluginHandlers 추가
+- `src/main/cqrs/schemas.ts` — plugin.toggle Zod 스키마
+- `src/shared/cqrs/commands.ts` — plugin.toggle 커맨드 (→ 22개)
+- `src/shared/cqrs/queries.ts` — plugin.list 쿼리 (→ 17개)
+- `src/shared/cqrs/bus.ts` — allowlist 업데이트
+- `src/renderer/stores/settings.ts` — enabledPlugins 기본값 + 탭 타입 확장
+- `src/renderer/pages/Settings.tsx` — Scan 탭 추가 (4탭 구성)
+- `src/renderer/components/SettingsTabs.tsx` — 감지 알고리즘 카드 섹션 + 토글
+- `src/renderer/i18n/ko.ts`, `en.ts`, `ja.ts` — 3개 i18n 키 추가
+
+**테스트 수정 2개**:
+- `tests/unit/engine/bk-tree.test.ts` — groupByDistance에 hammingDistance 전달
+- `tests/unit/engine/scan-engine.test.ts` — plugin: phashSsimPlugin 전달
 
 ## 현재 상태
 - **코드**: 201 테스트 통과, 0 TS 에러
-- **IPC**: CQRS 패턴 완전 전환 (레거시 코드 0줄)
-- **커밋**: `c42d955` (CQRS merge on main)
-- **빌드**: main 80KB, preload 2KB, renderer 878KB
+- **CQRS**: CommandBus(22) / QueryBus(17) / EventBus(5)
+- **플러그인**: phash-ssim 내장 (기본 활성)
+- **Settings UI**: 스캔/UI/데이터/정보 4탭
 
 ## 다음 작업
 
-### 배포 (즉시)
-1. ~~will-navigate 핸들러 추가 (보안)~~ ✓ 완료 (2026-04-20)
+### 배포 (보류 중)
+1. ~~will-navigate 핸들러 추가 (보안)~~ ✓ 완료
 2. GitHub Actions release.yml 작성
 3. v0.1.0 태그 + Release (unsigned macOS DMG)
 
-### 플러그인 아키텍처 (v0.2)
-1. PluginRegistry + DetectionPlugin 인터페이스 구현
-2. 기존 pHash+SSIM을 첫 번째 내장 플러그인으로 추출
-3. 설정 UI에 알고리즘 on/off 섹션 추가
+### 추가 플러그인 (v0.3)
+1. dHash + MSE 플러그인 구현
+2. 다중 플러그인 동시 실행 + 그룹 병합 로직
+3. Stage 3 중복 감지 (ORB/딥러닝) 플러그인
 
 ## 미해결 이슈 (docs/ISSUES.md)
 - DB 스키마 경량화 (scanDiscoveries, reviewDecisions 테이블)
 - HEIC 성능 근본 해결 (네이티브 libheif 또는 디스크 캐시)
 - 스캔 고급 옵션 미구현 6개
-- Stage 3 중복 감지 (ORB/딥러닝)
 - 날짜별 사진 정리
 - EXIF 편집
 - Quick Start 가이드

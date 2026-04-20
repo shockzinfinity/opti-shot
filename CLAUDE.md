@@ -5,7 +5,8 @@
 
 ## Architecture
 - **Framework**: Electron (Main + Renderer process)
-- **IPC**: CQRS 패턴 — CommandBus(21) / QueryBus(16) / EventBus(5)
+- **IPC**: CQRS 패턴 — CommandBus(22) / QueryBus(17) / EventBus(5)
+- **Plugin**: DetectionPlugin 인터페이스 + PluginRegistry (감지 알고리즘 교체 가능)
 - **Renderer**: React 19 + TypeScript + Tailwind CSS + Zustand
 - **Main**: Node.js + CQRS handlers + Services
 - **Database**: better-sqlite3 + Drizzle ORM
@@ -35,7 +36,8 @@ src/
 │   │   ├── schemas.ts       # Zod 스키마 (payload 검증)
 │   │   └── handlers/        # 도메인별 핸들러 (folder, scan, group, ...)
 │   ├── services/      # Business logic (변경 없음)
-│   ├── engine/        # ScanEngine, BK-Tree, pHash
+│   ├── engine/        # ScanEngine, BK-Tree, pHash, PluginRegistry
+│   │   └── plugins/   # DetectionPlugin 구현체 (phash-ssim 내장)
 │   ├── db/            # Drizzle schema + migrations
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
@@ -46,9 +48,10 @@ src/
 │   └── App.tsx
 ├── shared/            # Types shared between main/renderer
 │   ├── types.ts       # 도메인 타입, IpcResponse
+│   ├── plugins.ts     # PluginInfo 타입 (UI-safe)
 │   └── cqrs/          # CQRS 타입 레지스트리
-│       ├── commands.ts  # CommandMap (21 commands)
-│       ├── queries.ts   # QueryMap (16 queries)
+│       ├── commands.ts  # CommandMap (22 commands)
+│       ├── queries.ts   # QueryMap (17 queries)
 │       ├── events.ts    # EventMap (5 events)
 │       └── bus.ts       # 공통 타입, allowlist 배열
 └── preload/           # contextBridge — command/query/subscribe API

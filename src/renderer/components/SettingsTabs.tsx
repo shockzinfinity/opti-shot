@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { clearThumbnailCache } from '@renderer/hooks/useThumbnail'
 import { formatBytes } from '@shared/utils'
+import type { PluginInfo } from '@shared/plugins'
 import {
   ScanSearch,
   Palette,
@@ -16,6 +17,8 @@ import {
   Globe,
   Trash2,
   Clock,
+  Puzzle,
+  HelpCircle,
 } from 'lucide-react'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTranslation } from '@renderer/hooks/useTranslation'
@@ -79,6 +82,34 @@ function SectionHeader({ title }: { title: string }) {
   return <h3 className="text-base font-heading font-semibold text-foreground-primary">{title}</h3>
 }
 
+// --- Info Tooltip ---
+
+function InfoTooltip({ text }: { text: string }) {
+  const [visible, setVisible] = useState(false)
+
+  return (
+    <div className="relative inline-block">
+      <button
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        onFocus={() => setVisible(true)}
+        onBlur={() => setVisible(false)}
+        className="w-5 h-5 rounded-full border border-border text-foreground-muted hover:text-primary hover:border-primary flex items-center justify-center transition-colors"
+        aria-label="More info"
+        type="button"
+      >
+        <HelpCircle className="w-3.5 h-3.5" />
+      </button>
+      {visible && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 p-3 rounded-lg bg-foreground-primary text-surface-primary text-xs leading-relaxed shadow-lg z-50 whitespace-pre-line">
+          {text}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-2 h-2 bg-foreground-primary rotate-45 -mt-1" />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ============================
 // SCAN TAB
 // ============================
@@ -86,9 +117,68 @@ function SectionHeader({ title }: { title: string }) {
 export function ScanTab() {
   const { scan, updateScan, applyPreset } = useSettingsStore()
   const { t } = useTranslation()
+  const [plugins, setPlugins] = useState<PluginInfo[]>([])
+
+  useEffect(() => {
+    window.electron.query('plugin.list').then((res) => {
+      if (res.success) setPlugins(res.data as unknown as PluginInfo[])
+    })
+  }, [])
+
+  const handlePluginToggle = async (pluginId: string, enabled: boolean) => {
+    await window.electron.command('plugin.toggle', { pluginId, enabled })
+    setPlugins((prev) => prev.map((p) => p.id === pluginId ? { ...p, enabled } : p))
+  }
 
   return (
     <div className="space-y-8">
+      {/* Detection Algorithms */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Puzzle className="w-4 h-4 text-primary" />
+          <SectionHeader title={t('settings.detectionAlgorithms')} />
+        </div>
+        <p className="text-sm text-foreground-muted">{t('settings.detectionAlgorithmsDesc')}</p>
+        <div className="space-y-3">
+          {plugins.map((plugin) => (
+            <div
+              key={plugin.id}
+              className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <Puzzle className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground-primary">{plugin.name}</p>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-border text-foreground-muted">
+                      v{plugin.version}
+                    </span>
+                    {plugin.builtIn && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        {t('settings.builtIn')}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-xs text-foreground-muted">{plugin.description}</p>
+                    {plugin.detailDescription && (
+                      <InfoTooltip text={plugin.detailDescription} />
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Toggle
+                on={plugin.enabled}
+                onToggle={() => handlePluginToggle(plugin.id, !plugin.enabled)}
+                label={plugin.name}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Scanning Presets */}
       <div className="space-y-3">
         <SectionHeader title={t('settings.scanPresets')} />

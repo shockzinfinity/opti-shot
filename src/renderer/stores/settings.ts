@@ -3,7 +3,7 @@ import type { ScanSettings, UiSettings, DataSettings } from '@main/services/sett
 
 export type { ScanSettings, UiSettings, DataSettings }
 
-type TabId = 'ui' | 'data' | 'info'
+type TabId = 'scan' | 'ui' | 'data' | 'info'
 
 interface SettingsState {
   scan: ScanSettings
@@ -31,6 +31,7 @@ const DEFAULT_SCAN: ScanSettings = {
   enableCorrectionDetection: true,
   enableExifFilter: true,
   enableIncremental: true,
+  enabledPlugins: { 'phash-ssim': true },
 }
 
 const DEFAULT_UI: UiSettings = {

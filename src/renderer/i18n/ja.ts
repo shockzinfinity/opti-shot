@@ -125,6 +125,11 @@ export const ja = {
   'settings.tabData': 'データ',
   'settings.tabInfo': '情報',
 
+  // Settings - Detection Algorithms
+  'settings.detectionAlgorithms': '検出アルゴリズム',
+  'settings.detectionAlgorithmsDesc': '重複検出に使用するアルゴリズムを選択します。少なくとも1つは有効にしてください。',
+  'settings.builtIn': '内蔵',
+
   // Settings - Scan Tab
   'settings.scanPresets': 'スキャンプリセット',
   'settings.scanPresetsDesc': 'プリセットを選択して検出感度を素早く設定します。',
