@@ -41,24 +41,42 @@ bun run dev
 | `bun run build:win` | Build .exe installer |
 | `bun run build:linux` | Build AppImage |
 
+## Architecture
+
+IPC 통신은 CQRS 패턴으로 구성 — 42개 개별 채널 대신 3개 버스(CommandBus, QueryBus, EventBus)를 통해 통신합니다.
+
+```
+Renderer (React)                        Main (Node.js)
+  command('scan.start', opts) ──────►  CommandBus → Service
+  query('group.list', params) ──────►  QueryBus  → Service
+  subscribe('scan.progress')  ◄──────  EventBus  → broadcast
+```
+
 ## Project Structure
 
 ```
 src/
 ├── main/                # Electron Main Process
+│   ├── cqrs/            # CQRS infrastructure
+│   │   ├── commandBus.ts    # 21 commands (state changes)
+│   │   ├── queryBus.ts      # 16 queries (data reads)
+│   │   ├── eventBus.ts      # 5 events (Main→Renderer push)
+│   │   ├── ipcBridge.ts     # IPC entry (dual validation: allowlist + Zod)
+│   │   ├── schemas.ts       # Zod payload schemas
+│   │   └── handlers/        # Domain handlers (folder, scan, group, ...)
 │   ├── db/              # Drizzle schema & migrations
 │   ├── engine/          # BK-Tree, pHash, SSIM, quality scoring
-│   ├── ipc/handlers/    # IPC request handlers
-│   ├── scheduler/       # Cleanup scheduler
 │   └── services/        # Business logic
 ├── renderer/            # React App (Renderer Process)
 │   ├── components/      # UI components
 │   ├── pages/           # 7 route-based screens
-│   ├── stores/          # Zustand stores
+│   ├── stores/          # Zustand stores (command/query/subscribe)
 │   ├── hooks/           # Custom hooks
 │   └── i18n/            # ko, en, ja
 ├── shared/              # Types shared between processes
-└── preload/             # contextBridge (CJS)
+│   ├── types.ts         # Domain types, IpcResponse
+│   └── cqrs/            # CommandMap, QueryMap, EventMap type registries
+└── preload/             # contextBridge — command/query/subscribe API
 ```
 
 ## How It Works
