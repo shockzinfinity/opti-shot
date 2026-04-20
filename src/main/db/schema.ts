@@ -50,18 +50,6 @@ export const scans = sqliteTable('scans', {
   index('idx_scans_status').on(t.status),
 ])
 
-// ─── Scan Discoveries ───
-
-export const scanDiscoveries = sqliteTable('scan_discoveries', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  scanId: text('scan_id').notNull().references(() => scans.id, { onDelete: 'cascade' }),
-  groupId: text('group_id').notNull(), // references photoGroups, added after table def
-  fileCount: integer('file_count').notNull().default(0),
-  totalSize: integer('total_size').notNull().default(0), // bytes
-  masterFilename: text('master_filename').notNull().default(''),
-  discoveredAt: text('discovered_at').notNull(), // ISO datetime
-})
-
 // ─── Photo Groups ───
 // Note: masterId has circular ref to photos. Declared as nullable text;
 // application layer enforces referential integrity.
@@ -107,19 +95,6 @@ export const photos = sqliteTable('photos', {
   index('idx_photos_phash').on(t.phash),
   index('idx_photos_group_id').on(t.groupId),
 ])
-
-// ─── Review Decisions ───
-
-export const reviewDecisions = sqliteTable('review_decisions', {
-  id: text('id').primaryKey(), // UUID
-  groupId: text('group_id').notNull().references(() => photoGroups.id, { onDelete: 'cascade' }),
-  photoId: text('photo_id').notNull().references(() => photos.id, { onDelete: 'cascade' }),
-  decision: text('decision', {
-    enum: ['keep', 'delete'],
-  }).notNull(),
-  isExportSelected: integer('is_export_selected', { mode: 'boolean' }).notNull().default(false),
-  decidedAt: text('decided_at').notNull(), // ISO datetime
-})
 
 // ─── Export Jobs ───
 

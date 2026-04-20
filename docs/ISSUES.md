@@ -265,6 +265,16 @@ Stage 2에서 탈락한 후보 중 pHash distance가 낮은 쌍만 Stage 3으로
 - 특성: 색상 분포 기반이라 구도 변화에 강함, 색상이 유사한 다른 피사체에 약함
 - 용도: 색 보정 전후 사진, 필터 적용 사진
 
+### 후보 7: OCR 텍스트 비교 (`ocr-diff`)
+
+**난이도**: 중간 | **외부 의존성: Tesseract.js**
+
+- Stage 1: Tesseract.js로 이미지에서 텍스트 추출 → 텍스트 해시 생성
+- Stage 2: 텍스트 유사도 비교 (Levenshtein distance 또는 cosine similarity)
+- 특성: 동일 템플릿/다른 텍스트 내용의 스크린샷/문서를 정확히 구분
+- 발견 계기: 같은 프레젠테이션의 다른 슬라이드 스크린샷이 pHash=6, SSIM=0.84로 중복 판정됨 (IMG_0033.PNG ↔ IMG_0035.PNG)
+- 용도: 스크린샷, 문서 스캔, 프레젠테이션 슬라이드, UI 목업
+
 ### 우선순위 추천
 
 | 순서 | 플러그인 | 이유 |
@@ -273,8 +283,9 @@ Stage 2에서 탈락한 후보 중 pHash distance가 낮은 쌍만 Stage 3으로
 | 2 | `ahash` | 가장 단순, 빠른 사전 필터 용도 |
 | 3 | `phash-rotated` | 기존 pHash/SSIM 재사용, 회전 문제 해결 |
 | 4 | `color-histogram` | 순수 JS 구현 가능, 외부 의존 없음 |
-| 5 | `orb-bf` | OpenCV 의존, 기존 Stage 3 이슈 해결 |
-| 6 | `neural-embedding` | 모델 번들링 필요, v1.0 이후 검토 |
+| 5 | `ocr-diff` | 스크린샷/문서 중복 오탐 해결, Tesseract.js |
+| 6 | `orb-bf` | OpenCV 의존, 기존 Stage 3 이슈 해결 |
+| 7 | `neural-embedding` | 모델 번들링 필요, v1.0 이후 검토 |
 
 ---
 
@@ -342,6 +353,15 @@ Stage 2에서 탈락한 후보 중 pHash distance가 낮은 쌍만 Stage 3으로
 - 각 단계에 스크린샷 또는 일러스트
 - 첫 실행 시 자동으로 표시 (onboarding), 이후에는 `?` 버튼으로 접근
 - Settings/Info 탭은 별도 경로로 유지 (사이드바 설정 메뉴 등)
+
+### 프리셋/파라미터 가이드 (필수 포함)
+매뉴얼에 각 프리셋과 파라미터가 실제 감지 결과에 미치는 영향을 상세 설명해야 함:
+
+- **프리셋 비교표**: conservative/balanced/sensitive 각각의 phashThreshold, ssimThreshold 값과 어떤 상황에 적합한지
+- **pHash 임계값(4-16)**: 낮을수록 엄격 — 값별 감지 범위 예시 (4=정확한 복제본, 8=일반 중복, 12=유사 사진)
+- **SSIM 임계값(0.5-0.95)**: 높을수록 엄격 — 값별 예시 (0.82=일반, 0.90=확실한 중복만)
+- **오탐 사례와 대응**: 스크린샷/프레젠테이션 슬라이드 같은 "동일 레이아웃 + 다른 내용" 이미지가 balanced에서 중복 판정될 수 있음 → conservative로 해결
+- **사진 종류별 권장 프리셋**: 일반 사진 촬영분=balanced, 스크린샷 포함 라이브러리=conservative, 대량 아카이브 정리=sensitive
 
 ---
 

@@ -29,7 +29,7 @@ describe('Database Schema & Migration', () => {
     db.$client.close()
   })
 
-  it('should create all 9 tables', () => {
+  it('should create all 8 tables', () => {
     const tables = db.$client
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
       .all() as { name: string }[]
@@ -40,8 +40,6 @@ describe('Database Schema & Migration', () => {
       'export_jobs',
       'photo_groups',
       'photos',
-      'review_decisions',
-      'scan_discoveries',
       'scan_folders',
       'scans',
       'settings',
@@ -147,37 +145,6 @@ describe('CRUD Operations', () => {
     const photo = db.select().from(schema.photos).all()
     expect(photo[0].isMaster).toBe(true)
     expect(photo[0].qualityScore).toBe(85.5)
-  })
-
-  it('should insert review decisions with foreign keys', () => {
-    // Setup: group + photo
-    db.insert(schema.photoGroups).values({
-      id: 'group-r1',
-      fileCount: 1,
-      totalSize: 1000,
-      reclaimableSize: 0,
-    }).run()
-
-    db.insert(schema.photos).values({
-      id: 'photo-r1',
-      filename: 'test.jpg',
-      path: '/test.jpg',
-      phash: 'abcdef',
-      groupId: 'group-r1',
-    }).run()
-
-    db.insert(schema.reviewDecisions).values({
-      id: 'decision-001',
-      groupId: 'group-r1',
-      photoId: 'photo-r1',
-      decision: 'keep',
-      isExportSelected: false,
-      decidedAt: '2026-01-01T12:00:00Z',
-    }).run()
-
-    const rows = db.select().from(schema.reviewDecisions).all()
-    expect(rows).toHaveLength(1)
-    expect(rows[0].decision).toBe('keep')
   })
 
   it('should insert export jobs and items', () => {

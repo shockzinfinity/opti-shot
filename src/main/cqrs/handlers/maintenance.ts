@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { rmSync, existsSync, statSync, readdirSync } from 'fs'
 import { getDb } from '@main/db'
-import { photos, photoGroups, reviewDecisions, scans, scanDiscoveries, trashItems } from '@main/db/schema'
+import { photos, photoGroups, scans, trashItems } from '@main/db/schema'
 import type { CommandBus } from '../commandBus'
 import type { QueryBus } from '../queryBus'
 
@@ -27,8 +27,6 @@ export function registerMaintenanceHandlers(cmd: CommandBus, qry: QueryBus): voi
   cmd.register('maintenance.clearScanHistory', async () => {
     const db = getDb()
     db.delete(trashItems).run()
-    db.delete(reviewDecisions).run()
-    db.delete(scanDiscoveries).run()
     db.delete(photos).run()
     db.delete(photoGroups).run()
     db.delete(scans).run()

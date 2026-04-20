@@ -1,12 +1,27 @@
 import { Settings2, ChevronDown, ChevronUp, Hash, Eye, Clock, Cpu, RefreshCcw, Filter, Zap } from 'lucide-react'
-import type { ScanOptions } from '../stores/folder'
+import type { ScanOptions, ScanPresetId } from '../stores/folder'
+import { SCAN_PRESET_VALUES } from '../stores/folder'
+import { PresetSelector } from './PresetSelector'
 import { useTranslation } from '@renderer/hooks/useTranslation'
+
+function detectPreset(options: ScanOptions): 'balanced' | 'conservative' | 'sensitive' {
+  for (const [id, values] of Object.entries(SCAN_PRESET_VALUES)) {
+    if (
+      options.phashThreshold === values.phashThreshold &&
+      options.ssimThreshold === values.ssimThreshold
+    ) {
+      return id as ScanPresetId
+    }
+  }
+  return 'balanced'
+}
 
 interface AdvancedSettingsProps {
   open: boolean
   options: ScanOptions
   onToggle: () => void
   onOptionChange: <K extends keyof ScanOptions>(key: K, value: ScanOptions[K]) => void
+  onPresetChange: (preset: ScanPresetId) => void
 }
 
 interface SliderFieldProps {
@@ -49,7 +64,7 @@ function SliderField({ icon, label, value, min, max, step, format, onChange }: S
   )
 }
 
-export function AdvancedSettings({ open, options, onToggle, onOptionChange }: AdvancedSettingsProps) {
+export function AdvancedSettings({ open, options, onToggle, onOptionChange, onPresetChange }: AdvancedSettingsProps) {
   const { t } = useTranslation()
 
   return (
@@ -76,6 +91,7 @@ export function AdvancedSettings({ open, options, onToggle, onOptionChange }: Ad
 
       {open && (
         <div className="px-6 pb-6 border-t border-border pt-6 space-y-6">
+          <PresetSelector value={detectPreset(options)} onChange={onPresetChange} />
           <div className="grid grid-cols-2 gap-6">
             <SliderField
               icon={<Hash className="w-4 h-4" />}

@@ -82,27 +82,6 @@ export function migrate(db: AppDatabase): void {
     CREATE INDEX IF NOT EXISTS idx_photos_phash ON photos(phash);
     CREATE INDEX IF NOT EXISTS idx_photos_group_id ON photos(group_id);
 
-    -- Scan Discoveries
-    CREATE TABLE IF NOT EXISTS scan_discoveries (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      scan_id TEXT NOT NULL REFERENCES scans(id) ON DELETE CASCADE,
-      group_id TEXT NOT NULL,
-      file_count INTEGER NOT NULL DEFAULT 0,
-      total_size INTEGER NOT NULL DEFAULT 0,
-      master_filename TEXT NOT NULL DEFAULT '',
-      discovered_at TEXT NOT NULL
-    );
-
-    -- Review Decisions
-    CREATE TABLE IF NOT EXISTS review_decisions (
-      id TEXT PRIMARY KEY NOT NULL,
-      group_id TEXT NOT NULL REFERENCES photo_groups(id) ON DELETE CASCADE,
-      photo_id TEXT NOT NULL REFERENCES photos(id) ON DELETE CASCADE,
-      decision TEXT NOT NULL,
-      is_export_selected INTEGER NOT NULL DEFAULT 0,
-      decided_at TEXT NOT NULL
-    );
-
     -- Export Jobs
     CREATE TABLE IF NOT EXISTS export_jobs (
       id TEXT PRIMARY KEY NOT NULL,

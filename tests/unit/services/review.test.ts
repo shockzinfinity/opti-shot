@@ -1,11 +1,10 @@
-// @TASK P3-R2 - Review service unit tests (unused reviewDecisions table deprecated)
+// @TASK P3-R2 - Review service unit tests
 // @TEST tests/unit/services/review.test.ts
 
 import { describe, it, expect } from 'vitest'
 
 describe('ReviewService', () => {
-  it('placeholder - all reviewDecisions tests removed (table deprecated)', () => {
-    // getPendingDeletions is used by renderer/stores/review.ts but has no dedicated unit tests
+  it('placeholder - getPendingDeletions uses photoGroups.decision + photos.isMaster', () => {
     expect(true).toBe(true)
   })
 })

@@ -11,7 +11,7 @@ import { useTranslation } from '@renderer/hooks/useTranslation'
 
 export function FolderSelect() {
   const navigate = useNavigate()
-  const { folders, options, advancedOpen, addFolder, removeFolder, setMode, setOption, toggleAdvanced, reset } =
+  const { folders, options, advancedOpen, addFolder, removeFolder, setMode, setOption, applyPreset, toggleAdvanced, reset } =
     useFolderStore()
   const { t } = useTranslation()
 
@@ -67,6 +67,7 @@ export function FolderSelect() {
         options={options}
         onToggle={toggleAdvanced}
         onOptionChange={setOption}
+        onPresetChange={applyPreset}
       />
 
       {/* Section 4: Action Bar */}

@@ -3,7 +3,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createTestDb, type AppDatabase } from '@main/db'
-import { photos, photoGroups, reviewDecisions, exportJobs } from '@main/db/schema'
+import { photos, photoGroups, exportJobs } from '@main/db/schema'
 import {
   startExport,
   pauseExport,
@@ -34,12 +34,12 @@ function seedExportData(
   db: AppDatabase,
   sourceDir: string,
   fileNames: string[],
-  opts?: { exportSelected?: boolean[] },
+  opts?: { isMaster?: boolean[] },
 ): { groupId: string; photoIds: string[] } {
   const groupId = 'group-1'
   const photoIds = fileNames.map((_, i) => `photo-${i + 1}`)
 
-  // Create group
+  // Create group (reviewed = eligible for export)
   db.insert(photoGroups).values({
     id: groupId,
     fileCount: fileNames.length,
@@ -54,6 +54,7 @@ function seedExportData(
     const filePath = join(sourceDir, fileNames[i])
     writeFileSync(filePath, `content-of-${fileNames[i]}`)
 
+    const isMaster = opts?.isMaster?.[i] ?? (i === 0)
     db.insert(photos).values({
       id: photoIds[i],
       filename: fileNames[i],
@@ -63,20 +64,9 @@ function seedExportData(
       height: 480,
       qualityScore: 80,
       phash: `hash-${photoIds[i]}`,
-      isMaster: i === 0,
+      isMaster,
       groupId,
       thumbnailPath: '',
-    }).run()
-
-    // Create review decisions with export selection
-    const isSelected = opts?.exportSelected?.[i] ?? true
-    db.insert(reviewDecisions).values({
-      id: `decision-${i + 1}`,
-      groupId,
-      photoId: photoIds[i],
-      decision: 'keep',
-      isExportSelected: isSelected,
-      decidedAt: new Date().toISOString(),
     }).run()
   }
 
@@ -150,8 +140,10 @@ describe('ExportService', () => {
   // --- startExport: copy ---
 
   describe('startExport - copy', () => {
-    it('should copy selected files to target directory', async () => {
-      seedExportData(db, sourceDir, ['a.jpg', 'b.jpg'])
+    it('should copy master photos to target directory', async () => {
+      seedExportData(db, sourceDir, ['a.jpg', 'b.jpg'], {
+        isMaster: [true, true],
+      })
       const options: ExportOptions = {
         targetPath: targetDir,
         action: 'copy',
@@ -171,9 +163,9 @@ describe('ExportService', () => {
       expect(existsSync(join(sourceDir, 'b.jpg'))).toBe(true)
     })
 
-    it('should only export files with isExportSelected=true', async () => {
+    it('should only export master photos (isMaster=true)', async () => {
       seedExportData(db, sourceDir, ['a.jpg', 'b.jpg', 'c.jpg'], {
-        exportSelected: [true, false, true],
+        isMaster: [true, false, true],
       })
       const options: ExportOptions = {
         targetPath: targetDir,
@@ -184,7 +176,7 @@ describe('ExportService', () => {
 
       const result = await startExport(db, options, vi.fn())
 
-      expect(result.totalFiles).toBe(2) // only a.jpg and c.jpg
+      expect(result.totalFiles).toBe(2) // only a.jpg and c.jpg (masters)
       expect(existsSync(join(targetDir, 'a.jpg'))).toBe(true)
       expect(existsSync(join(targetDir, 'b.jpg'))).toBe(false)
       expect(existsSync(join(targetDir, 'c.jpg'))).toBe(true)
@@ -195,7 +187,7 @@ describe('ExportService', () => {
 
   describe('startExport - move', () => {
     it('should move files (copy to target + soft-delete source via trash)', async () => {
-      seedExportData(db, sourceDir, ['a.jpg', 'b.jpg'])
+      seedExportData(db, sourceDir, ['a.jpg', 'b.jpg'], { isMaster: [true, true] })
       const options: ExportOptions = {
         targetPath: targetDir,
         action: 'move',
@@ -319,7 +311,7 @@ describe('ExportService', () => {
 
   describe('progress callback', () => {
     it('should fire progress callbacks during export', async () => {
-      seedExportData(db, sourceDir, ['a.jpg', 'b.jpg', 'c.jpg'])
+      seedExportData(db, sourceDir, ['a.jpg', 'b.jpg', 'c.jpg'], { isMaster: [true, true, true] })
       const onProgress = vi.fn()
 
       const options: ExportOptions = {
@@ -345,7 +337,7 @@ describe('ExportService', () => {
     it('should abort export when cancel is called', async () => {
       // Seed many files to give time to cancel
       const fileNames = Array.from({ length: 20 }, (_, i) => `photo-${i}.jpg`)
-      seedExportData(db, sourceDir, fileNames)
+      seedExportData(db, sourceDir, fileNames, { isMaster: fileNames.map(() => true) })
 
       const options: ExportOptions = {
         targetPath: targetDir,
@@ -400,9 +392,9 @@ describe('ExportService', () => {
   // --- No selected files ---
 
   describe('edge cases', () => {
-    it('should throw when no files are selected for export', async () => {
+    it('should throw when no master photos exist for export', async () => {
       seedExportData(db, sourceDir, ['a.jpg', 'b.jpg'], {
-        exportSelected: [false, false],
+        isMaster: [false, false],
       })
 
       const options: ExportOptions = {
@@ -418,7 +410,7 @@ describe('ExportService', () => {
     it('should prevent concurrent exports', async () => {
       // Seed enough files so the export takes measurable time
       const fileNames = Array.from({ length: 5 }, (_, i) => `file-${i}.jpg`)
-      seedExportData(db, sourceDir, fileNames)
+      seedExportData(db, sourceDir, fileNames, { isMaster: fileNames.map(() => true) })
       const options: ExportOptions = {
         targetPath: targetDir,
         action: 'copy',

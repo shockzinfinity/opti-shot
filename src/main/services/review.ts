@@ -22,7 +22,6 @@ export interface PendingDeletionRecord {
  * Reconstruct pending deletions from DB state.
  * Simple logic: non-master photos in groups with decision='duplicates_deleted',
  * excluding photos already in trash.
- * No dependency on reviewDecisions table.
  */
 export function getPendingDeletions(db: AppDatabase): PendingDeletionRecord[] {
   const rows = db

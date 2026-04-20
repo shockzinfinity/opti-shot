@@ -12,7 +12,7 @@ import {
   statSync,
 } from 'fs'
 import { join, basename, dirname, extname } from 'path'
-import { reviewDecisions, photos, exportJobs, exportItems } from '@main/db/schema'
+import { photos, photoGroups, exportJobs, exportItems } from '@main/db/schema'
 import { moveToTrash } from '@main/services/trash'
 import type { AppDatabase } from '@main/db'
 import type { ExportProgress, ConflictStrategy, ExportAction } from '@shared/types'
@@ -95,7 +95,7 @@ export function resolveConflict(
 /**
  * Start exporting selected photos to the target directory.
  *
- * 1. Queries reviewDecisions where isExportSelected=true, joined with photos
+ * 1. Queries master photos from reviewed groups (isMaster=true + reviewStatus='reviewed')
  * 2. Creates exportJobs record in DB (status='running')
  * 3. Creates target directory if autoCreateFolder
  * 4. For each file: resolve conflicts, copy/move, update progress
@@ -125,19 +125,18 @@ export async function startExport(
     mkdirSync(options.targetPath, { recursive: true })
   }
 
-  // Layer 3: Query export-selected files
+  // Layer 3: Query master photos from reviewed groups
   const selectedFiles = db
     .select({
-      decisionId: reviewDecisions.id,
-      photoId: reviewDecisions.photoId,
-      groupId: reviewDecisions.groupId,
+      photoId: photos.id,
+      groupId: photos.groupId,
       filename: photos.filename,
       path: photos.path,
       fileSize: photos.fileSize,
     })
-    .from(reviewDecisions)
-    .innerJoin(photos, eq(reviewDecisions.photoId, photos.id))
-    .where(eq(reviewDecisions.isExportSelected, true))
+    .from(photos)
+    .innerJoin(photoGroups, eq(photos.groupId, photoGroups.id))
+    .where(and(eq(photos.isMaster, true), eq(photoGroups.reviewStatus, 'reviewed')))
     .all()
 
   if (selectedFiles.length === 0) {

@@ -20,6 +20,14 @@ export interface ScanOptions {
   enableCorrectionDetection: boolean
 }
 
+export type ScanPresetId = 'balanced' | 'conservative' | 'sensitive'
+
+export const SCAN_PRESET_VALUES: Record<ScanPresetId, Partial<ScanOptions>> = {
+  balanced: { phashThreshold: 8, ssimThreshold: 0.82, timeWindowHours: 1, parallelThreads: 8 },
+  conservative: { phashThreshold: 6, ssimThreshold: 0.9, timeWindowHours: 2, parallelThreads: 4 },
+  sensitive: { phashThreshold: 10, ssimThreshold: 0.8, timeWindowHours: 0, parallelThreads: 16 },
+}
+
 interface FolderState {
   folders: FolderEntry[]
   options: ScanOptions
@@ -31,6 +39,7 @@ interface FolderState {
   loadDefaults: () => Promise<void>
   setMode: (mode: ScanMode) => void
   setOption: <K extends keyof ScanOptions>(key: K, value: ScanOptions[K]) => void
+  applyPreset: (preset: ScanPresetId) => void
   toggleAdvanced: () => void
 }
 
@@ -125,6 +134,11 @@ export const useFolderStore = create<FolderState>((set, get) => ({
 
   setOption: <K extends keyof ScanOptions>(key: K, value: ScanOptions[K]) => {
     set((state) => ({ options: { ...state.options, [key]: value } }))
+  },
+
+  applyPreset: (preset: ScanPresetId) => {
+    const values = SCAN_PRESET_VALUES[preset]
+    set((state) => ({ options: { ...state.options, ...values } }))
   },
 
   toggleAdvanced: () => {
