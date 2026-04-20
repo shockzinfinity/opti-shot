@@ -26,7 +26,10 @@
     "desktop",
     "electron"
   ],
-  "author": "shockz",
+  "author": {
+    "name": "shockz",
+    "email": "shockz@users.noreply.github.com"
+  },
   "license": "MIT",
   "build": {
     "appId": "com.optishot.app",

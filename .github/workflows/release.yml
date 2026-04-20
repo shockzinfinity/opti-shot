@@ -11,6 +11,7 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
@@ -29,8 +30,15 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Rebuild native modules
+        run: bun run postinstall
 
       - name: Run tests
         run: bun run test
@@ -53,6 +61,7 @@ jobs:
 
   release:
     needs: build
+    if: ${{ !cancelled() && contains(needs.build.result, 'success') }}
     runs-on: ubuntu-latest
 
     steps:
