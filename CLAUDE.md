@@ -5,7 +5,7 @@
 
 ## Architecture
 - **Framework**: Electron (Main + Renderer process)
-- **IPC**: CQRS 패턴 — CommandBus(20) / QueryBus(17) / EventBus(5)
+- **IPC**: CQRS 패턴 — CommandBus(25) / QueryBus(18) / EventBus(6)
 - **Plugin**: DetectionPlugin 인터페이스 + PluginRegistry (감지 알고리즘 교체 가능)
 - **Renderer**: React 19 + TypeScript + Tailwind CSS + Zustand
 - **Main**: Node.js + CQRS handlers + Services
@@ -34,15 +34,15 @@ src/
 │   │   ├── eventBus.ts      # Event 발행 (Main→Renderer)
 │   │   ├── ipcBridge.ts     # IPC 진입점 (cqrs:cmd, cqrs:qry) + 이중 검증
 │   │   ├── schemas.ts       # Zod 스키마 (payload 검증)
-│   │   └── handlers/        # 도메인별 핸들러 (folder, scan, group, ...)
+│   │   └── handlers/        # 도메인별 핸들러 (folder, scan, group, organize, ...)
 │   ├── services/      # Business logic (변경 없음)
 │   ├── engine/        # ScanEngine, BK-Tree, pHash, PluginRegistry
 │   │   └── plugins/   # DetectionPlugin 구현체 (phash-ssim 내장)
 │   ├── db/            # Drizzle schema + migrations
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
-│   ├── components/    # Reusable UI components (SidePanel, PanelSection 등 공통 패턴)
-│   ├── pages/         # Route-based pages (6 screens)
+│   ├── components/    # Reusable UI components (FolderPicker, ActionBar 등 공통 패턴)
+│   ├── pages/         # Route-based pages (7 screens)
 │   ├── stores/        # Zustand stores — command/query/subscribe API 사용
 │   ├── hooks/         # Custom hooks
 │   └── App.tsx
@@ -52,9 +52,9 @@ src/
 │   ├── utils.ts       # 공유 포맷 함수 (formatBytes, formatDuration, formatDateTime 등)
 │   ├── plugins.ts     # PluginInfo 타입 (UI-safe)
 │   └── cqrs/          # CQRS 타입 레지스트리
-│       ├── commands.ts  # CommandMap (22 commands)
-│       ├── queries.ts   # QueryMap (17 queries)
-│       ├── events.ts    # EventMap (5 events)
+│       ├── commands.ts  # CommandMap (25 commands)
+│       ├── queries.ts   # QueryMap (18 queries)
+│       ├── events.ts    # EventMap (6 events)
 │       └── bus.ts       # 공통 타입, allowlist 배열
 └── preload/           # contextBridge — command/query/subscribe API
     └── index.ts
@@ -94,13 +94,15 @@ Renderer                          Main
 
 ## Domain
 - 16 resources: specs/domain/resources.yaml
-- 6 screens: /, /folders, /scan, /review, /trash, /settings
+- 7 screens: /, /folders, /scan, /review, /trash, /organize, /settings
 - Design system: design/design-system.pen (Pencil)
 - Stitch mockups: design/stitch-project.json (project 977412230907375002)
 
 ## Design System
 - Style: Soft Bento + Electric Cobalt
-- Primary: #0062FF, Surface: #F7F8FA, Text: #1A1A1A
+- Theme: Light/Dark/Auto — CSS 변수 오버라이드 (.dark 클래스), useTheme 훅
+- Light: Primary #0062FF, Surface #FFFFFF/#F7F8FA, Text #1A1A1A
+- Dark: Primary #4D8EFF, Surface #121317/#1C1D24, Text #E8EAED
 - Fonts: Geist (headings), Inter (body), Geist Mono (data)
 - Icons: lucide-react
 - Stitch HTML can be directly used as React component templates
@@ -126,6 +128,16 @@ Renderer                          Main
 - 고급 설정: 플러그인별 섹션 분리 (PluginSection 컴포넌트)
 - 향후 기능(보정 감지, 증분 스캔 등)도 설정 ON 시 별도 섹션으로 추가 예정
 
+## File Organize (/organize)
+- 스캔과 독립된 별도 기능 — 폴더 내 이미지 파일명을 촬영일 기준 일괄 변경
+- 네이밍 규칙: `YYYY-MM-DD_HHmmss.ext` (충돌 시만 `_001` seq 추가)
+- 날짜 소스: EXIF DateTimeOriginal → CreateDate → file birthtime → mtime
+- 워크플로우: 폴더 선택 → 미리보기 → 확인 → 실행 → 되돌리기(직전 1회)
+- DB: `organize_jobs` + `organize_renames` (최근 1개 job만 유지)
+- 되돌리기: DB에 저장된 원래 경로로 renameSync 역실행
+- 대시보드: 최근 스캔 아래 최근 정리 카드 표시
+- 공통 컴포넌트: FolderPicker(Single/Multi), ActionBar, PageCloseButton
+
 ## Performance Targets
 - 200K images Stage 1 scan: < 30 minutes
 - Worker threads for parallel pHash computation (현재 stub — 순차 실행)
@@ -134,7 +146,8 @@ Renderer                          Main
 ## Current Status
 - 핵심 기능 완료 (P0~P5), Export 제거, 알림 시스템/크래시 방어 완료
 - 추가: EXIF 필터링, Plugin, HEIC, i18n, 알림(CQRS 미들웨어), 크래시 방어
-- 단기 논의 필요: Auto-updater 배포, Incremental Scan, 파일명 변경/날짜 정리
+- 추가: 다크 모드 테마, 파일 정리(일괄 리네임 + 되돌리기)
+- 단기 논의 필요: Auto-updater 배포, Incremental Scan
 - 중기: Worker Threads (stub), Correction Detection 정리, exifr 최적화
 - 테스트: 기능 구현 시 함께 작성 (별도 과제 아님)
 - 로드맵 상세: docs/ROADMAP.md
