@@ -1,9 +1,7 @@
 import { create } from 'zustand'
-import type { ScanMode, ScanPreset } from '@shared/types'
+import type { ScanMode, ScanPreset, MergeStrategy } from '@shared/types'
 import type { ScanSettings } from '@main/services/settings'
-import type { PluginInfo } from '@shared/plugins'
-import { SCAN_PRESETS, DEFAULT_SCAN_SETTINGS, detectPreset } from '@shared/constants'
-import type { ScanPresetConfig } from '@shared/constants'
+import { SCAN_PRESETS, DEFAULT_SCAN_SETTINGS } from '@shared/constants'
 
 export interface FolderEntry {
   id: string
@@ -18,8 +16,11 @@ export interface ScanOptions {
   mode: ScanMode
   dateStart: string | null
   dateEnd: string | null
-  phashThreshold: number
-  ssimThreshold: number
+  hashAlgorithms: string[]
+  hashThresholds: Record<string, number>
+  mergeStrategy: MergeStrategy
+  verifyAlgorithms: string[]
+  verifyThresholds: Record<string, number>
   timeWindowHours: number
   parallelThreads: number
   enableCorrectionDetection: boolean
@@ -39,7 +40,6 @@ interface FolderState {
   folders: FolderEntry[]
   options: ScanOptions
   advancedOpen: boolean
-  enabledPlugins: PluginInfo[]
   addFolder: () => Promise<void>
   removeFolder: (id: string) => void
   commitFolders: () => Promise<void>
@@ -56,8 +56,11 @@ const FALLBACK_OPTIONS: ScanOptions = {
   mode: 'full',
   dateStart: null,
   dateEnd: null,
-  phashThreshold: DEFAULT_SCAN_SETTINGS.phashThreshold,
-  ssimThreshold: DEFAULT_SCAN_SETTINGS.ssimThreshold,
+  hashAlgorithms: [...DEFAULT_SCAN_SETTINGS.hashAlgorithms],
+  hashThresholds: { ...DEFAULT_SCAN_SETTINGS.hashThresholds },
+  mergeStrategy: DEFAULT_SCAN_SETTINGS.mergeStrategy,
+  verifyAlgorithms: [...DEFAULT_SCAN_SETTINGS.verifyAlgorithms],
+  verifyThresholds: { ...DEFAULT_SCAN_SETTINGS.verifyThresholds },
   timeWindowHours: DEFAULT_SCAN_SETTINGS.timeWindowHours,
   parallelThreads: DEFAULT_SCAN_SETTINGS.parallelThreads,
   enableCorrectionDetection: DEFAULT_SCAN_SETTINGS.enableCorrectionDetection,
@@ -76,7 +79,6 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   folders: [],
   options: FALLBACK_OPTIONS,
   advancedOpen: false,
-  enabledPlugins: [],
 
   addFolder: async () => {
     const dialogResult = await window.electron.command('dialog.openDirectory')
@@ -118,7 +120,7 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   },
 
   reset: () => {
-    set({ folders: [], options: FALLBACK_OPTIONS, advancedOpen: false, enabledPlugins: [] })
+    set({ folders: [], options: FALLBACK_OPTIONS, advancedOpen: false })
     // Re-load from Settings so defaults match user's saved preferences
     get().loadDefaults()
   },
@@ -131,8 +133,11 @@ export const useFolderStore = create<FolderState>((set, get) => ({
         set((state) => ({
           options: {
             ...state.options,
-            phashThreshold: s.phashThreshold,
-            ssimThreshold: s.ssimThreshold,
+            hashAlgorithms: s.hashAlgorithms ?? FALLBACK_OPTIONS.hashAlgorithms,
+            hashThresholds: s.hashThresholds ?? FALLBACK_OPTIONS.hashThresholds,
+            mergeStrategy: s.mergeStrategy ?? FALLBACK_OPTIONS.mergeStrategy,
+            verifyAlgorithms: s.verifyAlgorithms ?? FALLBACK_OPTIONS.verifyAlgorithms,
+            verifyThresholds: s.verifyThresholds ?? FALLBACK_OPTIONS.verifyThresholds,
             timeWindowHours: s.timeWindowHours,
             parallelThreads: s.parallelThreads,
             enableCorrectionDetection: s.enableCorrectionDetection,
@@ -146,15 +151,6 @@ export const useFolderStore = create<FolderState>((set, get) => ({
     } catch {
       // Keep fallback values
     }
-    // Load enabled plugins
-    try {
-      const pluginRes = await window.electron.query('plugin.list') as unknown as { success: boolean; data: PluginInfo[] }
-      if (pluginRes.success) {
-        set({ enabledPlugins: pluginRes.data.filter((p) => p.enabled) })
-      }
-    } catch {
-      // Keep empty
-    }
   },
 
   setMode: (mode: ScanMode) => {
@@ -166,8 +162,20 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   },
 
   applyPreset: (preset: ScanPresetId) => {
+    if (preset === 'custom') return
     const values = SCAN_PRESETS[preset]
-    set((state) => ({ options: { ...state.options, ...values } }))
+    set((state) => ({
+      options: {
+        ...state.options,
+        hashAlgorithms: [...values.hashAlgorithms],
+        hashThresholds: { ...values.hashThresholds },
+        mergeStrategy: values.mergeStrategy,
+        verifyAlgorithms: [...values.verifyAlgorithms],
+        verifyThresholds: { ...values.verifyThresholds },
+        timeWindowHours: values.timeWindowHours,
+        parallelThreads: values.parallelThreads,
+      },
+    }))
   },
 
   toggleAdvanced: () => {

@@ -1,4 +1,4 @@
-import type { ScanMode } from '../types'
+import type { ScanMode, MergeStrategy } from '../types'
 
 // 리뷰 결정 타입 — 실제 핸들러 기준 (레거시 Decision과 구분)
 export type ReviewDecision = 'kept_all' | 'duplicates_deleted'
@@ -16,8 +16,11 @@ export interface CommandMap {
   'scan.start': {
     input: {
       mode: ScanMode
-      phashThreshold: number
-      ssimThreshold: number
+      hashAlgorithms: string[]
+      hashThresholds: Record<string, number>
+      mergeStrategy: MergeStrategy
+      verifyAlgorithms: string[]
+      verifyThresholds: Record<string, number>
       timeWindowHours: number
       parallelThreads: number
       batchSize?: number

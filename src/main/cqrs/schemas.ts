@@ -13,9 +13,12 @@ export const COMMAND_SCHEMAS: Record<string, ZodSchema> = {
   'folder.remove': z.object({ id: stringId }),
 
   'scan.start': z.object({
-    mode: z.enum(['full', 'date_range', 'folder_only', 'incremental']),
-    phashThreshold: z.number().min(4).max(16),
-    ssimThreshold: z.number().min(0.5).max(0.95),
+    mode: z.enum(['full', 'date_range', 'folder_only']),
+    hashAlgorithms: z.array(z.string()).min(1),
+    hashThresholds: z.record(z.string(), z.number()),
+    mergeStrategy: z.enum(['union', 'intersection']),
+    verifyAlgorithms: z.array(z.string()),
+    verifyThresholds: z.record(z.string(), z.number()),
     timeWindowHours: z.number().min(0).max(24),
     parallelThreads: z.number().min(1).max(16),
     batchSize: z.number().optional(),

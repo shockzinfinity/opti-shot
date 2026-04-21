@@ -193,16 +193,19 @@ export const ko = {
   // Presets
   'preset.balanced': '균형',
   'preset.balancedDesc': '대부분의 라이브러리에 적합',
+  'preset.fast': '빠른',
+  'preset.fastDesc': '정확도보다 속도 우선',
   'preset.conservative': '보수적',
   'preset.conservativeDesc': '오탐 감소',
-  'preset.sensitive': '민감',
-  'preset.sensitiveDesc': '유사 중복 감지',
+  'preset.precise': '정밀',
+  'preset.preciseDesc': '다중 알고리즘 검증',
 
   // Advanced Settings (FolderSelect page)
   'advanced.title': '고급 설정',
   'advanced.subtitle': '감지 임계값 및 성능을 세부 조정합니다',
   'advanced.phashThreshold': 'pHash 임계값',
   'advanced.ssimThreshold': 'SSIM 임계값',
+  'advanced.threshold': '임계값',
   'advanced.timeWindow': '시간 윈도우',
   'advanced.timeWindowOff': '끄기',
   'advanced.threads': '스레드',

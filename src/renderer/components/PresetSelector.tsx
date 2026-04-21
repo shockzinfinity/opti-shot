@@ -12,8 +12,9 @@ interface PresetInfo {
 
 const PRESETS: PresetInfo[] = [
   { id: 'balanced', labelKey: 'preset.balanced', descKey: 'preset.balancedDesc' },
+  { id: 'fast', labelKey: 'preset.fast', descKey: 'preset.fastDesc' },
   { id: 'conservative', labelKey: 'preset.conservative', descKey: 'preset.conservativeDesc' },
-  { id: 'sensitive', labelKey: 'preset.sensitive', descKey: 'preset.sensitiveDesc' },
+  { id: 'precise', labelKey: 'preset.precise', descKey: 'preset.preciseDesc' },
 ]
 
 interface PresetSelectorProps {
@@ -24,10 +25,16 @@ interface PresetSelectorProps {
 export function PresetSelector({ value, onChange }: PresetSelectorProps) {
   const { t } = useTranslation()
 
+  // Filter out 'custom' from selectable presets; show it as active label only
+  const selectablePresets = PRESETS.filter((p) => p.id !== 'custom')
+
   return (
-    <div className="grid grid-cols-3 gap-4">
-      {PRESETS.map((preset) => {
+    <div className="grid grid-cols-4 gap-4">
+      {selectablePresets.map((preset) => {
         const isActive = value === preset.id
+        const config = SCAN_PRESETS[preset.id as Exclude<ScanPreset, 'custom'>]
+        const hashSummary = config.hashAlgorithms.join('+')
+        const verifySummary = config.verifyAlgorithms.length > 0 ? config.verifyAlgorithms.join('+') : 'none'
         return (
           <button
             key={preset.id}
@@ -46,7 +53,7 @@ export function PresetSelector({ value, onChange }: PresetSelectorProps) {
             </div>
             <p className="text-xs text-foreground-secondary mb-1">{t(preset.descKey)}</p>
             <p className="text-xs font-mono text-foreground-muted">
-              pHash {SCAN_PRESETS[preset.id].phashThreshold} · SSIM {SCAN_PRESETS[preset.id].ssimThreshold.toFixed(2)} · {SCAN_PRESETS[preset.id].parallelThreads} threads
+              {hashSummary} · {verifySummary} · {config.parallelThreads}T
             </p>
           </button>
         )

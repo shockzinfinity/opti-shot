@@ -15,7 +15,8 @@ export type ScanStatus = 'running' | 'paused' | 'completed' | 'failed' | 'cancel
 export type ReviewStatus = 'pending' | 'reviewed'
 export type Decision = 'keep' | 'delete'
 export type TrashStatus = 'trashed' | 'restored' | 'purged'
-export type ScanPreset = 'balanced' | 'conservative' | 'sensitive'
+export type ScanPreset = 'balanced' | 'fast' | 'conservative' | 'precise' | 'custom'
+export type MergeStrategy = 'union' | 'intersection'
 
 
 // Status & Decision Constants

@@ -1,4 +1,4 @@
-import { Settings2, ChevronDown, ChevronUp, Hash, Eye, Clock, Cpu, Puzzle } from 'lucide-react'
+import { Settings2, ChevronDown, ChevronUp, Clock, Cpu, Puzzle } from 'lucide-react'
 import type { ScanOptions, ScanPresetId } from '../stores/folder'
 import type { PluginInfo } from '@shared/plugins'
 import type { TranslationKey } from '@renderer/i18n'
@@ -62,8 +62,15 @@ function PluginSection({ plugin, options, onOptionChange, onPresetChange, t }: {
   onPresetChange: (preset: ScanPresetId) => void
   t: (key: TranslationKey) => string
 }) {
-  // pHash+SSIM plugin gets preset selector + 4 sliders
+  // pHash+SSIM plugin gets preset selector + algorithm thresholds + general sliders
   if (plugin.id === 'phash-ssim') {
+    const currentPreset = detectPreset({
+      hashAlgorithms: options.hashAlgorithms,
+      hashThresholds: options.hashThresholds,
+      mergeStrategy: options.mergeStrategy,
+      verifyAlgorithms: options.verifyAlgorithms,
+      verifyThresholds: options.verifyThresholds,
+    })
     return (
       <div className="space-y-5">
         <div className="flex items-center gap-2">
@@ -73,28 +80,34 @@ function PluginSection({ plugin, options, onOptionChange, onPresetChange, t }: {
         </div>
         <p className="text-xs text-foreground-muted -mt-3">{plugin.description}</p>
 
-        <PresetSelector value={detectPreset(options.phashThreshold, options.ssimThreshold) ?? 'balanced'} onChange={onPresetChange} />
+        <PresetSelector value={currentPreset} onChange={onPresetChange} />
         <div className="grid grid-cols-2 gap-6">
-          <SliderField
-            icon={<Hash className="w-4 h-4" />}
-            label={t('advanced.phashThreshold')}
-            value={options.phashThreshold}
-            min={4}
-            max={16}
-            step={1}
-            format={(v) => `${v}`}
-            onChange={(v) => onOptionChange('phashThreshold', v)}
-          />
-          <SliderField
-            icon={<Eye className="w-4 h-4" />}
-            label={t('advanced.ssimThreshold')}
-            value={options.ssimThreshold}
-            min={0.5}
-            max={0.95}
-            step={0.05}
-            format={(v) => v.toFixed(2)}
-            onChange={(v) => onOptionChange('ssimThreshold', v)}
-          />
+          {Object.entries(options.hashThresholds).map(([algo, val]) => (
+            <SliderField
+              key={`hash-${algo}`}
+              icon={<Puzzle className="w-4 h-4" />}
+              label={`${algo} ${t('advanced.threshold')}`}
+              value={val}
+              min={2}
+              max={20}
+              step={1}
+              format={(v) => `${v}`}
+              onChange={(v) => onOptionChange('hashThresholds', { ...options.hashThresholds, [algo]: v })}
+            />
+          ))}
+          {Object.entries(options.verifyThresholds).map(([algo, val]) => (
+            <SliderField
+              key={`verify-${algo}`}
+              icon={<Puzzle className="w-4 h-4" />}
+              label={`${algo} ${t('advanced.threshold')}`}
+              value={val}
+              min={0.01}
+              max={1}
+              step={0.01}
+              format={(v) => v.toFixed(2)}
+              onChange={(v) => onOptionChange('verifyThresholds', { ...options.verifyThresholds, [algo]: v })}
+            />
+          ))}
           <SliderField
             icon={<Clock className="w-4 h-4" />}
             label={t('advanced.timeWindow')}

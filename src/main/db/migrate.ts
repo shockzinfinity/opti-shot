@@ -161,4 +161,7 @@ export function migrate(db: AppDatabase): void {
   addColumnIfMissing('photos', 'longitude', 'REAL')
   addColumnIfMissing('scans', 'option_enable_exif_filter', 'INTEGER NOT NULL DEFAULT 0')
   addColumnIfMissing('scans', 'filtered_files', 'INTEGER NOT NULL DEFAULT 0')
+
+  // Algorithm architecture (v0.2 Step 4)
+  addColumnIfMissing('scans', 'option_algorithm_config', 'TEXT')
 }

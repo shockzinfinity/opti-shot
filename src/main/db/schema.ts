@@ -34,7 +34,7 @@ export const scans = sqliteTable('scans', {
 
   // scan_options embedded
   optionMode: text('option_mode', {
-    enum: ['full', 'date_range', 'folder_only', 'incremental'],
+    enum: ['full', 'date_range', 'folder_only'],
   }).notNull().default('full'),
   optionDateStart: text('option_date_start'), // ISO date, nullable
   optionDateEnd: text('option_date_end'),     // ISO date, nullable
@@ -44,6 +44,7 @@ export const scans = sqliteTable('scans', {
   optionParallelThreads: integer('option_parallel_threads').notNull().default(8),
   optionEnableCorrectionDetection: integer('option_enable_correction_detection', { mode: 'boolean' }).notNull().default(true),
   optionEnableExifFilter: integer('option_enable_exif_filter', { mode: 'boolean' }).notNull().default(false),
+  optionAlgorithmConfig: text('option_algorithm_config'), // JSON, nullable (new scans only)
   filteredFiles: integer('filtered_files').notNull().default(0),
 
   startedAt: text('started_at').notNull(),  // ISO datetime

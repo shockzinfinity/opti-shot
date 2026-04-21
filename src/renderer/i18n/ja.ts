@@ -193,16 +193,19 @@ export const ja = {
   // Presets
   'preset.balanced': 'バランス',
   'preset.balancedDesc': 'ほとんどのライブラリに最適',
+  'preset.fast': '高速',
+  'preset.fastDesc': '精度より速度優先',
   'preset.conservative': '保守的',
   'preset.conservativeDesc': '誤検出を減らす',
-  'preset.sensitive': '高感度',
-  'preset.sensitiveDesc': '類似重複を検出',
+  'preset.precise': '精密',
+  'preset.preciseDesc': 'マルチアルゴリズム検証',
 
   // Advanced Settings (FolderSelect page)
   'advanced.title': '詳細設定',
   'advanced.subtitle': '検出しきい値とパフォーマンスを微調整します',
   'advanced.phashThreshold': 'pHash しきい値',
   'advanced.ssimThreshold': 'SSIM しきい値',
+  'advanced.threshold': 'しきい値',
   'advanced.timeWindow': 'タイムウィンドウ',
   'advanced.timeWindowOff': 'オフ',
   'advanced.threads': 'スレッド',

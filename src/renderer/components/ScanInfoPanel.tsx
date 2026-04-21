@@ -13,8 +13,10 @@ interface ScanInfoPanelProps {
 
 const PRESET_LABELS: Record<string, string> = {
   balanced: 'Balanced (균형)',
+  fast: 'Fast (빠른)',
   conservative: 'Conservative (보수적)',
-  sensitive: 'Sensitive (민감)',
+  precise: 'Precise (정밀)',
+  custom: 'Custom (사용자 정의)',
 }
 
 export function ScanInfoPanel({ onClose }: ScanInfoPanelProps) {
@@ -68,8 +70,16 @@ export function ScanInfoPanel({ onClose }: ScanInfoPanelProps) {
             <PanelRow
               label={t('scanInfo.preset')}
               value={(() => {
-                const p = detectPreset(scan.optionPhashThreshold, scan.optionSsimThreshold)
-                return p ? (PRESET_LABELS[p] ?? p) : t('scanInfo.custom')
+                // Reconstruct AlgorithmConfig from legacy scan record fields
+                const config = {
+                  hashAlgorithms: ['phash'],
+                  hashThresholds: { phash: scan.optionPhashThreshold },
+                  mergeStrategy: 'union' as const,
+                  verifyAlgorithms: ['ssim'],
+                  verifyThresholds: { ssim: scan.optionSsimThreshold },
+                }
+                const p = detectPreset(config)
+                return PRESET_LABELS[p] ?? p
               })()}
               highlight
             />

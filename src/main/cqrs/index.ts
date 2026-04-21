@@ -11,8 +11,6 @@ import { phashAlgorithm } from '@main/engine/algorithms/phash'
 import { dhashAlgorithm } from '@main/engine/algorithms/dhash'
 import { ssimAlgorithm } from '@main/engine/algorithms/ssim'
 import { nmseAlgorithm } from '@main/engine/algorithms/nmse'
-import { getSettings } from '@main/services/settings'
-
 // Singleton instances
 let commandBus: CommandBus
 let queryBus: QueryBus
@@ -31,12 +29,6 @@ export function initCqrs(): void {
   algorithmRegistry.registerHash(dhashAlgorithm)
   algorithmRegistry.registerVerify(ssimAlgorithm)
   algorithmRegistry.registerVerify(nmseAlgorithm)
-
-  // Restore plugin enabled state from settings
-  const scanSettings = getSettings('scan')
-  if (scanSettings.enabledPlugins) {
-    pluginRegistry.loadState(scanSettings.enabledPlugins)
-  }
 
   // Register all handlers on the buses
   registerAllCqrsHandlers(commandBus, queryBus, eventBus)

@@ -6,7 +6,7 @@ import { ScanEngine, clearHeicCache } from '@main/engine'
 import type { ScanResult } from '@main/engine'
 import exifr from 'exifr'
 import { sharpFromPath } from '@main/engine/heic'
-import { pluginRegistry } from '@main/engine/plugin-registry'
+import { algorithmRegistry } from '@main/engine/algorithm-registry'
 import { listFolders } from '@main/services/folder'
 import type { FolderRecord } from '@main/services/folder'
 import type { AppDatabase } from '@main/db'
@@ -31,9 +31,12 @@ let activeScan: {
 // --- Types ---
 
 export interface ScanOptions {
-  mode: string   // 'full' | 'date_range' | 'folder_only' | 'incremental'
-  phashThreshold: number
-  ssimThreshold: number
+  mode: string   // 'full' | 'date_range' | 'folder_only'
+  hashAlgorithms: string[]
+  hashThresholds: Record<string, number>
+  mergeStrategy: 'union' | 'intersection'
+  verifyAlgorithms: string[]
+  verifyThresholds: Record<string, number>
   timeWindowHours: number
   parallelThreads: number
   batchSize?: number
@@ -410,12 +413,19 @@ export async function startScan(
     status: SCAN_STATUS.RUNNING,
     totalFiles: filePaths.length,
     processedFiles: 0,
-    optionMode: options.mode as 'full' | 'date_range' | 'folder_only' | 'incremental',
-    optionPhashThreshold: options.phashThreshold,
-    optionSsimThreshold: options.ssimThreshold,
+    optionMode: options.mode as 'full' | 'date_range' | 'folder_only',
+    optionPhashThreshold: options.hashThresholds['phash'] ?? 0,
+    optionSsimThreshold: options.verifyThresholds['ssim'] ?? 0,
     optionTimeWindowHours: options.timeWindowHours,
     optionParallelThreads: options.parallelThreads,
     optionEnableExifFilter: options.enableExifFilter ?? false,
+    optionAlgorithmConfig: JSON.stringify({
+      hashAlgorithms: options.hashAlgorithms,
+      hashThresholds: options.hashThresholds,
+      mergeStrategy: options.mergeStrategy,
+      verifyAlgorithms: options.verifyAlgorithms,
+      verifyThresholds: options.verifyThresholds,
+    }),
     filteredFiles: filteredCount,
     startedAt: now,
   }).run()
@@ -428,18 +438,27 @@ export async function startScan(
     paused: false,
   }
 
-  // Get active detection plugin
-  const enabledPlugins = pluginRegistry.getEnabled()
-  if (enabledPlugins.length === 0) {
-    throw new Error('No detection plugin enabled')
-  }
-  const activePlugin = enabledPlugins[0]
+  // Resolve algorithm instances from registry
 
-  // Create engine with plugin + user options
+  const hashAlgos = options.hashAlgorithms
+    .map((id) => algorithmRegistry.getHash(id))
+    .filter((a): a is NonNullable<typeof a> => a != null)
+
+  if (hashAlgos.length === 0) {
+    throw new Error('No hash algorithm found')
+  }
+
+  const verifyAlgos = options.verifyAlgorithms
+    .map((id) => algorithmRegistry.getVerify(id))
+    .filter((a): a is NonNullable<typeof a> => a != null)
+
+  // Create engine with new algorithm mode
   const engine = new ScanEngine({
-    plugin: activePlugin,
-    hashThreshold: options.phashThreshold,
-    verifyThreshold: options.ssimThreshold,
+    hashAlgorithms: hashAlgos,
+    hashThresholds: options.hashThresholds,
+    mergeStrategy: options.mergeStrategy,
+    verifyAlgorithms: verifyAlgos,
+    verifyThresholds: options.verifyThresholds,
     batchSize: options.batchSize,
   })
 

@@ -212,16 +212,19 @@ export const en = {
   // Presets
   'preset.balanced': 'Balanced',
   'preset.balancedDesc': 'Best for most libraries',
+  'preset.fast': 'Fast',
+  'preset.fastDesc': 'Speed over accuracy',
   'preset.conservative': 'Conservative',
   'preset.conservativeDesc': 'Fewer false positives',
-  'preset.sensitive': 'Sensitive',
-  'preset.sensitiveDesc': 'Catch near-duplicates',
+  'preset.precise': 'Precise',
+  'preset.preciseDesc': 'Multi-algorithm verification',
 
   // Advanced Settings (FolderSelect page)
   'advanced.title': 'Advanced Settings',
   'advanced.subtitle': 'Fine-tune detection thresholds and performance',
   'advanced.phashThreshold': 'pHash Threshold',
   'advanced.ssimThreshold': 'SSIM Threshold',
+  'advanced.threshold': 'threshold',
   'advanced.timeWindow': 'Time Window',
   'advanced.timeWindowOff': 'Off',
   'advanced.threads': 'Threads',

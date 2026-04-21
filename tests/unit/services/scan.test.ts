@@ -7,23 +7,22 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 import sharp from 'sharp'
 
-// Mock pluginRegistry before importing scan service
-vi.mock('@main/engine/plugin-registry', () => ({
-  pluginRegistry: {
-    getEnabled: () => [{
-      id: 'phash-ssim',
-      name: 'pHash + SSIM',
-      description: 'test',
-      detailDescription: 'test',
-      version: '1.0.0',
-      builtIn: true,
-      defaultHashThreshold: 8,
-      defaultVerifyThreshold: 0.82,
-      computeHash: vi.fn().mockImplementation(() => new Promise((r) => setTimeout(() => r('0000000000000000'), 100))),
-      computeDistance: vi.fn().mockReturnValue(0),
-      verify: vi.fn().mockResolvedValue([]),
-    }],
-    getAll: () => [],
+// Mock algorithmRegistry before importing scan service
+const mockPhashAlgo = {
+  id: 'phash',
+  name: 'pHash',
+  description: 'test',
+  detailDescription: 'test',
+  version: '1.0.0',
+  defaultThreshold: 8,
+  computeHash: vi.fn().mockImplementation(() => new Promise((r) => setTimeout(() => r('0000000000000000'), 100))),
+  computeDistance: vi.fn().mockReturnValue(0),
+}
+
+vi.mock('@main/engine/algorithm-registry', () => ({
+  algorithmRegistry: {
+    getHash: (id: string) => id === 'phash' ? mockPhashAlgo : undefined,
+    getVerify: () => undefined,
   },
 }))
 
@@ -263,8 +262,11 @@ describe('ScanService', () => {
     it('should throw when no folders registered', async () => {
       const options = {
         mode: 'full' as const,
-        phashThreshold: 8,
-        ssimThreshold: 0.9,
+        hashAlgorithms: ['phash'],
+        hashThresholds: { phash: 8 },
+        mergeStrategy: 'union' as const,
+        verifyAlgorithms: [],
+        verifyThresholds: {},
         timeWindowHours: 1,
         parallelThreads: 4,
       }
@@ -278,8 +280,11 @@ describe('ScanService', () => {
 
       const options = {
         mode: 'full' as const,
-        phashThreshold: 8,
-        ssimThreshold: 0.9,
+        hashAlgorithms: ['phash'],
+        hashThresholds: { phash: 8 },
+        mergeStrategy: 'union' as const,
+        verifyAlgorithms: [],
+        verifyThresholds: {},
         timeWindowHours: 1,
         parallelThreads: 4,
       }

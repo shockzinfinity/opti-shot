@@ -185,7 +185,7 @@ export function ScanTab() {
       <div className="space-y-3">
         <SectionHeader title={t('settings.scanPresets')} />
         <p className="text-sm text-foreground-muted">{t('settings.scanPresetsDesc')}</p>
-        <PresetSelector value={scan.preset} onChange={(p) => applyPreset(p)} />
+        <PresetSelector value={scan.preset} onChange={(p) => { if (p !== 'custom') applyPreset(p) }} />
       </div>
 
       {/* Heuristic Parameters */}
@@ -195,24 +195,30 @@ export function ScanTab() {
           <SectionHeader title={t('settings.heuristicParams')} />
         </div>
 
-        <SettingsSlider
-          label={t('settings.phashThreshold')}
-          value={scan.phashThreshold}
-          min={4}
-          max={16}
-          step={1}
-          format={(v) => `${v}`}
-          onChange={(v) => updateScan('phashThreshold', v)}
-        />
-        <SettingsSlider
-          label={t('settings.ssimThreshold')}
-          value={scan.ssimThreshold}
-          min={0.5}
-          max={0.95}
-          step={0.01}
-          format={(v) => v.toFixed(2)}
-          onChange={(v) => updateScan('ssimThreshold', v)}
-        />
+        {Object.entries(scan.hashThresholds).map(([algo, val]) => (
+          <SettingsSlider
+            key={`hash-${algo}`}
+            label={`${algo} threshold`}
+            value={val}
+            min={2}
+            max={20}
+            step={1}
+            format={(v) => `${v}`}
+            onChange={(v) => updateScan('hashThresholds', { ...scan.hashThresholds, [algo]: v })}
+          />
+        ))}
+        {Object.entries(scan.verifyThresholds).map(([algo, val]) => (
+          <SettingsSlider
+            key={`verify-${algo}`}
+            label={`${algo} threshold`}
+            value={val}
+            min={0.01}
+            max={1}
+            step={0.01}
+            format={(v) => v.toFixed(2)}
+            onChange={(v) => updateScan('verifyThresholds', { ...scan.verifyThresholds, [algo]: v })}
+          />
+        ))}
         <SettingsSlider
           label={t('settings.timeWindow')}
           value={scan.timeWindowHours}

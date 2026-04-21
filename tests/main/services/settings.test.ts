@@ -63,13 +63,13 @@ describe('SettingsService', () => {
 
     it('should read from existing settings file', () => {
       const custom = {
-        scan: { ...DEFAULTS.scan, preset: 'sensitive' as const },
+        scan: { ...DEFAULTS.scan, preset: 'precise' as const },
         ui: { ...DEFAULTS.ui, language: 'en' as const },
         data: { ...DEFAULTS.data, trashRetentionDays: 7 },
       }
       writeFileSync(settingsPath, JSON.stringify(custom), 'utf-8')
 
-      expect(getSettings('scan').preset).toBe('sensitive')
+      expect(getSettings('scan').preset).toBe('precise')
       expect(getSettings('ui').language).toBe('en')
       expect(getSettings('data').trashRetentionDays).toBe(7)
     })
@@ -80,8 +80,8 @@ describe('SettingsService', () => {
 
       const scan = getSettings('scan')
       expect(scan.preset).toBe('conservative')
-      expect(scan.phashThreshold).toBe(8) // filled from defaults
-      expect(scan.ssimThreshold).toBe(0.82)
+      expect(scan.hashAlgorithms).toEqual(DEFAULTS.scan.hashAlgorithms) // filled from defaults
+      expect(scan.verifyAlgorithms).toEqual(DEFAULTS.scan.verifyAlgorithms)
     })
 
     it('should return defaults on corrupted JSON', () => {
@@ -94,15 +94,15 @@ describe('SettingsService', () => {
 
   describe('saveSettings', () => {
     it('should persist scan settings to file', () => {
-      const saved = saveSettings('scan', { preset: 'sensitive' })
+      const saved = saveSettings('scan', { preset: 'conservative' })
 
-      expect(saved.preset).toBe('sensitive')
+      expect(saved.preset).toBe('conservative')
       // Other fields remain default
-      expect(saved.phashThreshold).toBe(8)
+      expect(saved.hashAlgorithms).toEqual(DEFAULTS.scan.hashAlgorithms)
 
       // Verify file was written
       const raw = JSON.parse(readFileSync(settingsPath, 'utf-8'))
-      expect(raw.scan.preset).toBe('sensitive')
+      expect(raw.scan.preset).toBe('conservative')
     })
 
     it('should merge partial ui settings', () => {
@@ -145,7 +145,7 @@ describe('SettingsService', () => {
 
   describe('resetSettings', () => {
     it('should restore scan to defaults', () => {
-      saveSettings('scan', { preset: 'sensitive', phashThreshold: 16 })
+      saveSettings('scan', { preset: 'precise', phashThreshold: 16 })
       const reset = resetSettings('scan')
 
       expect(reset).toEqual(DEFAULTS.scan)
@@ -166,7 +166,7 @@ describe('SettingsService', () => {
     })
 
     it('should preserve other sections when resetting one', () => {
-      saveSettings('scan', { preset: 'sensitive' })
+      saveSettings('scan', { preset: 'precise' })
       saveSettings('ui', { theme: 'dark' })
 
       resetSettings('scan')
@@ -190,7 +190,7 @@ describe('SettingsService', () => {
       expect(d.data).toEqual(DEFAULTS.data)
 
       // Ensure it is a copy, not the same reference
-      d.scan.preset = 'sensitive'
+      d.scan.preset = 'precise'
       expect(DEFAULTS.scan.preset).toBe('balanced')
     })
   })
@@ -198,8 +198,11 @@ describe('SettingsService', () => {
   describe('default values match spec', () => {
     it('scan defaults match resources.yaml', () => {
       expect(DEFAULTS.scan.preset).toBe('balanced')
-      expect(DEFAULTS.scan.phashThreshold).toBe(8)
-      expect(DEFAULTS.scan.ssimThreshold).toBe(0.82)
+      expect(DEFAULTS.scan.hashAlgorithms).toEqual(['phash', 'dhash'])
+      expect(DEFAULTS.scan.hashThresholds).toEqual({ phash: 8, dhash: 8 })
+      expect(DEFAULTS.scan.mergeStrategy).toBe('union')
+      expect(DEFAULTS.scan.verifyAlgorithms).toEqual(['ssim'])
+      expect(DEFAULTS.scan.verifyThresholds).toEqual({ ssim: 0.82 })
       expect(DEFAULTS.scan.timeWindowHours).toBe(1)
       expect(DEFAULTS.scan.parallelThreads).toBe(8)
       expect(DEFAULTS.scan.batchSize).toBe(100)

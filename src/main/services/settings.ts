@@ -4,15 +4,18 @@
 import { app } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
-import type { ScanPreset } from '@shared/types'
+import type { ScanPreset, MergeStrategy } from '@shared/types'
 import { DEFAULT_SCAN_SETTINGS, DEFAULT_UI_SETTINGS, DEFAULT_DATA_SETTINGS } from '@shared/constants'
 
 // --- Interfaces ---
 
 export interface ScanSettings {
   preset: ScanPreset
-  phashThreshold: number
-  ssimThreshold: number
+  hashAlgorithms: string[]
+  hashThresholds: Record<string, number>
+  mergeStrategy: MergeStrategy
+  verifyAlgorithms: string[]
+  verifyThresholds: Record<string, number>
   timeWindowHours: number
   parallelThreads: number
   batchSize: number
@@ -22,7 +25,6 @@ export interface ScanSettings {
   exifMinWidth: number
   exifMinHeight: number
   exifGpsFilter: 'all' | 'with_gps' | 'without_gps'
-  enabledPlugins: Record<string, boolean>
 }
 
 export interface UiSettings {

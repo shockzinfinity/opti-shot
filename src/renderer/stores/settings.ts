@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { ScanPreset } from '@shared/types'
 import type { ScanSettings, UiSettings, DataSettings } from '@main/services/settings'
 import { SCAN_PRESETS, DEFAULT_SCAN_SETTINGS, DEFAULT_UI_SETTINGS, DEFAULT_DATA_SETTINGS } from '@shared/constants'
 
@@ -18,7 +19,7 @@ interface SettingsState {
   updateScan: (key: keyof ScanSettings, value: unknown) => void
   updateUi: (key: keyof UiSettings, value: unknown) => void
   updateData: (key: keyof DataSettings, value: unknown) => void
-  applyPreset: (preset: 'balanced' | 'conservative' | 'sensitive') => void
+  applyPreset: (preset: Exclude<ScanPreset, 'custom'>) => void
   resetSection: (section: 'scan' | 'ui' | 'data') => Promise<void>
 }
 
@@ -80,7 +81,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     persistSection('data', data)
   },
 
-  applyPreset: (preset) => {
+  applyPreset: (preset: Exclude<ScanPreset, 'custom'>) => {
     const presetValues = SCAN_PRESETS[preset]
     const scan = { ...get().scan, preset, ...presetValues }
     set({ scan })
