@@ -176,6 +176,20 @@ export const ja = {
   'settings.appDesc': '写真重複除去デスクトップツール',
   'settings.privacyNote': 'OptiShotは100%ローカルで動作します。画像やメタデータがサーバーやクラウドサービスに送信されることはありません。プライバシーが保証されます。',
 
+  // Updater
+  'updater.title': 'ソフトウェアアップデート',
+  'updater.checkForUpdates': 'アップデートを確認',
+  'updater.checking': '確認中...',
+  'updater.upToDate': '最新バージョンです',
+  'updater.available': '新しいバージョンがあります',
+  'updater.availableDesc': 'v{version}アップデートの準備ができました',
+  'updater.download': 'ダウンロード',
+  'updater.downloading': 'ダウンロード中... {percent}%',
+  'updater.downloaded': 'ダウンロード完了',
+  'updater.install': '再起動してインストール',
+  'updater.installDesc': 'ダウンロード完了。再起動すると自動的にインストールされます。',
+  'updater.error': 'アップデートの確認に失敗しました',
+
   // Presets
   'preset.balanced': 'バランス',
   'preset.balancedDesc': 'ほとんどのライブラリに最適',

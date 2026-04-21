@@ -66,6 +66,8 @@ jobs:
             dist/*.zip
             dist/*.exe
             dist/*.AppImage
+            dist/*.yml
+            dist/*.yaml
           if-no-files-found: ignore
 
   release:
@@ -91,5 +93,7 @@ jobs:
             artifacts/*.zip
             artifacts/*.exe
             artifacts/*.AppImage
+            artifacts/*.yml
+            artifacts/*.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

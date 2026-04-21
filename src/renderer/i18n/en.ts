@@ -195,6 +195,20 @@ export const en = {
   'settings.appDesc': 'Photo deduplication desktop tool',
   'settings.privacyNote': 'OptiShot operates 100% locally. No images or metadata are ever sent to any server or cloud service. Your privacy is guaranteed.',
 
+  // Updater
+  'updater.title': 'Software Update',
+  'updater.checkForUpdates': 'Check for Updates',
+  'updater.checking': 'Checking...',
+  'updater.upToDate': 'Up to date',
+  'updater.available': 'New version available',
+  'updater.availableDesc': 'v{version} update is ready',
+  'updater.download': 'Download',
+  'updater.downloading': 'Downloading... {percent}%',
+  'updater.downloaded': 'Download complete',
+  'updater.install': 'Restart to Install',
+  'updater.installDesc': 'Download complete. Restart to install automatically.',
+  'updater.error': 'Update check failed',
+
   // Presets
   'preset.balanced': 'Balanced',
   'preset.balancedDesc': 'Best for most libraries',

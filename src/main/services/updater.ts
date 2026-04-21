@@ -3,7 +3,7 @@
 
 import pkg from 'electron-updater'
 const { autoUpdater } = pkg
-import { BrowserWindow } from 'electron'
+import { getEventBus } from '@main/cqrs'
 import { sendNotification } from '@main/services/notification'
 
 /**
@@ -20,11 +20,9 @@ export function initAutoUpdater(): void {
   autoUpdater.autoInstallOnAppQuit = true
 
   autoUpdater.on('update-available', (info: { version: string; releaseDate: string }) => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      win.webContents.send('updater:available', {
-        version: info.version,
-        releaseDate: info.releaseDate,
-      })
+    getEventBus().publish('updater.available', {
+      version: info.version,
+      releaseDate: info.releaseDate,
     })
     sendNotification({
       level: 'info',
@@ -35,19 +33,15 @@ export function initAutoUpdater(): void {
   })
 
   autoUpdater.on('download-progress', (progress: { percent: number; transferred: number; total: number }) => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      win.webContents.send('updater:progress', {
-        percent: progress.percent,
-        transferred: progress.transferred,
-        total: progress.total,
-      })
+    getEventBus().publish('updater.progress', {
+      percent: progress.percent,
+      transferred: progress.transferred,
+      total: progress.total,
     })
   })
 
   autoUpdater.on('update-downloaded', () => {
-    BrowserWindow.getAllWindows().forEach((win) => {
-      win.webContents.send('updater:downloaded')
-    })
+    getEventBus().publish('updater.downloaded', undefined as never)
   })
 
   autoUpdater.on('error', (error: Error) => {

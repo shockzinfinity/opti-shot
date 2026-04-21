@@ -176,6 +176,20 @@ export const ko = {
   'settings.appDesc': '사진 중복 제거 데스크톱 도구',
   'settings.privacyNote': 'OptiShot는 100% 로컬에서 작동합니다. 이미지나 메타데이터가 서버나 클라우드 서비스로 전송되지 않습니다. 개인 정보가 보장됩니다.',
 
+  // Updater
+  'updater.title': '소프트웨어 업데이트',
+  'updater.checkForUpdates': '업데이트 확인',
+  'updater.checking': '확인 중...',
+  'updater.upToDate': '최신 버전입니다',
+  'updater.available': '새 버전 사용 가능',
+  'updater.availableDesc': 'v{version} 업데이트가 준비되었습니다',
+  'updater.download': '다운로드',
+  'updater.downloading': '다운로드 중... {percent}%',
+  'updater.downloaded': '다운로드 완료',
+  'updater.install': '재시작하여 설치',
+  'updater.installDesc': '다운로드 완료. 재시작하면 자동으로 설치됩니다.',
+  'updater.error': '업데이트 확인 실패',
+
   // Presets
   'preset.balanced': '균형',
   'preset.balancedDesc': '대부분의 라이브러리에 적합',
