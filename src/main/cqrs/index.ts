@@ -8,7 +8,9 @@ import { pluginRegistry } from '@main/engine/plugin-registry'
 import { phashSsimPlugin } from '@main/engine/plugins/phash-ssim'
 import { algorithmRegistry } from '@main/engine/algorithm-registry'
 import { phashAlgorithm } from '@main/engine/algorithms/phash'
+import { dhashAlgorithm } from '@main/engine/algorithms/dhash'
 import { ssimAlgorithm } from '@main/engine/algorithms/ssim'
+import { nmseAlgorithm } from '@main/engine/algorithms/nmse'
 import { getSettings } from '@main/services/settings'
 
 // Singleton instances
@@ -26,7 +28,9 @@ export function initCqrs(): void {
 
   // Register algorithms (new architecture)
   algorithmRegistry.registerHash(phashAlgorithm)
+  algorithmRegistry.registerHash(dhashAlgorithm)
   algorithmRegistry.registerVerify(ssimAlgorithm)
+  algorithmRegistry.registerVerify(nmseAlgorithm)
 
   // Restore plugin enabled state from settings
   const scanSettings = getSettings('scan')
