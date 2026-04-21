@@ -16,7 +16,6 @@ const MODES: { value: ScanMode; labelKey: TranslationKey; descKey: TranslationKe
   { value: 'full', labelKey: 'folders.fullScan', descKey: 'folders.fullScanDesc' },
   { value: 'date_range', labelKey: 'folders.dateRange', descKey: 'folders.dateRangeDesc' },
   { value: 'folder_only', labelKey: 'folders.folderOnly', descKey: 'folders.folderOnlyDesc' },
-  { value: 'incremental', labelKey: 'folders.incremental', descKey: 'folders.incrementalDesc' },
 ]
 
 export function ScanModeSelector({

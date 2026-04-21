@@ -15,6 +15,7 @@ import { registerUpdaterHandlers } from './updater'
 import { registerPluginHandlers } from './plugin'
 import { registerNotificationHandlers } from './notification'
 import { registerOrganizeHandlers } from './organize'
+import { registerAlgorithmHandlers } from './algorithm'
 
 export function registerAllCqrsHandlers(
   cmd: CommandBus,
@@ -34,4 +35,5 @@ export function registerAllCqrsHandlers(
   registerPluginHandlers(cmd, qry)
   registerNotificationHandlers(cmd, qry, evt)
   registerOrganizeHandlers(cmd, qry, evt)
+  registerAlgorithmHandlers(qry)
 }

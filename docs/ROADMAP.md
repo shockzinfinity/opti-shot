@@ -1,6 +1,6 @@
 # OptiShot 로드맵 현황
 
-> 최종 갱신: 2026-04-21
+> 최종 갱신: 2026-04-22
 
 ## Phase 완료 현황
 
@@ -22,7 +22,7 @@
 | 기능 | 설명 |
 |------|------|
 | EXIF 사전 필터링 | 촬영날짜/카메라/GPS/해상도 기반 사전 필터링 (32 concurrent) |
-| Plugin Architecture | DetectionPlugin 인터페이스 + PluginRegistry (v0.2에서 HashAlgorithm/VerifyAlgorithm 아키텍처로 재설계 예정) |
+| 알고리즘 아키텍처 | HashAlgorithm/VerifyAlgorithm 분리 + AlgorithmRegistry + 자유 조합 + 프리셋 |
 | HEIC/HEIF 변환 | heic.ts 변환 + 캐싱 |
 | 다국어 (i18n) | ko/en/ja 3개 언어 |
 | 알림 시스템 | 3계층 (로그 파일 + EventBus + 인메모리) + CQRS 미들웨어 정책 기반 |
@@ -31,7 +31,10 @@
 | 다크 모드 테마 | Light/Dark/Auto + 시스템 테마 감지 (CSS 변수 오버라이드) |
 | 파일 정리 | 촬영일 기반 일괄 리네임 + 되돌리기 + 이력 초기화 (설정) |
 | DB 스키마 경량화 | 레거시 4테이블 제거, 현재 8테이블 |
-| 플러그인별 임계값 UI | PluginSection 컴포넌트, 플러그인 없으면 미표시 |
+| Auto-updater UI | Settings > Info 탭 업데이트 확인/다운로드/설치 + EventBus 연동 |
+| dHash + NMSE | Stage 1 dHash(Gradient) + Stage 2 NMSE(정규화 MSE) 알고리즘 |
+| 그룹 병합 엔진 | Union-Find 기반 Union/Intersection 전략 + 복수 Stage 2 순차 파이프라인 |
+| 프리셋 시스템 | 균형/빠른/보수적/정밀/사용자정의 — 점진적 공개 UI |
 
 ---
 
@@ -53,30 +56,26 @@
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
 | 1 | Auto-updater 실전 배포 | 배포 | ✅ UI/EventBus 구현 완료, 실전 태그 테스트만 남음 |
-| 2 | 감지 알고리즘 아키텍처 재설계 | 아키텍처 | 설계 진행 중 — 아래 상세 |
+| 2 | 감지 알고리즘 아키텍처 재설계 | 아키텍처 | ✅ 완료 — 아래 상세 |
 | 3 | Quick Start 가이드 / 온보딩 | UX | 아이디어 |
 
-### #2 감지 알고리즘 아키텍처 재설계
+### #2 감지 알고리즘 아키텍처 재설계 ✅
 
-기존 모놀리식 DetectionPlugin(Stage1+2 고정 조합)을 알고리즘 단위로 분리하고, 사용자가 자유 조합할 수 있는 구조로 전환. 상세 설계: `docs/planning/11-algorithm-architecture.md`
+상세 설계: `docs/planning/11-algorithm-architecture.md`
 
 **2-Stage 파이프라인 (고정):**
-- Stage 1 (후보 탐색): HashAlgorithm — 빠르게 후보 그룹 추림
-- Stage 2 (정밀 검증): VerifyAlgorithm — 후보 그룹 내 진짜 중복 확인
-- Stage 수는 2로 고정, 각 Stage 안에서 알고리즘을 자유롭게 추가
+- Stage 1 (후보 탐색): HashAlgorithm — pHash, dHash
+- Stage 2 (정밀 검증): VerifyAlgorithm — SSIM, NMSE
+- 복수 Stage 1 → Union-Find 병합 (Union/Intersection)
+- 복수 Stage 2 → 순차 파이프라인
 
-**구현 단계:**
-- Step 1: 인터페이스 분리 + 기존 pHash/SSIM 마이그레이션
-- Step 2: dHash(HashAlgorithm) + NMSE(VerifyAlgorithm) 추가
-- Step 3: 복수 Stage 1 동시 실행 + Union-Find 그룹 병합 + 복수 Stage 2 순차 파이프라인
-- Step 4: UI (점진적 공개 — 프리셋만 노출, 고급 설정 접힘) + 기존 DetectionPlugin 제거
+**프리셋:** 균형 / 빠른 / 보수적 / 정밀 / 사용자 정의
 
-**프리셋:**
-- 균형 (기본값): pHash + dHash(Union) + SSIM
-- 빠른 스캔: dHash only
-- 보수적: pHash + SSIM(0.90)
-- 정밀: pHash + dHash(Intersection) + SSIM → NMSE 순차 검증
-- 사용자 정의: 자유 조합
+**구현 완료:**
+- Step 1: 인터페이스 분리 + 마이그레이션 (`d92ab14`)
+- Step 2: dHash + NMSE 추가 (`938a192`)
+- Step 3: Union-Find 그룹 병합 (`6958e9e`)
+- Step 4: UI + 프리셋 + 전체 연동 (`7a53840`)
 
 ---
 
@@ -135,7 +134,7 @@
 | 크로스 플랫폼 | ✅ 양호 | path 처리, titleBarStyle, 트래시 폴더 분기 |
 | 다크 모드 | ✅ 완료 | Light/Dark/Auto + 시스템 감지 |
 | 파일 정리 | ✅ 완료 | 일괄 리네임 + 되돌리기 + 이력 초기화 |
-| 테스트 | ⚠️ 부분 | 단위 16파일 181개, E2E 0개 |
+| 테스트 | ⚠️ 부분 | 단위 19파일 203개, E2E 0개 |
 | i18n | ✅ 완비 | ko/en/ja |
 | 알림 | ✅ 완료 | 정책 기반 미들웨어 + 3계층 |
 | 크래시 방어 | ✅ 완료 | 글로벌 핸들러 + 방어적 코드 |

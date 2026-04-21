@@ -105,13 +105,17 @@ export const ja = {
 
   // Settings - Detection Algorithms
   'settings.detectionAlgorithms': '検出アルゴリズム',
-  'settings.detectionAlgorithmsDesc': '重複検出に使用するアルゴリズムを選択します。少なくとも1つは有効にしてください。',
+  'settings.detectionAlgorithmsDesc': '重複検出に使用するアルゴリズムを選択します。トグルするとプリセットが「カスタム」に切り替わります。',
+  'settings.hashAlgorithms': '候補探索',
+  'settings.verifyAlgorithms': '精密検証',
   'settings.builtIn': '内蔵',
 
   // Settings - Scan Tab
   'settings.scanPresets': 'スキャンプリセット',
   'settings.scanPresetsDesc': 'プリセットを選択して検出感度を素早く設定します。',
   'settings.heuristicParams': 'ヒューリスティックパラメータ',
+  'settings.performanceParams': 'パフォーマンス',
+  'settings.threshold': 'しきい値',
   'settings.phashThreshold': 'pHash しきい値',
   'settings.ssimThreshold': 'SSIM しきい値',
   'settings.timeWindow': 'タイムウィンドウ',

@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { clearThumbnailCache } from '@renderer/hooks/useThumbnail'
 import { formatBytes } from '@shared/utils'
-import type { PluginInfo } from '@shared/plugins'
+// AlgorithmInfo loaded via algorithm.list query
 import {
   ScanSearch,
   Palette,
@@ -119,21 +119,50 @@ function InfoTooltip({ text }: { text: string }) {
 export function ScanTab() {
   const { scan, updateScan, applyPreset } = useSettingsStore()
   const { t } = useTranslation()
-  const [plugins, setPlugins] = useState<PluginInfo[]>([])
+  const [algorithms, setAlgorithms] = useState<Array<{ id: string; name: string; description: string; detailDescription: string; version: string; stage: 'hash' | 'verify' }>>([])
 
   useEffect(() => {
-    window.electron.query('plugin.list').then((res) => {
-      if (res.success) setPlugins(res.data as unknown as PluginInfo[])
+    window.electron.query('algorithm.list').then((res) => {
+      if (res.success) setAlgorithms(res.data as typeof algorithms)
     })
   }, [])
 
-  const handlePluginToggle = async (pluginId: string, enabled: boolean) => {
-    await window.electron.command('plugin.toggle', { pluginId, enabled })
-    setPlugins((prev) => prev.map((p) => p.id === pluginId ? { ...p, enabled } : p))
+  const isAlgoEnabled = (algo: { id: string; stage: 'hash' | 'verify' }) => {
+    return algo.stage === 'hash'
+      ? scan.hashAlgorithms.includes(algo.id)
+      : scan.verifyAlgorithms.includes(algo.id)
   }
+
+  const handleAlgoToggle = (algo: { id: string; stage: 'hash' | 'verify' }) => {
+    if (algo.stage === 'hash') {
+      const current = scan.hashAlgorithms
+      const updated = current.includes(algo.id)
+        ? current.filter((id) => id !== algo.id)
+        : [...current, algo.id]
+      if (updated.length === 0) return // at least one hash required
+      updateScan('hashAlgorithms', updated)
+    } else {
+      const current = scan.verifyAlgorithms
+      const updated = current.includes(algo.id)
+        ? current.filter((id) => id !== algo.id)
+        : [...current, algo.id]
+      updateScan('verifyAlgorithms', updated)
+    }
+    updateScan('preset', 'custom')
+  }
+
+  const hashAlgos = algorithms.filter((a) => a.stage === 'hash')
+  const verifyAlgos = algorithms.filter((a) => a.stage === 'verify')
 
   return (
     <div className="space-y-8">
+      {/* Scanning Presets — 최상단 */}
+      <div className="space-y-3">
+        <SectionHeader title={t('settings.scanPresets')} />
+        <p className="text-sm text-foreground-muted">{t('settings.scanPresetsDesc')}</p>
+        <PresetSelector value={scan.preset} onChange={(p) => { if (p !== 'custom') applyPreset(p) }} />
+      </div>
+
       {/* Detection Algorithms */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
@@ -141,84 +170,133 @@ export function ScanTab() {
           <SectionHeader title={t('settings.detectionAlgorithms')} />
         </div>
         <p className="text-sm text-foreground-muted">{t('settings.detectionAlgorithmsDesc')}</p>
-        <div className="space-y-3">
-          {plugins.map((plugin) => (
-            <div
-              key={plugin.id}
-              className="flex items-center justify-between p-4 bg-surface-secondary rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <Puzzle className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground-primary">{plugin.name}</p>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-border text-foreground-muted">
-                      v{plugin.version}
-                    </span>
-                    {plugin.builtIn && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                        {t('settings.builtIn')}
-                      </span>
+
+        {/* Stage 1: Hash Algorithms */}
+        {hashAlgos.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">Stage 1 — {t('settings.hashAlgorithms')}</p>
+            <div className="space-y-2">
+              {hashAlgos.map((algo) => {
+                const enabled = isAlgoEnabled(algo)
+                const threshold = scan.hashThresholds[algo.id]
+                return (
+                  <div key={algo.id} className="bg-surface-secondary rounded-xl">
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                          <Puzzle className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground-primary">{algo.name}</p>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-border text-foreground-muted">
+                              v{algo.version}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-xs text-foreground-muted">{algo.description}</p>
+                            {algo.detailDescription && (
+                              <InfoTooltip text={algo.detailDescription} />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Toggle
+                        on={enabled}
+                        onToggle={() => handleAlgoToggle(algo)}
+                        label={algo.name}
+                      />
+                    </div>
+                    {enabled && threshold != null && (
+                      <div className="px-4 pb-4 pt-0">
+                        <SettingsSlider
+                          label={t('settings.threshold')}
+                          value={threshold}
+                          min={2}
+                          max={20}
+                          step={1}
+                          format={(v) => `${v}`}
+                          onChange={(v) => {
+                            updateScan('hashThresholds', { ...scan.hashThresholds, [algo.id]: v })
+                            updateScan('preset', 'custom')
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className="text-xs text-foreground-muted">{plugin.description}</p>
-                    {plugin.detailDescription && (
-                      <InfoTooltip text={plugin.detailDescription} />
-                    )}
-                  </div>
-                </div>
-              </div>
-              <Toggle
-                on={plugin.enabled}
-                onToggle={() => handlePluginToggle(plugin.id, !plugin.enabled)}
-                label={plugin.name}
-              />
+                )
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {/* Stage 2: Verify Algorithms */}
+        {verifyAlgos.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">Stage 2 — {t('settings.verifyAlgorithms')}</p>
+            <div className="space-y-2">
+              {verifyAlgos.map((algo) => {
+                const enabled = isAlgoEnabled(algo)
+                const threshold = scan.verifyThresholds[algo.id]
+                return (
+                  <div key={algo.id} className="bg-surface-secondary rounded-xl">
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                          <Puzzle className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground-primary">{algo.name}</p>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-border text-foreground-muted">
+                              v{algo.version}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-xs text-foreground-muted">{algo.description}</p>
+                            {algo.detailDescription && (
+                              <InfoTooltip text={algo.detailDescription} />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <Toggle
+                        on={enabled}
+                        onToggle={() => handleAlgoToggle(algo)}
+                        label={algo.name}
+                      />
+                    </div>
+                    {enabled && threshold != null && (
+                      <div className="px-4 pb-4 pt-0">
+                        <SettingsSlider
+                          label={t('settings.threshold')}
+                          value={threshold}
+                          min={0.01}
+                          max={1}
+                          step={0.01}
+                          format={(v) => v.toFixed(2)}
+                          onChange={(v) => {
+                            updateScan('verifyThresholds', { ...scan.verifyThresholds, [algo.id]: v })
+                            updateScan('preset', 'custom')
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Scanning Presets */}
-      <div className="space-y-3">
-        <SectionHeader title={t('settings.scanPresets')} />
-        <p className="text-sm text-foreground-muted">{t('settings.scanPresetsDesc')}</p>
-        <PresetSelector value={scan.preset} onChange={(p) => { if (p !== 'custom') applyPreset(p) }} />
-      </div>
-
-      {/* Heuristic Parameters */}
+      {/* Performance Parameters */}
       <div className="bg-surface-secondary p-8 rounded-xl space-y-6">
         <div className="flex items-center gap-2">
           <ScanSearch className="w-4 h-4 text-primary" />
-          <SectionHeader title={t('settings.heuristicParams')} />
+          <SectionHeader title={t('settings.performanceParams')} />
         </div>
 
-        {Object.entries(scan.hashThresholds).map(([algo, val]) => (
-          <SettingsSlider
-            key={`hash-${algo}`}
-            label={`${algo} threshold`}
-            value={val}
-            min={2}
-            max={20}
-            step={1}
-            format={(v) => `${v}`}
-            onChange={(v) => updateScan('hashThresholds', { ...scan.hashThresholds, [algo]: v })}
-          />
-        ))}
-        {Object.entries(scan.verifyThresholds).map(([algo, val]) => (
-          <SettingsSlider
-            key={`verify-${algo}`}
-            label={`${algo} threshold`}
-            value={val}
-            min={0.01}
-            max={1}
-            step={0.01}
-            format={(v) => v.toFixed(2)}
-            onChange={(v) => updateScan('verifyThresholds', { ...scan.verifyThresholds, [algo]: v })}
-          />
-        ))}
         <SettingsSlider
           label={t('settings.timeWindow')}
           value={scan.timeWindowHours}
@@ -274,13 +352,6 @@ export function ScanTab() {
             description={t('settings.exifFilteringDesc')}
             value={scan.enableExifFilter}
             onToggle={() => updateScan('enableExifFilter', !scan.enableExifFilter)}
-          />
-          <ToggleCard
-            icon={<Check className="w-4 h-4" />}
-            label={t('settings.incrementalScan')}
-            description={t('settings.incrementalScanDesc')}
-            value={scan.enableIncremental}
-            onToggle={() => updateScan('enableIncremental', !scan.enableIncremental)}
           />
         </div>
       </div>

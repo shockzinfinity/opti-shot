@@ -6,7 +6,7 @@
 ## Architecture
 - **Framework**: Electron (Main + Renderer process)
 - **IPC**: CQRS 패턴 — CommandBus(26) / QueryBus(18) / EventBus(6)
-- **Plugin**: DetectionPlugin 인터페이스 + PluginRegistry (감지 알고리즘 교체 가능)
+- **Algorithm**: HashAlgorithm/VerifyAlgorithm 인터페이스 + AlgorithmRegistry (2-Stage 자유 조합)
 - **Renderer**: React 19 + TypeScript + Tailwind CSS + Zustand
 - **Main**: Node.js + CQRS handlers + Services
 - **Database**: better-sqlite3 + Drizzle ORM
@@ -36,8 +36,9 @@ src/
 │   │   ├── schemas.ts       # Zod 스키마 (payload 검증)
 │   │   └── handlers/        # 도메인별 핸들러 (folder, scan, group, organize, ...)
 │   ├── services/      # Business logic (변경 없음)
-│   ├── engine/        # ScanEngine, BK-Tree, pHash, PluginRegistry
-│   │   └── plugins/   # DetectionPlugin 구현체 (phash-ssim 내장)
+│   ├── engine/        # ScanEngine, BK-Tree, pHash, AlgorithmRegistry
+│   │   ├── algorithms/  # HashAlgorithm(phash, dhash) + VerifyAlgorithm(ssim, nmse)
+│   │   └── plugins/     # DetectionPlugin 구현체 (레거시, 제거 예정)
 │   ├── db/            # Drizzle schema + migrations
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
@@ -122,11 +123,11 @@ Renderer                          Main
 1. 스캔 대상 폴더
 2. 스캔 모드
 3. EXIF 필터 섹션 (설정 ON 시만 표시)
-4. 고급 설정 — 활성 플러그인별 파라미터 (플러그인 ON 시만 표시)
+4. 고급 설정 — 알고리즘별 임계값 슬라이더 (프리셋에서 자동 설정)
 5. 액션 바
 ```
-- 고급 설정: 플러그인별 섹션 분리 (PluginSection 컴포넌트)
-- 향후 기능(보정 감지, 증분 스캔 등)도 설정 ON 시 별도 섹션으로 추가 예정
+- 고급 설정: 해시/검증 알고리즘별 임계값 동적 렌더링
+- 프리셋 선택 시 알고리즘 조합 + 임계값 자동 적용, 수정 시 "사용자 정의"로 전환
 
 ## File Organize (/organize)
 - 스캔과 독립된 별도 기능 — 폴더 내 이미지 파일명을 촬영일 기준 일괄 변경
@@ -145,11 +146,12 @@ Renderer                          Main
 
 ## Current Status
 - 핵심 기능 완료 (P0~P5), Export 제거, 알림 시스템/크래시 방어 완료
-- 추가: EXIF 필터링, Plugin, HEIC, i18n, 알림(CQRS 미들웨어), 크래시 방어
+- 추가: EXIF 필터링, HEIC, i18n, 알림(CQRS 미들웨어), 크래시 방어
 - 추가: 다크 모드 테마, 파일 정리(일괄 리네임 + 되돌리기)
-- 단기 논의 필요: Auto-updater 배포, Incremental Scan
+- 추가: 알고리즘 아키텍처 재설계 (HashAlgorithm/VerifyAlgorithm 분리, 4개 알고리즘, 프리셋)
+- 추가: Auto-updater UI (Settings > Info 탭)
 - 중기: Worker Threads (stub), Correction Detection 정리, exifr 최적화
-- 테스트: 기능 구현 시 함께 작성 (별도 과제 아님)
+- 테스트: 기능 구현 시 함께 작성 (19파일 203개)
 - 로드맵 상세: docs/ROADMAP.md
 
 ## Safety Rules

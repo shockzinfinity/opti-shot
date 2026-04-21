@@ -1,5 +1,5 @@
 import type { SettingsSection } from './commands'
-import type { PluginInfo } from '../plugins'
+import type { PluginInfo, AlgorithmInfo } from '../plugins'
 import type { NotificationEntry } from '../types'
 
 export interface QueryMap {
@@ -78,8 +78,11 @@ export interface QueryMap {
     } | null
   }
 
-  // Plugin
+  // Plugin (legacy)
   'plugin.list': { input: void; result: PluginInfo[] }
+
+  // Algorithm
+  'algorithm.list': { input: void; result: AlgorithmInfo[] }
 
   // Notification
   'notification.list': {

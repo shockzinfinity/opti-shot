@@ -105,13 +105,17 @@ export const ko = {
 
   // Settings - Detection Algorithms
   'settings.detectionAlgorithms': '감지 알고리즘',
-  'settings.detectionAlgorithmsDesc': '중복 탐지에 사용할 알고리즘을 선택합니다. 최소 하나 이상 활성화해야 합니다.',
+  'settings.detectionAlgorithmsDesc': '중복 탐지에 사용할 알고리즘을 선택합니다. 토글하면 프리셋이 "사용자 정의"로 전환됩니다.',
+  'settings.hashAlgorithms': '후보 탐색',
+  'settings.verifyAlgorithms': '정밀 검증',
   'settings.builtIn': '내장',
 
   // Settings - Scan Tab
   'settings.scanPresets': '스캔 프리셋',
   'settings.scanPresetsDesc': '프리셋을 선택하여 감지 민감도를 빠르게 설정하세요.',
   'settings.heuristicParams': '휴리스틱 파라미터',
+  'settings.performanceParams': '성능 설정',
+  'settings.threshold': '임계값',
   'settings.phashThreshold': 'pHash 임계값',
   'settings.ssimThreshold': 'SSIM 임계값',
   'settings.timeWindow': '시간 윈도우',

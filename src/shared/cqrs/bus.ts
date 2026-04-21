@@ -45,6 +45,7 @@ export const ALL_QUERY_TYPES: QueryType[] = [
   'trash.list', 'trash.summary',
   'organize.lastJob',
   'plugin.list',
+  'algorithm.list',
   'notification.list',
   'settings.get',
   'stats.dashboard', 'stats.scanHistory',

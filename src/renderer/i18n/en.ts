@@ -124,13 +124,17 @@ export const en = {
 
   // Settings - Detection Algorithms
   'settings.detectionAlgorithms': 'Detection Algorithms',
-  'settings.detectionAlgorithmsDesc': 'Select algorithms for duplicate detection. At least one must be enabled.',
+  'settings.detectionAlgorithmsDesc': 'Select algorithms for duplicate detection. Toggling switches preset to "Custom".',
+  'settings.hashAlgorithms': 'Candidate Search',
+  'settings.verifyAlgorithms': 'Verification',
   'settings.builtIn': 'Built-in',
 
   // Settings - Scan Tab
   'settings.scanPresets': 'Scanning Presets',
   'settings.scanPresetsDesc': 'Choose a preset to quickly configure detection sensitivity.',
   'settings.heuristicParams': 'Heuristic Parameters',
+  'settings.performanceParams': 'Performance',
+  'settings.threshold': 'Threshold',
   'settings.phashThreshold': 'pHash Threshold',
   'settings.ssimThreshold': 'SSIM Threshold',
   'settings.timeWindow': 'Time Window',
