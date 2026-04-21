@@ -321,6 +321,44 @@ export const en = {
   // Misc
   'scan.waitingForData': 'Waiting for scan data...',
 
+  // Navigation
+  'nav.organize': 'Organize',
+
+  // Quick Actions
+  'actions.organize': 'Organize',
+  'actions.organizeFiles': 'Batch rename files',
+
+  // Organize page
+  'organize.title': 'File Organizer',
+  'organize.subtitle': 'Rename files by capture date in batch',
+  'organize.targetFolder': 'Target Folder',
+  'organize.selectFolder': 'Select Folder',
+  'organize.noFolder': 'Select a folder to organize. Click "Select Folder" to choose a target directory',
+  'organize.includeSubfolders': 'Include subfolders',
+  'organize.patternLabel': 'Naming Rule',
+  'organize.patternDesc': 'Uses EXIF capture date first, falls back to file creation/modification date. Files at the same time get sequence numbers.',
+  'organize.preview': 'Preview',
+  'organize.analyzing': 'Analyzing...',
+  'organize.previewTitle': 'Preview Changes',
+  'organize.totalFiles': 'Total',
+  'organize.toRename': 'Rename',
+  'organize.toSkip': 'Skip',
+  'organize.originalName': 'Original Name',
+  'organize.newName': 'New Name',
+  'organize.source': 'Source',
+  'organize.fileDate': 'File Date',
+  'organize.andMore': '... and {count} more',
+  'organize.execute': 'Start Organize',
+  'organize.executing': 'Organizing files...',
+  'organize.completed': 'Organize Complete',
+  'organize.renamed': 'Renamed',
+  'organize.skipped': 'Skipped',
+  'organize.undo': 'Undo',
+  'organize.undone': 'Undone',
+  'organize.newOrganize': 'New Organize',
+  'organize.lastOrganize': 'Recent Organize',
+  'organize.filesRenamed': ' renamed',
+
   // Notifications
   'notification.title': 'Notifications',
   'notification.markAllRead': 'Mark all read',

@@ -302,6 +302,44 @@ export const ja = {
   // Misc
   'scan.waitingForData': 'スキャンデータを待機中...',
 
+  // Navigation
+  'nav.organize': 'ファイル整理',
+
+  // Quick Actions
+  'actions.organize': 'ファイル整理',
+  'actions.organizeFiles': '一括リネーム',
+
+  // Organize page
+  'organize.title': 'ファイル整理',
+  'organize.subtitle': '撮影日を基準にファイル名を一括変更します',
+  'organize.targetFolder': '対象フォルダ',
+  'organize.selectFolder': 'フォルダ選択',
+  'organize.noFolder': '整理するフォルダを選択してください。「フォルダ選択」をクリックして対象ディレクトリを指定してください',
+  'organize.includeSubfolders': 'サブフォルダを含む',
+  'organize.patternLabel': '命名規則',
+  'organize.patternDesc': 'EXIF撮影日優先、なければファイル作成/更新日を使用。同時刻のファイルはシーケンス番号で区別。',
+  'organize.preview': 'プレビュー',
+  'organize.analyzing': '分析中...',
+  'organize.previewTitle': '変更プレビュー',
+  'organize.totalFiles': '合計',
+  'organize.toRename': '変更',
+  'organize.toSkip': 'スキップ',
+  'organize.originalName': '元のファイル名',
+  'organize.newName': '変更後',
+  'organize.source': 'ソース',
+  'organize.fileDate': 'ファイル日付',
+  'organize.andMore': '... 他{count}件',
+  'organize.execute': '整理開始',
+  'organize.executing': 'ファイル整理中...',
+  'organize.completed': '整理完了',
+  'organize.renamed': '変更済み',
+  'organize.skipped': 'スキップ',
+  'organize.undo': '元に戻す',
+  'organize.undone': '元に戻しました',
+  'organize.newOrganize': '新規整理',
+  'organize.lastOrganize': '最近の整理',
+  'organize.filesRenamed': '件変更',
+
   // Notifications
   'notification.title': '通知',
   'notification.markAllRead': 'すべて既読',

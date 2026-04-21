@@ -58,6 +58,31 @@ export const COMMAND_NOTIFICATION_POLICY: Record<string, CommandNotificationRule
     },
   },
 
+  // --- Organize ---
+  'organize.execute': {
+    category: 'organize',
+    onSuccess: {
+      level: 'success',
+      message: '{renamedFiles} files renamed ({totalFiles} total)',
+    },
+    onError: {
+      level: 'error',
+      message: 'File organization failed: {error}',
+    },
+  },
+
+  'organize.undo': {
+    category: 'organize',
+    onSuccess: {
+      level: 'info',
+      message: '{restoredCount} files restored to original names',
+    },
+    onError: {
+      level: 'error',
+      message: 'Undo failed: {error}',
+    },
+  },
+
   // --- Trash ---
   'trash.empty': {
     category: 'trash',

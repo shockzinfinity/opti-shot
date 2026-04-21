@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Image, Layers, HardDrive } from 'lucide-react'
 import { useDashboardStore } from '@renderer/stores/dashboard'
 import { RecentScanCard } from '@renderer/components/RecentScanCard'
+import { RecentOrganizeCard } from '@renderer/components/RecentOrganizeCard'
 import { QuickActions } from '@renderer/components/QuickActions'
 import { formatBytes, formatNumber as formatCount } from '@shared/utils'
 import { useTranslation } from '@renderer/hooks/useTranslation'
@@ -68,9 +69,12 @@ export function Dashboard() {
         />
       </div>
 
-      {/* Recent Scan + Quick Actions */}
+      {/* Recent Activity + Quick Actions */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <RecentScanCard className="xl:col-span-2" />
+        <div className="xl:col-span-2 space-y-4">
+          <RecentScanCard />
+          <RecentOrganizeCard />
+        </div>
         <QuickActions />
       </div>
 

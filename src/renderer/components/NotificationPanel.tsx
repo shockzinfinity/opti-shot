@@ -1,11 +1,11 @@
-import { ScanLine, Download, Trash2, Info, CheckCheck, X } from 'lucide-react'
+import { ScanLine, FolderSync, Trash2, Info, CheckCheck, X } from 'lucide-react'
 import { useNotificationStore } from '../stores/notification'
 import type { NotificationItem } from '../stores/notification'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 
 const CATEGORY_ICONS = {
   scan: ScanLine,
-  export: Download,
+  organize: FolderSync,
   trash: Trash2,
   system: Info,
 } as const

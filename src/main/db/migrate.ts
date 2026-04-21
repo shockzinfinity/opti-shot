@@ -96,6 +96,30 @@ export function migrate(db: AppDatabase): void {
     );
     CREATE INDEX IF NOT EXISTS idx_trash_items_status ON trash_items(status);
 
+    -- Organize Jobs
+    CREATE TABLE IF NOT EXISTS organize_jobs (
+      id TEXT PRIMARY KEY NOT NULL,
+      folder TEXT NOT NULL,
+      include_subfolders INTEGER NOT NULL DEFAULT 1,
+      total_files INTEGER NOT NULL DEFAULT 0,
+      renamed_files INTEGER NOT NULL DEFAULT 0,
+      skipped_files INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'completed',
+      started_at TEXT NOT NULL,
+      ended_at TEXT,
+      error_message TEXT
+    );
+
+    -- Organize Renames
+    CREATE TABLE IF NOT EXISTS organize_renames (
+      id TEXT PRIMARY KEY NOT NULL,
+      job_id TEXT NOT NULL REFERENCES organize_jobs(id) ON DELETE CASCADE,
+      original_path TEXT NOT NULL,
+      renamed_path TEXT NOT NULL,
+      date_source TEXT NOT NULL DEFAULT 'exif'
+    );
+    CREATE INDEX IF NOT EXISTS idx_organize_renames_job_id ON organize_renames(job_id);
+
     -- Settings (key-value store)
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY NOT NULL,

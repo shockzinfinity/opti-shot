@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Scan, Trash2, Settings } from 'lucide-react'
+import { Scan, Trash2, FolderSync, Settings } from 'lucide-react'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 
 interface ActionButtonProps {
@@ -49,6 +49,12 @@ export function QuickActions() {
           desc={t('actions.processLibrary')}
           primary
           onClick={() => navigate('/folders')}
+        />
+        <ActionButton
+          icon={<FolderSync className="w-5 h-5" />}
+          label={t('actions.organize')}
+          desc={t('actions.organizeFiles')}
+          onClick={() => navigate('/organize')}
         />
         <ActionButton
           icon={<Trash2 className="w-5 h-5" />}

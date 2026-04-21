@@ -73,9 +73,37 @@ export interface ScanRecord {
   endedAt: string | null
 }
 
+// Organize types
+export type OrganizeStatus = 'completed' | 'failed' | 'undone'
+export type OrganizeDateSource = 'exif' | 'file'
+
+export interface OrganizePreviewItem {
+  originalPath: string
+  renamedPath: string
+  dateSource: OrganizeDateSource
+}
+
+export interface OrganizeJob {
+  id: string
+  folder: string
+  includeSubfolders: boolean
+  totalFiles: number
+  renamedFiles: number
+  skippedFiles: number
+  status: OrganizeStatus
+  startedAt: string
+  endedAt: string | null
+}
+
+export interface OrganizeProgress {
+  processedFiles: number
+  totalFiles: number
+  currentFile: string
+}
+
 // Notification types
 export type NotificationLevel = 'info' | 'success' | 'warning' | 'error'
-export type NotificationCategory = 'scan' | 'export' | 'trash' | 'system'
+export type NotificationCategory = 'scan' | 'organize' | 'trash' | 'system'
 
 export interface NotificationEntry {
   id: string

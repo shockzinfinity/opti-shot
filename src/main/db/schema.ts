@@ -118,6 +118,37 @@ export const trashItems = sqliteTable('trash_items', {
   index('idx_trash_items_status').on(t.status),
 ])
 
+// ─── Organize Jobs ───
+
+export const organizeJobs = sqliteTable('organize_jobs', {
+  id: text('id').primaryKey(), // UUID
+  folder: text('folder').notNull(),
+  includeSubfolders: integer('include_subfolders', { mode: 'boolean' }).notNull().default(true),
+  totalFiles: integer('total_files').notNull().default(0),
+  renamedFiles: integer('renamed_files').notNull().default(0),
+  skippedFiles: integer('skipped_files').notNull().default(0),
+  status: text('status', {
+    enum: ['completed', 'failed', 'undone'],
+  }).notNull().default('completed'),
+  startedAt: text('started_at').notNull(),
+  endedAt: text('ended_at'),
+  errorMessage: text('error_message'),
+})
+
+// ─── Organize Renames ───
+
+export const organizeRenames = sqliteTable('organize_renames', {
+  id: text('id').primaryKey(), // UUID
+  jobId: text('job_id').notNull().references(() => organizeJobs.id, { onDelete: 'cascade' }),
+  originalPath: text('original_path').notNull(),
+  renamedPath: text('renamed_path').notNull(),
+  dateSource: text('date_source', {
+    enum: ['exif', 'file'],
+  }).notNull().default('exif'),
+}, (t) => [
+  index('idx_organize_renames_job_id').on(t.jobId),
+])
+
 // ─── Settings (key-value store for singleton settings) ───
 
 export const settings = sqliteTable('settings', {

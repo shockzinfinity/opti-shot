@@ -303,6 +303,44 @@ export const ko = {
   'scan.waitingForData': '스캔 데이터 대기 중...',
 
   // Notifications
+  // Navigation
+  'nav.organize': '파일 정리',
+
+  // Quick Actions
+  'actions.organize': '파일 정리',
+  'actions.organizeFiles': '이름 일괄 변경',
+
+  // Organize page
+  'organize.title': '파일 정리',
+  'organize.subtitle': '촬영 날짜 기준으로 파일명을 일괄 변경합니다',
+  'organize.targetFolder': '대상 폴더',
+  'organize.selectFolder': '폴더 선택',
+  'organize.noFolder': '정리할 폴더를 선택하세요. "폴더 선택"을 클릭하여 대상 디렉터리를 지정하세요',
+  'organize.includeSubfolders': '하위 폴더 포함',
+  'organize.patternLabel': '네이밍 규칙',
+  'organize.patternDesc': 'EXIF 촬영일 우선, 없으면 파일 생성/수정일 사용. 동일 시간 파일은 시퀀스 번호로 구분.',
+  'organize.preview': '미리보기',
+  'organize.analyzing': '분석 중...',
+  'organize.previewTitle': '변경 미리보기',
+  'organize.totalFiles': '전체',
+  'organize.toRename': '변경',
+  'organize.toSkip': '건너뜀',
+  'organize.originalName': '원래 이름',
+  'organize.newName': '변경 후',
+  'organize.source': '소스',
+  'organize.fileDate': '파일일자',
+  'organize.andMore': '... 외 {count}개',
+  'organize.execute': '정리 시작',
+  'organize.executing': '파일 정리 중...',
+  'organize.completed': '정리 완료',
+  'organize.renamed': '변경됨',
+  'organize.skipped': '건너뜀',
+  'organize.undo': '되돌리기',
+  'organize.undone': '되돌림 완료',
+  'organize.newOrganize': '새 정리',
+  'organize.lastOrganize': '최근 정리',
+  'organize.filesRenamed': '개 변경',
+
   'notification.title': '알림',
   'notification.markAllRead': '모두 읽음',
   'notification.clearAll': '모두 지우기',

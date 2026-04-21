@@ -27,6 +27,7 @@ export const ALL_COMMAND_TYPES: CommandType[] = [
   'scan.start', 'scan.pause', 'scan.cancel',
   'group.changeMaster', 'group.markReviewed',
   'trash.move', 'trash.restore', 'trash.restoreGroup', 'trash.delete', 'trash.empty',
+  'organize.preview', 'organize.execute', 'organize.undo',
   'plugin.toggle',
   'settings.save', 'settings.reset',
   'maintenance.clearCache', 'maintenance.clearScanHistory',
@@ -42,6 +43,7 @@ export const ALL_QUERY_TYPES: QueryType[] = [
   'photo.info', 'photo.thumbnail', 'photo.exif',
   'review.getPending',
   'trash.list', 'trash.summary',
+  'organize.lastJob',
   'plugin.list',
   'notification.list',
   'settings.get',
@@ -52,6 +54,7 @@ export const ALL_QUERY_TYPES: QueryType[] = [
 
 export const ALL_EVENT_TYPES: EventType[] = [
   'scan.progress',
+  'organize.progress',
   'updater.available', 'updater.progress', 'updater.downloaded',
   'notification.new',
 ]

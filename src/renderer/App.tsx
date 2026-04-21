@@ -6,6 +6,7 @@ import { FolderSelect } from './pages/FolderSelect'
 import { ScanProgress } from './pages/ScanProgress'
 import { GroupReview } from './pages/GroupReview'
 import { Trash } from './pages/Trash'
+import { Organize } from './pages/Organize'
 import { Settings } from './pages/Settings'
 import { useTheme } from './hooks/useTheme'
 import { useSettingsStore } from './stores/settings'
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/scan" element={<ScrollPage><ScanProgress /></ScrollPage>} />
             <Route path="/review" element={<FullPage><GroupReview /></FullPage>} />
             <Route path="/trash" element={<ScrollPage><Trash /></ScrollPage>} />
+            <Route path="/organize" element={<ScrollPage><Organize /></ScrollPage>} />
             <Route path="/settings" element={<ScrollPage><Settings /></ScrollPage>} />
           </Routes>
         </main>

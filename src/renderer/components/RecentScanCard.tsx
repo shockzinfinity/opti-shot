@@ -1,16 +1,12 @@
 import { useNavigate } from 'react-router-dom'
-import { Play, ArrowRight, Clock } from 'lucide-react'
+import { Play, ArrowRight, Clock, ScanLine } from 'lucide-react'
 import { useDashboardStore } from '@renderer/stores/dashboard'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 import { formatDuration, formatDateLine, formatTimeLine } from '@shared/utils'
 import { StatusBadge } from './StatusBadge'
 
-interface RecentScanCardProps {
-  className?: string
-}
-
-export function RecentScanCard({ className = '' }: RecentScanCardProps) {
+export function RecentScanCard() {
   const navigate = useNavigate()
   const { stats, loading } = useDashboardStore()
   const { ui } = useSettingsStore()
@@ -19,9 +15,12 @@ export function RecentScanCard({ className = '' }: RecentScanCardProps) {
   const hasData = stats.lastScanStatus !== null
 
   return (
-    <div className={`bg-surface-secondary rounded-xl p-6 space-y-4 ${className}`}>
+    <div className="bg-surface-secondary rounded-xl p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-heading font-semibold text-base text-foreground-primary">{t('dashboard.recentScan')}</h2>
+        <div className="flex items-center gap-2">
+          <ScanLine className="w-4 h-4 text-primary" />
+          <h2 className="font-heading font-semibold text-base text-foreground-primary">{t('dashboard.recentScan')}</h2>
+        </div>
         {hasData && stats.lastScanStatus && (
           <StatusBadge status={stats.lastScanStatus} />
         )}

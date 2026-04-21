@@ -29,13 +29,15 @@ describe('Database Schema & Migration', () => {
     db.$client.close()
   })
 
-  it('should create all 6 tables', () => {
+  it('should create all 8 tables', () => {
     const tables = db.$client
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
       .all() as { name: string }[]
 
     const tableNames = tables.map((t) => t.name).sort()
     expect(tableNames).toEqual([
+      'organize_jobs',
+      'organize_renames',
       'photo_groups',
       'photos',
       'scan_folders',

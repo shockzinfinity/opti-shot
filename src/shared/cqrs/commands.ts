@@ -54,6 +54,20 @@ export interface CommandMap {
     result: Record<string, unknown>
   }
 
+  // Organize
+  'organize.preview': {
+    input: { folder: string; includeSubfolders: boolean }
+    result: { items: Array<{ originalPath: string; renamedPath: string; dateSource: string }>; totalFiles: number; renamedCount: number; skippedCount: number }
+  }
+  'organize.execute': {
+    input: { folder: string; includeSubfolders: boolean }
+    result: { jobId: string; renamedFiles: number; skippedFiles: number; totalFiles: number }
+  }
+  'organize.undo': {
+    input: { jobId: string }
+    result: { restoredCount: number }
+  }
+
   // Plugin
   'plugin.toggle': {
     input: { pluginId: string; enabled: boolean }

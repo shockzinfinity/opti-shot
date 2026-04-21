@@ -10,6 +10,7 @@ const routeNames: Record<string, TranslationKey> = {
   '/scan': 'nav.scan',
   '/review': 'nav.review',
   '/trash': 'nav.trash',
+  '/organize': 'nav.organize',
   '/settings': 'nav.settings',
 }
 

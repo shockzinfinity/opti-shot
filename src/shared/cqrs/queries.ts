@@ -68,6 +68,16 @@ export interface QueryMap {
   // Maintenance
   'maintenance.storageStats': { input: void; result: { dbSize: number; cacheSize: number } }
 
+  // Organize
+  'organize.lastJob': {
+    input: void
+    result: {
+      id: string; folder: string; includeSubfolders: boolean
+      totalFiles: number; renamedFiles: number; skippedFiles: number
+      status: string; startedAt: string; endedAt: string | null
+    } | null
+  }
+
   // Plugin
   'plugin.list': { input: void; result: PluginInfo[] }
 
