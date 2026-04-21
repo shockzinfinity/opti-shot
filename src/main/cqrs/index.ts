@@ -6,6 +6,9 @@ import { registerAllCqrsHandlers } from './handlers/register'
 import { applyNotificationMiddleware } from './notificationMiddleware'
 import { pluginRegistry } from '@main/engine/plugin-registry'
 import { phashSsimPlugin } from '@main/engine/plugins/phash-ssim'
+import { algorithmRegistry } from '@main/engine/algorithm-registry'
+import { phashAlgorithm } from '@main/engine/algorithms/phash'
+import { ssimAlgorithm } from '@main/engine/algorithms/ssim'
 import { getSettings } from '@main/services/settings'
 
 // Singleton instances
@@ -18,8 +21,12 @@ export function initCqrs(): void {
   queryBus = new QueryBus()
   eventBus = new EventBus()
 
-  // Register built-in detection plugins
+  // Register built-in detection plugins (legacy — to be removed after Step 4)
   pluginRegistry.register(phashSsimPlugin)
+
+  // Register algorithms (new architecture)
+  algorithmRegistry.registerHash(phashAlgorithm)
+  algorithmRegistry.registerVerify(ssimAlgorithm)
 
   // Restore plugin enabled state from settings
   const scanSettings = getSettings('scan')

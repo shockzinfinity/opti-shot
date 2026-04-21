@@ -37,6 +37,11 @@ vi.mock('@main/services/notification', () => ({
   sendNotification: vi.fn(),
 }))
 
+const mockPublish = vi.fn()
+vi.mock('@main/cqrs', () => ({
+  getEventBus: () => ({ publish: mockPublish }),
+}))
+
 describe('UpdaterService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -151,7 +156,7 @@ describe('UpdaterService', () => {
       }) => void
       handler({ version: '2.0.0', releaseDate: '2026-04-17' })
 
-      expect(mockSend).toHaveBeenCalledWith('updater:available', {
+      expect(mockPublish).toHaveBeenCalledWith('updater.available', {
         version: '2.0.0',
         releaseDate: '2026-04-17',
       })
@@ -178,7 +183,7 @@ describe('UpdaterService', () => {
       }) => void
       handler({ percent: 50, transferred: 5000000, total: 10000000 })
 
-      expect(mockSend).toHaveBeenCalledWith('updater:progress', {
+      expect(mockPublish).toHaveBeenCalledWith('updater.progress', {
         percent: 50,
         transferred: 5000000,
         total: 10000000,
@@ -202,7 +207,7 @@ describe('UpdaterService', () => {
       const handler = downloadedCall![1] as () => void
       handler()
 
-      expect(mockSend).toHaveBeenCalledWith('updater:downloaded')
+      expect(mockPublish).toHaveBeenCalledWith('updater.downloaded', undefined)
 
       process.env.NODE_ENV = origEnv
     })
