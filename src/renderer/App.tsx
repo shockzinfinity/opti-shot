@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { HeaderBar } from './components/HeaderBar'
 import { Dashboard } from './pages/Dashboard'
@@ -6,8 +7,14 @@ import { ScanProgress } from './pages/ScanProgress'
 import { GroupReview } from './pages/GroupReview'
 import { Trash } from './pages/Trash'
 import { Settings } from './pages/Settings'
+import { useTheme } from './hooks/useTheme'
+import { useSettingsStore } from './stores/settings'
 
 export default function App() {
+  const loadSettings = useSettingsStore((s) => s.loadSettings)
+  useEffect(() => { loadSettings() }, [loadSettings])
+  useTheme()
+
   return (
     <HashRouter>
       <div className="flex flex-col h-screen bg-surface-primary text-foreground-primary font-body">

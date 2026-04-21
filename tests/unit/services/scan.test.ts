@@ -6,6 +6,27 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import sharp from 'sharp'
+
+// Mock pluginRegistry before importing scan service
+vi.mock('@main/engine/plugin-registry', () => ({
+  pluginRegistry: {
+    getEnabled: () => [{
+      id: 'phash-ssim',
+      name: 'pHash + SSIM',
+      description: 'test',
+      detailDescription: 'test',
+      version: '1.0.0',
+      builtIn: true,
+      defaultHashThreshold: 8,
+      defaultVerifyThreshold: 0.82,
+      computeHash: vi.fn().mockImplementation(() => new Promise((r) => setTimeout(() => r('0000000000000000'), 100))),
+      computeDistance: vi.fn().mockReturnValue(0),
+      verify: vi.fn().mockResolvedValue([]),
+    }],
+    getAll: () => [],
+  },
+}))
+
 import { createTestDb, type AppDatabase } from '@main/db'
 import { addFolder } from '@main/services/folder'
 import { scans, photos, photoGroups } from '@main/db/schema'
@@ -265,6 +286,9 @@ describe('ScanService', () => {
 
       // Simulate an already-running scan by starting one without awaiting
       const promise1 = startScan(db, options, vi.fn())
+
+      // Wait a tick so the first scan sets activeScan before we check
+      await new Promise((r) => setTimeout(r, 50))
 
       // The second call should reject immediately
       await expect(startScan(db, options, vi.fn())).rejects.toThrow('already running')

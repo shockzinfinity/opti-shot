@@ -11,6 +11,8 @@ import {
   RefreshCcw,
   Check,
   Bell,
+  Sun,
+  Moon,
   Monitor,
   Minimize2,
   Maximize2,
@@ -297,8 +299,8 @@ export function UITab() {
   const { t } = useTranslation()
 
   const THEMES: { id: Theme; label: string; icon: ReactNode }[] = [
-    { id: 'light', label: t('settings.themeLight'), icon: <Monitor className="w-4 h-4" /> },
-    { id: 'dark', label: t('settings.themeDark'), icon: <Monitor className="w-4 h-4" /> },
+    { id: 'light', label: t('settings.themeLight'), icon: <Sun className="w-4 h-4" /> },
+    { id: 'dark', label: t('settings.themeDark'), icon: <Moon className="w-4 h-4" /> },
     { id: 'auto', label: t('settings.themeAuto'), icon: <Monitor className="w-4 h-4" /> },
   ]
 
