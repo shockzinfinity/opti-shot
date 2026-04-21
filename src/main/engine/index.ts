@@ -3,6 +3,7 @@
 
 export { computePhash, hammingDistance, dct2d } from './phash'
 export { hammingDistance as hammingDistanceUtil } from './hash-utils'
+export { mergeGroups, mergeUnion, mergeIntersection } from './group-merger'
 export { BKTree, groupByDistance } from './bk-tree'
 export type { QueryResult, DistanceFunction } from './bk-tree'
 export { computeSsim, verifySsimGroup } from './ssim'

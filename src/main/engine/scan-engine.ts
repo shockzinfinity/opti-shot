@@ -2,6 +2,7 @@
 // @SPEC CLAUDE.md#Architecture — 2-Stage pipeline (plugin-based)
 
 import { groupByDistance } from './bk-tree'
+import { mergeGroups } from './group-merger'
 import { computeQualityScore, getExifData } from './quality'
 import type { DetectionPlugin } from './plugin-registry'
 import type { HashAlgorithm, VerifyAlgorithm } from './algorithm-registry'
@@ -170,12 +171,18 @@ export class ScanEngine {
     const pathById = new Map<string, string>() // id -> path
     const idByPath = new Map<string, string>() // path -> id
 
-    // Determine which hash function to use for Stage 1
-    const hashFn = this.plugin
-      ? this.plugin.computeHash.bind(this.plugin)
-      : this.hashAlgorithms[0].computeHash.bind(this.hashAlgorithms[0])
+    // Determine hash functions for Stage 1
+    const activeHashAlgos = this.plugin
+      ? [{ id: '_legacy', computeHash: this.plugin.computeHash.bind(this.plugin) }]
+      : this.hashAlgorithms
 
-    // hashMap: path -> hash (primary hash for quality/display)
+    // Per-algorithm hash maps: algoId -> Map<path, hash>
+    const algoHashMaps = new Map<string, Map<string, string>>()
+    for (const algo of activeHashAlgos) {
+      algoHashMaps.set(algo.id, new Map())
+    }
+
+    // Primary hash map for display (first algorithm)
     const hashMap = new Map<string, string>()
 
     for (let i = 0; i < filePaths.length; i += this.batchSize) {
@@ -186,12 +193,21 @@ export class ScanEngine {
         this.checkAborted(signal)
 
         try {
-          const hash = await hashFn(filePath)
-          const id = randomUUID()
+          // Compute hashes for all active algorithms
+          for (const algo of activeHashAlgos) {
+            const hash = await algo.computeHash(filePath)
+            algoHashMaps.get(algo.id)!.set(filePath, hash)
+          }
 
-          hashMap.set(filePath, hash)
-          pathById.set(id, filePath)
-          idByPath.set(filePath, id)
+          // Assign ID only once per file
+          if (!idByPath.has(filePath)) {
+            const id = randomUUID()
+            pathById.set(id, filePath)
+            idByPath.set(filePath, id)
+          }
+
+          // Primary hash for DB/display
+          hashMap.set(filePath, algoHashMaps.get(activeHashAlgos[0].id)!.get(filePath)!)
         } catch (err) {
           const reason = err instanceof Error ? err.message : 'Unknown error'
           skippedFiles.push({ path: filePath, reason })
@@ -202,33 +218,42 @@ export class ScanEngine {
       }
     }
 
-    // --- Stage 1b: Group via BK-Tree ---
+    // --- Stage 1b: Group via BK-Tree (per algorithm) + merge ---
     this.checkAborted(signal)
 
     const validPaths = filePaths.filter((path) => idByPath.has(path))
-    const items = validPaths.map((path) => ({
-      id: idByPath.get(path)!,
-      hash: hashMap.get(path)!,
-    }))
-
     let candidateGroups: string[][]
 
     if (this.plugin) {
       // Legacy mode: single plugin
+      const items = validPaths.map((path) => ({
+        id: idByPath.get(path)!,
+        hash: hashMap.get(path)!,
+      }))
       candidateGroups = groupByDistance(
         items,
         this.hashThreshold,
         this.plugin.computeDistance,
       )
     } else {
-      // New algorithm mode: use first hash algorithm (multi-hash in Step 3)
-      const algo = this.hashAlgorithms[0]
-      const threshold = this.hashThresholds[algo.id] ?? algo.defaultThreshold
-      candidateGroups = groupByDistance(
-        items,
-        threshold,
-        algo.computeDistance,
-      )
+      // New algorithm mode: run BK-Tree per hash algorithm, then merge
+      const allIds = validPaths.map((path) => idByPath.get(path)!)
+      const groupSets: string[][][] = []
+
+      for (const algo of this.hashAlgorithms) {
+        const algoHashes = algoHashMaps.get(algo.id)!
+        const items = validPaths.map((path) => ({
+          id: idByPath.get(path)!,
+          hash: algoHashes.get(path)!,
+        }))
+        const threshold = this.hashThresholds[algo.id] ?? algo.defaultThreshold
+        const groups = groupByDistance(items, threshold, algo.computeDistance)
+        groupSets.push(groups)
+      }
+
+      candidateGroups = groupSets.length === 1
+        ? groupSets[0].filter((g) => g.length >= 2)
+        : mergeGroups(groupSets, allIds, this.mergeStrategy)
     }
 
     // --- Stage 2: Verification for each candidate group ---
