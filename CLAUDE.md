@@ -5,7 +5,7 @@
 
 ## Architecture
 - **Framework**: Electron (Main + Renderer process)
-- **IPC**: CQRS 패턴 — CommandBus(25) / QueryBus(18) / EventBus(6)
+- **IPC**: CQRS 패턴 — CommandBus(26) / QueryBus(18) / EventBus(6)
 - **Plugin**: DetectionPlugin 인터페이스 + PluginRegistry (감지 알고리즘 교체 가능)
 - **Renderer**: React 19 + TypeScript + Tailwind CSS + Zustand
 - **Main**: Node.js + CQRS handlers + Services
@@ -52,7 +52,7 @@ src/
 │   ├── utils.ts       # 공유 포맷 함수 (formatBytes, formatDuration, formatDateTime 등)
 │   ├── plugins.ts     # PluginInfo 타입 (UI-safe)
 │   └── cqrs/          # CQRS 타입 레지스트리
-│       ├── commands.ts  # CommandMap (25 commands)
+│       ├── commands.ts  # CommandMap (26 commands)
 │       ├── queries.ts   # QueryMap (18 queries)
 │       ├── events.ts    # EventMap (6 events)
 │       └── bus.ts       # 공통 타입, allowlist 배열
