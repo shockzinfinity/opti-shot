@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { rmSync, existsSync, statSync, readdirSync } from 'fs'
 import { getDb } from '@main/db'
-import { photos, photoGroups, scans, trashItems } from '@main/db/schema'
+import { photos, photoGroups, scans, trashItems, organizeJobs, organizeRenames } from '@main/db/schema'
 import type { CommandBus } from '../commandBus'
 import type { QueryBus } from '../queryBus'
 
@@ -33,6 +33,12 @@ export function registerMaintenanceHandlers(cmd: CommandBus, qry: QueryBus): voi
 
     const cacheDir = join(app.getPath('userData'), 'cache')
     if (existsSync(cacheDir)) rmSync(cacheDir, { recursive: true })
+  })
+
+  cmd.register('maintenance.clearOrganizeHistory', async () => {
+    const db = getDb()
+    db.delete(organizeRenames).run()
+    db.delete(organizeJobs).run()
   })
 
   qry.register('maintenance.storageStats', async () => {

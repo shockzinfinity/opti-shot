@@ -30,7 +30,7 @@ export const ALL_COMMAND_TYPES: CommandType[] = [
   'organize.preview', 'organize.execute', 'organize.undo',
   'plugin.toggle',
   'settings.save', 'settings.reset',
-  'maintenance.clearCache', 'maintenance.clearScanHistory',
+  'maintenance.clearCache', 'maintenance.clearScanHistory', 'maintenance.clearOrganizeHistory',
   'notification.markRead', 'notification.clear',
   'dialog.openDirectory', 'shell.openPath',
   'updater.check', 'updater.download', 'updater.install',

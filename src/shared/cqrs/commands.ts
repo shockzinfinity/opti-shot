@@ -77,6 +77,7 @@ export interface CommandMap {
   // Maintenance
   'maintenance.clearCache': { input: void; result: void }
   'maintenance.clearScanHistory': { input: void; result: void }
+  'maintenance.clearOrganizeHistory': { input: void; result: void }
 
   // Notification
   'notification.markRead': { input: { ids: string[] }; result: void }

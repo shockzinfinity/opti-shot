@@ -430,6 +430,14 @@ export function DataTab() {
     }
   }
 
+  const handleClearOrganizeHistory = async () => {
+    if (!confirm(t('settings.clearOrganizeHistoryConfirm'))) return
+    const res = await window.electron.command('maintenance.clearOrganizeHistory')
+    if (res.success) {
+      alert(t('settings.organizeHistoryCleared'))
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Trash Retention */}
@@ -479,6 +487,12 @@ export function DataTab() {
             className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface-secondary border border-error/20 text-error hover:bg-error-light transition-colors"
           >
             {t('settings.clearScanHistory')}
+          </button>
+          <button
+            onClick={handleClearOrganizeHistory}
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-surface-secondary border border-error/20 text-error hover:bg-error-light transition-colors"
+          >
+            {t('settings.clearOrganizeHistory')}
           </button>
         </div>
       </div>
