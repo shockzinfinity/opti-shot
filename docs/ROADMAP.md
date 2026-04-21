@@ -76,7 +76,7 @@
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
 | 1 | ORB 특징점 매칭 플러그인 (OpenCV) | 플러그인 | 기획 |
-| 2 | 딥러닝 임베딩 플러그인 (ONNX Runtime) | 플러그인 | 기획 |
+| 2 | 딥러닝 임베딩 플러그인 (ONNX Runtime) | 플러그인 | 기획 — Gemma 4 E2B(2.3B, INT4 ~1-2GB) 또는 CLIP ViT-B/32(~350MB) 검토. VLM은 의미적 유사도(각도/보정/구도 차이) 감지 가능 |
 | 3 | 외부 플러그인 로더 (dynamic import) | 플러그인 | 기획 |
 | 4 | 지도 기반 위치 필터링 | 기능 | GPS 데이터 있음 |
 | 5 | EXIF 메타데이터 편집 | 기능 | 아이디어 |
@@ -90,9 +90,9 @@
 
 | # | 항목 | 상태 |
 |---|------|------|
-| 1 | GitHub Actions 워크플로우 | 미구현 |
-| 2 | macOS/Windows/Linux 크로스 빌드 자동화 | 미구현 |
-| 3 | 코드 서명 (Apple notarization, Windows signing) | 미구현 |
+| 1 | GitHub Actions 워크플로우 | ✅ release.yml (태그 트리거, 3-OS 매트릭스, 캐싱, lint, 테스트) |
+| 2 | macOS/Windows/Linux 크로스 빌드 자동화 | ✅ electron-builder 3-OS 타겟 |
+| 3 | 코드 서명 (Apple notarization, Windows signing) | 미구현 (장기) |
 
 ---
 
@@ -119,7 +119,7 @@
 | 알림 | ✅ 완료 | 정책 기반 미들웨어 + 3계층 |
 | 크래시 방어 | ✅ 완료 | 글로벌 핸들러 + 방어적 코드 |
 | Worker Threads | ❌ stub | parallelThreads 설정 미반영 |
-| CI/CD | ❌ 미구현 | 워크플로우/서명 없음 |
+| CI/CD | ⚠️ 부분 | release.yml 완료, 코드 서명 미구현 |
 
 ---
 
@@ -127,3 +127,9 @@
 
 - **GPU 가속**: 현재 해상도(32×32 pHash, 256×256 SSIM)에서 불필요. SSIM 512×512 이상 시 검토. 상세: memory/project_gpu_analysis.md
 - **exifr GPS**: GPSLatitude는 DMS 배열, latitude/longitude는 pick 불가. 상세: memory/project_exifr_gps.md
+- **로컬 LLM 이미지 유사도 플러그인 후보**:
+  - Gemma 4 E2B (2.3B effective, INT4 ~1-2GB) — 네이티브 멀티모달, ONNX 공식 지원, 의미적 유사도 감지 가능
+  - CLIP ViT-B/32 (~350MB) — 임베딩 전용, 코사인 유사도 직접 비교, 가장 빠름
+  - SuperGemma4 26B — **텍스트 전용** (비전 없음), 코드/추론/한국어 특화 파인튠. 코딩 에이전트용으로 추후 테스트 예정
+    - HF: https://huggingface.co/Jiunsong/supergemma4-26b-uncensored-mlx-4bit-v2
+    - MLX 4-bit, ~13GB, Apple Silicon 최적화, 46.2 tok/s
