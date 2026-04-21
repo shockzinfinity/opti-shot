@@ -22,7 +22,7 @@
 | 기능 | 설명 |
 |------|------|
 | EXIF 사전 필터링 | 촬영날짜/카메라/GPS/해상도 기반 사전 필터링 (32 concurrent) |
-| Plugin Architecture | DetectionPlugin 인터페이스 + PluginRegistry + 플러그인별 UI 분리 |
+| Plugin Architecture | DetectionPlugin 인터페이스 + PluginRegistry (v0.2에서 HashAlgorithm/VerifyAlgorithm 아키텍처로 재설계 예정) |
 | HEIC/HEIF 변환 | heic.ts 변환 + 캐싱 |
 | 다국어 (i18n) | ko/en/ja 3개 언어 |
 | 알림 시스템 | 3계층 (로그 파일 + EventBus + 인메모리) + CQRS 미들웨어 정책 기반 |
@@ -52,11 +52,31 @@
 
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
-| 1 | Auto-updater 실전 배포 | 배포 | 코드 구현됨, 실전 배포 미완 |
-| 2 | Incremental Scan | 기능 | 스캔 모드에 존재하나 미구현, 설계 논의 필요 |
-| 3 | dHash+MSE 플러그인 구현 | 플러그인 | 가이드 작성 완료, 구현 대기 |
-| 4 | 다중 플러그인 동시 실행 + 그룹 병합 | 플러그인 | 기획 |
-| 5 | Quick Start 가이드 / 온보딩 | UX | 아이디어 |
+| 1 | Auto-updater 실전 배포 | 배포 | ✅ UI/EventBus 구현 완료, 실전 태그 테스트만 남음 |
+| 2 | 감지 알고리즘 아키텍처 재설계 | 아키텍처 | 설계 진행 중 — 아래 상세 |
+| 3 | Quick Start 가이드 / 온보딩 | UX | 아이디어 |
+
+### #2 감지 알고리즘 아키텍처 재설계
+
+기존 모놀리식 DetectionPlugin(Stage1+2 고정 조합)을 알고리즘 단위로 분리하고, 사용자가 자유 조합할 수 있는 구조로 전환. 상세 설계: `docs/planning/11-algorithm-architecture.md`
+
+**2-Stage 파이프라인 (고정):**
+- Stage 1 (후보 탐색): HashAlgorithm — 빠르게 후보 그룹 추림
+- Stage 2 (정밀 검증): VerifyAlgorithm — 후보 그룹 내 진짜 중복 확인
+- Stage 수는 2로 고정, 각 Stage 안에서 알고리즘을 자유롭게 추가
+
+**구현 단계:**
+- Step 1: 인터페이스 분리 + 기존 pHash/SSIM 마이그레이션
+- Step 2: dHash(HashAlgorithm) + NMSE(VerifyAlgorithm) 추가
+- Step 3: 복수 Stage 1 동시 실행 + Union-Find 그룹 병합 + 복수 Stage 2 순차 파이프라인
+- Step 4: UI (점진적 공개 — 프리셋만 노출, 고급 설정 접힘) + 기존 DetectionPlugin 제거
+
+**프리셋:**
+- 균형 (기본값): pHash + dHash(Union) + SSIM
+- 빠른 스캔: dHash only
+- 보수적: pHash + SSIM(0.90)
+- 정밀: pHash + dHash(Intersection) + SSIM → NMSE 순차 검증
+- 사용자 정의: 자유 조합
 
 ---
 
@@ -67,7 +87,8 @@
 | 1 | Worker Threads (piscina) | 성능 | stub 상태, 4~8x 가속 예상 |
 | 2 | Correction Detection 구현 또는 제거 | 정리 | DB 컬럼 잔재 |
 | 3 | exifr 호출 최적화 | 성능 | parse() + gps() 2회 → 1회 통합 |
-| 4 | 다중 회전 pHash 플러그인 | 플러그인 | 기획 |
+| 4 | 다중 회전 해시 (HashAlgorithm) | 알고리즘 | 기획 — 0°/90°/180°/270° 회전 해시. 새 아키텍처 Stage 1 확장 |
+| 5 | Incremental Scan | 기능 | 보류 — 아래 설계 메모 참고 |
 
 ---
 
@@ -75,9 +96,9 @@
 
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
-| 1 | ORB 특징점 매칭 플러그인 (OpenCV) | 플러그인 | 기획 |
-| 2 | 딥러닝 임베딩 플러그인 (ONNX Runtime) | 플러그인 | 기획 — Gemma 4 E2B(2.3B, INT4 ~1-2GB) 또는 CLIP ViT-B/32(~350MB) 검토. VLM은 의미적 유사도(각도/보정/구도 차이) 감지 가능 |
-| 3 | 외부 플러그인 로더 (dynamic import) | 플러그인 | 기획 |
+| 1 | ORB 특징점 매칭 (VerifyAlgorithm) | 알고리즘 | 기획 — OpenCV 키포인트 비교. 새 아키텍처 Stage 2 확장 |
+| 2 | 딥러닝 임베딩 (HashAlgorithm, ONNX) | 알고리즘 | 기획 — Gemma 4 E2B(2.3B, INT4 ~1-2GB) 또는 CLIP ViT-B/32(~350MB). 새 아키텍처 Stage 1 확장. 의미적 유사도(각도/보정/구도 차이) 감지 |
+| 3 | 외부 알고리즘 로더 (dynamic import) | 아키텍처 | 기획 — AlgorithmRegistry에 외부 모듈 동적 등록 |
 | 4 | 지도 기반 위치 필터링 | 기능 | GPS 데이터 있음 |
 | 5 | EXIF 메타데이터 편집 | 기능 | 아이디어 |
 | 6 | 동영상 지원 | 기능 | PRD Out of Scope |
@@ -133,3 +154,9 @@
   - SuperGemma4 26B — **텍스트 전용** (비전 없음), 코드/추론/한국어 특화 파인튠. 코딩 에이전트용으로 추후 테스트 예정
     - HF: https://huggingface.co/Jiunsong/supergemma4-26b-uncensored-mlx-4bit-v2
     - MLX 4-bit, ~13GB, Apple Silicon 최적화, 46.2 tok/s
+- **Incremental Scan (보류)**:
+  - 사진 정리 앱은 상시 가동 도구가 아님 — 필요할 때 한 번 돌리는 패턴
+  - 대부분의 사용자는 한 번 정리 후 당분간 미사용, 재사용 시 폴더 구성이 달라져 있을 가능성 높음
+  - 구현 시 방향: `scanned_files` 테이블 (path+size+mtime 복합키)로 기존 pHash 재사용, 그룹은 매번 재생성 (병합보다 단순)
+  - 병목은 pHash 계산이므로, 기존 파일 pHash를 DB에서 로드하면 신규 파일만 계산 → 효과 큼
+  - 실제 사용자 피드백이 오거나 Worker Threads 이후 재검토
