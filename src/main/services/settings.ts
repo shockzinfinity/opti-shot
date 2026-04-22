@@ -19,7 +19,6 @@ export interface ScanSettings {
   timeWindowHours: number
   parallelThreads: number
   batchSize: number
-  enableCorrectionDetection: boolean
   enableExifFilter: boolean
   enableIncremental: boolean
   exifMinWidth: number

@@ -114,11 +114,14 @@ export async function getExifData(imagePath: string): Promise<ExifData> {
   let longitude: number | null = null
 
   try {
+    // Single exifr.parse() call with gps:true for decimal GPS coordinates
+    // Note: pick + gps:true → EXIF fields + converted lat/lon in one pass
     const exif = await exifr.parse(imagePath, {
       pick: [
         'DateTimeOriginal', 'Make', 'Model', 'LensModel',
         'ISO', 'ExposureTime', 'FNumber', 'FocalLength',
       ],
+      gps: true,
     })
     if (exif) {
       if (exif.DateTimeOriginal instanceof Date) {
@@ -134,15 +137,10 @@ export async function getExifData(imagePath: string): Promise<ExifData> {
       }
       aperture = typeof exif.FNumber === 'number' ? exif.FNumber : null
       focalLength = typeof exif.FocalLength === 'number' ? exif.FocalLength : null
+      // GPS: gps:true adds latitude/longitude as converted decimals
+      latitude = typeof exif.latitude === 'number' ? exif.latitude : null
+      longitude = typeof exif.longitude === 'number' ? exif.longitude : null
     }
-    // GPS: exifr.gps() returns converted decimal coordinates
-    try {
-      const gps = await exifr.gps(imagePath)
-      if (gps) {
-        latitude = gps.latitude ?? null
-        longitude = gps.longitude ?? null
-      }
-    } catch { /* no GPS data */ }
   } catch {
     // EXIF not available — skip
   }

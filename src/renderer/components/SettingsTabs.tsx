@@ -340,13 +340,6 @@ export function ScanTab() {
         <SectionHeader title={t('settings.advancedProcessing')} />
         <div className="space-y-3">
           <ToggleCard
-            icon={<RefreshCcw className="w-4 h-4" />}
-            label={t('settings.correctionDetection')}
-            description={t('settings.correctionDetectionDesc')}
-            value={scan.enableCorrectionDetection}
-            onToggle={() => updateScan('enableCorrectionDetection', !scan.enableCorrectionDetection)}
-          />
-          <ToggleCard
             icon={<Filter className="w-4 h-4" />}
             label={t('settings.exifFiltering')}
             description={t('settings.exifFilteringDesc')}

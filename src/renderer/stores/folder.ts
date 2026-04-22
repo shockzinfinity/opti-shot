@@ -24,7 +24,6 @@ export interface ScanOptions {
   verifyThresholds: Record<string, number>
   timeWindowHours: number
   parallelThreads: number
-  enableCorrectionDetection: boolean
   // EXIF filters
   enableExifFilter: boolean
   exifDateStart: string | null
@@ -65,7 +64,6 @@ const FALLBACK_OPTIONS: ScanOptions = {
   verifyThresholds: { ...DEFAULT_SCAN_SETTINGS.verifyThresholds },
   timeWindowHours: DEFAULT_SCAN_SETTINGS.timeWindowHours,
   parallelThreads: DEFAULT_SCAN_SETTINGS.parallelThreads,
-  enableCorrectionDetection: DEFAULT_SCAN_SETTINGS.enableCorrectionDetection,
   enableExifFilter: DEFAULT_SCAN_SETTINGS.enableExifFilter,
   exifDateStart: null,
   exifDateEnd: null,
@@ -148,7 +146,6 @@ export const useFolderStore = create<FolderState>((set, get) => ({
               verifyThresholds: { ...presetValues.verifyThresholds },
               timeWindowHours: presetValues.timeWindowHours,
               parallelThreads: presetValues.parallelThreads,
-              enableCorrectionDetection: s.enableCorrectionDetection,
               enableExifFilter: s.enableExifFilter,
               exifMinWidth: s.exifMinWidth,
               exifMinHeight: s.exifMinHeight,
@@ -168,7 +165,6 @@ export const useFolderStore = create<FolderState>((set, get) => ({
               verifyThresholds: s.verifyThresholds ?? FALLBACK_OPTIONS.verifyThresholds,
               timeWindowHours: s.timeWindowHours,
               parallelThreads: s.parallelThreads,
-              enableCorrectionDetection: s.enableCorrectionDetection,
               enableExifFilter: s.enableExifFilter,
               exifMinWidth: s.exifMinWidth,
               exifMinHeight: s.exifMinHeight,

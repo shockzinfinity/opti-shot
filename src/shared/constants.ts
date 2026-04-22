@@ -64,7 +64,6 @@ export const DEFAULT_SCAN_SETTINGS = {
   preset: 'balanced' as ScanPreset,
   ...SCAN_PRESETS.balanced,
   batchSize: 100,
-  enableCorrectionDetection: true,
   enableExifFilter: false,
   enableIncremental: true,
   exifMinWidth: 0,

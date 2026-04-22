@@ -42,7 +42,6 @@ export const scans = sqliteTable('scans', {
   optionSsimThreshold: real('option_ssim_threshold').notNull().default(0.82),
   optionTimeWindowHours: integer('option_time_window_hours').notNull().default(1),
   optionParallelThreads: integer('option_parallel_threads').notNull().default(8),
-  optionEnableCorrectionDetection: integer('option_enable_correction_detection', { mode: 'boolean' }).notNull().default(true),
   optionEnableExifFilter: integer('option_enable_exif_filter', { mode: 'boolean' }).notNull().default(false),
   optionAlgorithmConfig: text('option_algorithm_config'), // JSON, nullable (new scans only)
   filteredFiles: integer('filtered_files').notNull().default(0),
