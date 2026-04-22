@@ -340,7 +340,7 @@ export function initCqrs(): void {
       └─ startScan()
           └─ new ScanEngine({
                hashAlgorithms: [phashAlgorithm, dhashAlgorithm],  // 사용자 선택
-               hashThresholds: { phash: 8, dhash: 10 },           // 프리셋 또는 커스텀
+               hashThresholds: { phash: 8, dhash: 8 },            // 균형 프리셋 기본값
                mergeStrategy: 'union',                             // union | intersection
                verifyAlgorithms: [ssimAlgorithm],                 // 사용자 선택
                verifyThresholds: { ssim: 0.82 },                  // 프리셋 또는 커스텀
@@ -364,10 +364,10 @@ ScanEngine.scanFiles()
 
 | 프리셋 | 해시 | 검증 | 병합 전략 |
 |--------|------|------|-----------|
-| **balanced** | phash | ssim | — |
-| **fast** | dhash | — | — |
-| **conservative** | phash + dhash | ssim | intersection |
-| **precise** | phash + dhash | ssim + nmse | intersection |
+| **balanced** | phash(8) + dhash(8) | ssim(0.82) | union |
+| **fast** | dhash(8) | ssim(0.75) | — |
+| **conservative** | phash(6) | ssim(0.85) | — |
+| **precise** | phash(8) + dhash(8) | ssim(0.82) + nmse(0.05) | intersection |
 | **custom** | 사용자 선택 | 사용자 선택 | 사용자 선택 |
 
 ---

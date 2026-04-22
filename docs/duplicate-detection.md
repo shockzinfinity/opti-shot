@@ -199,8 +199,9 @@ export async function computePhash(imagePath: string): Promise<string> {
   const SIZE = 32
   const HASH_SIZE = 8
 
-  // Step 1: Resize to 32x32 greyscale
-  const { data } = await sharp(imagePath)
+  // Step 1: Resize to 32x32 greyscale (HEIC-aware)
+  const sharpInstance = await sharpFromPath(imagePath)
+  const { data } = await sharpInstance
     .resize(SIZE, SIZE, { fit: 'fill' })
     .greyscale()
     .raw()
@@ -615,7 +616,7 @@ $$\text{SSIM}(X,Y) = \frac{1}{M} \sum_{j=1}^{M} \text{SSIM}(x_j, y_j)$$
 ### 4.4 구현 코드
 
 ```typescript
-import sharp from 'sharp'
+import { sharpFromPath } from './heic'
 
 // SSIM constants (based on the SSIM paper, Wang et al. 2004)
 const K1 = 0.01
@@ -1111,7 +1112,8 @@ const LAPLACIAN_KERNEL = [0, 1, 0, 1, -4, 1, 0, 1, 0]
 export async function computeQualityScore(
   imagePath: string,
 ): Promise<number> {
-  const { data, info } = await sharp(imagePath)
+  const sharpInstance = await sharpFromPath(imagePath)
+  const { data, info } = await sharpInstance
     .resize(QUALITY_SIZE, QUALITY_SIZE, { fit: 'fill' })
     .greyscale()
     .raw()
@@ -1183,10 +1185,13 @@ export interface ExifData {
   shutterSpeed: string | null
   aperture: number | null
   focalLength: number | null
+  latitude: number | null
+  longitude: number | null
 }
 
 export async function getExifData(imagePath: string): Promise<ExifData> {
-  const metadata = await sharp(imagePath).metadata()
+  const sharpInstance = await sharpFromPath(imagePath)
+  const metadata = await sharpInstance.metadata()
   const stats = statSync(imagePath)
 
   // ... EXIF 파싱 (exifr 라이브러리 사용)
