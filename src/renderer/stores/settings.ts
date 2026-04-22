@@ -52,7 +52,19 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         window.electron.query('settings.get', { section: 'data' }) as unknown as Promise<{ success: boolean; data: DataSettings }>,
       ])
       if (scanRes.success && uiRes.success && dataRes.success) {
-        set({ scan: scanRes.data, ui: uiRes.data, data: dataRes.data })
+        const scan = scanRes.data
+        // Enforce preset values for consistency (stale settings protection)
+        if (scan.preset && scan.preset !== 'custom' && scan.preset in SCAN_PRESETS) {
+          const presetValues = SCAN_PRESETS[scan.preset as Exclude<ScanPreset, 'custom'>]
+          scan.hashAlgorithms = [...presetValues.hashAlgorithms]
+          scan.hashThresholds = { ...presetValues.hashThresholds }
+          scan.mergeStrategy = presetValues.mergeStrategy
+          scan.verifyAlgorithms = [...presetValues.verifyAlgorithms]
+          scan.verifyThresholds = { ...presetValues.verifyThresholds }
+          scan.timeWindowHours = presetValues.timeWindowHours
+          scan.parallelThreads = presetValues.parallelThreads
+        }
+        set({ scan, ui: uiRes.data, data: dataRes.data })
       }
     } catch {
       // Keep defaults if IPC fails

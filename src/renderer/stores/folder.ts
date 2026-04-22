@@ -132,23 +132,50 @@ export const useFolderStore = create<FolderState>((set, get) => ({
       const res = await window.electron.query('settings.get', { section: 'scan' }) as unknown as { success: boolean; data: ScanSettings }
       if (res.success) {
         const s = res.data
-        set((state) => ({
-          options: {
-            ...state.options,
-            hashAlgorithms: s.hashAlgorithms ?? FALLBACK_OPTIONS.hashAlgorithms,
-            hashThresholds: s.hashThresholds ?? FALLBACK_OPTIONS.hashThresholds,
-            mergeStrategy: s.mergeStrategy ?? FALLBACK_OPTIONS.mergeStrategy,
-            verifyAlgorithms: s.verifyAlgorithms ?? FALLBACK_OPTIONS.verifyAlgorithms,
-            verifyThresholds: s.verifyThresholds ?? FALLBACK_OPTIONS.verifyThresholds,
-            timeWindowHours: s.timeWindowHours,
-            parallelThreads: s.parallelThreads,
-            enableCorrectionDetection: s.enableCorrectionDetection,
-            enableExifFilter: s.enableExifFilter,
-            exifMinWidth: s.exifMinWidth,
-            exifMinHeight: s.exifMinHeight,
-            exifGpsFilter: s.exifGpsFilter,
-          },
-        }))
+        const preset = s.preset ?? 'balanced'
+
+        // If preset is not custom, enforce preset values for consistency
+        if (preset !== 'custom' && preset in SCAN_PRESETS) {
+          const presetValues = SCAN_PRESETS[preset as Exclude<ScanPreset, 'custom'>]
+          set((state) => ({
+            options: {
+              ...state.options,
+              preset,
+              hashAlgorithms: [...presetValues.hashAlgorithms],
+              hashThresholds: { ...presetValues.hashThresholds },
+              mergeStrategy: presetValues.mergeStrategy,
+              verifyAlgorithms: [...presetValues.verifyAlgorithms],
+              verifyThresholds: { ...presetValues.verifyThresholds },
+              timeWindowHours: presetValues.timeWindowHours,
+              parallelThreads: presetValues.parallelThreads,
+              enableCorrectionDetection: s.enableCorrectionDetection,
+              enableExifFilter: s.enableExifFilter,
+              exifMinWidth: s.exifMinWidth,
+              exifMinHeight: s.exifMinHeight,
+              exifGpsFilter: s.exifGpsFilter,
+            },
+          }))
+        } else {
+          // Custom preset: use saved values as-is
+          set((state) => ({
+            options: {
+              ...state.options,
+              preset: 'custom',
+              hashAlgorithms: s.hashAlgorithms ?? FALLBACK_OPTIONS.hashAlgorithms,
+              hashThresholds: s.hashThresholds ?? FALLBACK_OPTIONS.hashThresholds,
+              mergeStrategy: s.mergeStrategy ?? FALLBACK_OPTIONS.mergeStrategy,
+              verifyAlgorithms: s.verifyAlgorithms ?? FALLBACK_OPTIONS.verifyAlgorithms,
+              verifyThresholds: s.verifyThresholds ?? FALLBACK_OPTIONS.verifyThresholds,
+              timeWindowHours: s.timeWindowHours,
+              parallelThreads: s.parallelThreads,
+              enableCorrectionDetection: s.enableCorrectionDetection,
+              enableExifFilter: s.enableExifFilter,
+              exifMinWidth: s.exifMinWidth,
+              exifMinHeight: s.exifMinHeight,
+              exifGpsFilter: s.exifGpsFilter,
+            },
+          }))
+        }
       }
     } catch {
       // Keep fallback values
