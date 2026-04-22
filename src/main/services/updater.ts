@@ -6,11 +6,16 @@ const { autoUpdater } = pkg
 import { getEventBus } from '@main/cqrs'
 import { sendNotification } from '@main/services/notification'
 
+/** Check interval: 4 hours */
+const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000
+
+let checkTimer: ReturnType<typeof setInterval> | null = null
+
 /**
  * Initialize the auto-updater.
  * Skips initialization in development mode.
- * Registers event handlers for update lifecycle and
- * schedules an update check after 5 seconds.
+ * Registers event handlers for update lifecycle,
+ * checks after 5 seconds, then every 4 hours.
  */
 export function initAutoUpdater(): void {
   // Don't check in dev mode
@@ -54,10 +59,15 @@ export function initAutoUpdater(): void {
     })
   })
 
-  // Check for updates after 5 seconds
+  // Initial check after 5 seconds
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch(() => {})
   }, 5000)
+
+  // Periodic check every 4 hours
+  checkTimer = setInterval(() => {
+    autoUpdater.checkForUpdates().catch(() => {})
+  }, CHECK_INTERVAL_MS)
 }
 
 /** Trigger update download. */
@@ -68,4 +78,12 @@ export function downloadUpdate(): void {
 /** Quit and install the downloaded update. */
 export function installUpdate(): void {
   autoUpdater.quitAndInstall()
+}
+
+/** Clean up interval timer (for app quit). */
+export function stopAutoUpdater(): void {
+  if (checkTimer) {
+    clearInterval(checkTimer)
+    checkTimer = null
+  }
 }

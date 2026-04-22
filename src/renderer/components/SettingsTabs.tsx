@@ -626,17 +626,21 @@ export function InfoTab() {
 
   const handleCheckUpdate = async () => {
     setUpdaterStatus('checking')
-    const res = await window.electron.command('updater.check')
-    if (res.success && res.data) {
-      const updateInfo = res.data as { version?: string }
-      if (updateInfo.version) {
-        setUpdateVersion(updateInfo.version)
-        setUpdaterStatus('available')
+    try {
+      const res = await window.electron.command('updater.check')
+      if (res.success && res.data) {
+        const updateInfo = res.data as { version?: string }
+        if (updateInfo.version) {
+          setUpdateVersion(updateInfo.version)
+          setUpdaterStatus('available')
+        } else {
+          setUpdaterStatus('up-to-date')
+        }
       } else {
         setUpdaterStatus('up-to-date')
       }
-    } else {
-      setUpdaterStatus('up-to-date')
+    } catch {
+      setUpdaterStatus('error')
     }
   }
 
@@ -684,52 +688,47 @@ export function InfoTab() {
       <div className="space-y-3">
         <SectionHeader title={t('updater.title')} />
         <div className="bg-surface-secondary rounded-xl p-4 space-y-3">
-          {updaterStatus === 'idle' && (
+          {/* Check button row — always visible */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              {updaterStatus === 'checking' && (
+                <>
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-foreground-muted">{t('updater.checking')}</span>
+                </>
+              )}
+              {updaterStatus === 'up-to-date' && (
+                <>
+                  <Check className="w-4 h-4 text-success" />
+                  <span className="text-success">{t('updater.upToDate')}</span>
+                </>
+              )}
+              {updaterStatus === 'available' && (
+                <span className="text-primary font-semibold">
+                  {t('updater.availableDesc').replace('{version}', updateVersion)}
+                </span>
+              )}
+              {updaterStatus === 'error' && (
+                <span className="text-error">{t('updater.error')}</span>
+              )}
+            </div>
             <button
               onClick={handleCheckUpdate}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
+              disabled={updaterStatus === 'checking' || updaterStatus === 'downloading'}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('updater.checkForUpdates')}
             </button>
-          )}
+          </div>
 
-          {updaterStatus === 'checking' && (
-            <div className="flex items-center gap-2 text-sm text-foreground-muted">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              {t('updater.checking')}
-            </div>
-          )}
-
-          {updaterStatus === 'up-to-date' && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-success">
-                <Check className="w-4 h-4" />
-                {t('updater.upToDate')}
-              </div>
-              <button
-                onClick={handleCheckUpdate}
-                className="text-xs text-foreground-muted hover:text-primary transition-colors"
-              >
-                {t('updater.checkForUpdates')}
-              </button>
-            </div>
-          )}
-
+          {/* Download / Progress / Install — shown below when applicable */}
           {updaterStatus === 'available' && (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground-primary">{t('updater.available')}</p>
-                <p className="text-xs text-foreground-muted">
-                  {t('updater.availableDesc').replace('{version}', updateVersion)}
-                </p>
-              </div>
-              <button
-                onClick={handleDownload}
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
-              >
-                {t('updater.download')}
-              </button>
-            </div>
+            <button
+              onClick={handleDownload}
+              className="w-full px-4 py-2 rounded-lg text-sm font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            >
+              {t('updater.download')}
+            </button>
           )}
 
           {updaterStatus === 'downloading' && (
@@ -747,7 +746,7 @@ export function InfoTab() {
           )}
 
           {updaterStatus === 'downloaded' && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg">
               <div>
                 <p className="text-sm font-semibold text-foreground-primary">{t('updater.downloaded')}</p>
                 <p className="text-xs text-foreground-muted">{t('updater.installDesc')}</p>
@@ -757,18 +756,6 @@ export function InfoTab() {
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-success text-white hover:bg-success/90 transition-colors"
               >
                 {t('updater.install')}
-              </button>
-            </div>
-          )}
-
-          {updaterStatus === 'error' && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-error">{t('updater.error')}</p>
-              <button
-                onClick={handleCheckUpdate}
-                className="text-xs text-foreground-muted hover:text-primary transition-colors"
-              >
-                {t('updater.checkForUpdates')}
               </button>
             </div>
           )}
