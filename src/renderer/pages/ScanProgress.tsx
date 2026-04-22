@@ -7,6 +7,7 @@ import { ProgressBar } from '../components/ProgressBar'
 import { ScanStats } from '../components/ScanStats'
 import { DiscoveryFeed } from '../components/DiscoveryFeed'
 import { PageCloseButton } from '../components/PageCloseButton'
+import { clearThumbnailCache } from '@renderer/hooks/useThumbnail'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 
 export function ScanProgress() {
@@ -34,6 +35,7 @@ export function ScanProgress() {
 
   useEffect(() => {
     if (isComplete) {
+      clearThumbnailCache()
       const timer = setTimeout(() => {
         navigate('/review')
       }, 2000)
