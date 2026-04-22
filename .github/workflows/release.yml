@@ -47,7 +47,7 @@ jobs:
         run: bun run postinstall
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: bun run lint
 
       - name: Run tests
         run: bun run test
