@@ -149,7 +149,8 @@ Renderer                          Main
 - 추가: 다크 모드 테마, 파일 정리(일괄 리네임 + 되돌리기)
 - 추가: 알고리즘 아키텍처 재설계 (HashAlgorithm/VerifyAlgorithm 분리, 4개 알고리즘, 프리셋), 레거시 DetectionPlugin 제거 완료
 - 추가: Auto-updater UI (Settings > Info 탭)
-- 중기: Worker Threads (stub), exifr 최적화
+- 정리: Correction Detection dead code 제거, exifr 호출 ���적화 (parse+gps → 단일 parse)
+- 중기: Worker Threads (stub)
 - 테스트: 기능 구현 시 함께 작성 (19파일 203개)
 - 로드맵 상세: docs/ROADMAP.md
 

@@ -84,8 +84,8 @@
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
 | 1 | Worker Threads (piscina) | 성능 | stub 상태, 4~8x 가속 예상 |
-| 2 | Correction Detection 구현 또는 제거 | 정리 | DB 컬럼 잔재 (레거시 DetectionPlugin은 제거 완료) |
-| 3 | exifr 호출 최적화 | 성능 | parse() + gps() 2회 → 1회 통합 |
+| 2 | ~~Correction Detection 구현 또는 제거~~ | 정리 | ✅ 완료 — dead code 제거 (DB 컬럼만 호환 유지) |
+| 3 | ~~exifr 호출 최적화~~ | 성능 | ✅ ���료 — parse(gps:true) 단일 호출로 통합 |
 | 4 | 다중 회전 해시 (HashAlgorithm) | 알고리즘 | 기획 — 0°/90°/180°/270° 회전 해시. 새 아키텍처 Stage 1 확장 |
 | 5 | Incremental Scan | 기능 | 보류 — 아래 설계 메모 참고 |
 
