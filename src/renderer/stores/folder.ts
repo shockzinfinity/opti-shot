@@ -14,6 +14,7 @@ export type ExifGpsFilter = 'all' | 'with_gps' | 'without_gps'
 
 export interface ScanOptions {
   mode: ScanMode
+  preset: ScanPreset
   dateStart: string | null
   dateEnd: string | null
   hashAlgorithms: string[]
@@ -54,6 +55,7 @@ interface FolderState {
 /** Fallback defaults — derived from shared constants, used until Settings loads */
 const FALLBACK_OPTIONS: ScanOptions = {
   mode: 'full',
+  preset: DEFAULT_SCAN_SETTINGS.preset,
   dateStart: null,
   dateEnd: null,
   hashAlgorithms: [...DEFAULT_SCAN_SETTINGS.hashAlgorithms],
@@ -162,11 +164,15 @@ export const useFolderStore = create<FolderState>((set, get) => ({
   },
 
   applyPreset: (preset: ScanPresetId) => {
-    if (preset === 'custom') return
+    if (preset === 'custom') {
+      set((state) => ({ options: { ...state.options, preset: 'custom' } }))
+      return
+    }
     const values = SCAN_PRESETS[preset]
     set((state) => ({
       options: {
         ...state.options,
+        preset,
         hashAlgorithms: [...values.hashAlgorithms],
         hashThresholds: { ...values.hashThresholds },
         mergeStrategy: values.mergeStrategy,

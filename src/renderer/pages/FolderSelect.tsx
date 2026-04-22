@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Rocket } from 'lucide-react'
 import { useFolderStore } from '../stores/folder'
@@ -9,26 +9,17 @@ import { AdvancedSettings } from '../components/AdvancedSettings'
 import { ExifFilterSection } from '../components/ExifFilterSection'
 import { ActionBar } from '../components/ActionBar'
 import { useTranslation } from '@renderer/hooks/useTranslation'
-import type { PluginInfo } from '@shared/plugins'
 
 export function FolderSelect() {
   const navigate = useNavigate()
   const { folders, options, advancedOpen, addFolder, removeFolder, setMode, setOption, applyPreset, toggleAdvanced, reset } =
     useFolderStore()
   const { t } = useTranslation()
-  const [plugins, setPlugins] = useState<PluginInfo[]>([])
 
   // Reset on mount — fresh start every time
   useEffect(() => {
     reset()
   }, [reset])
-
-  // Fetch enabled plugins
-  useEffect(() => {
-    window.electron.query('plugin.list').then((res) => {
-      if (res.success) setPlugins((res.data as unknown as PluginInfo[]).filter((p) => p.enabled))
-    })
-  }, [])
 
   const handleStartScan = () => {
     if (folders.length === 0) return
@@ -75,16 +66,13 @@ export function FolderSelect() {
       <ExifFilterSection options={options} onOptionChange={setOption} />
 
       {/* Section 4: Advanced Settings */}
-      {plugins.length > 0 && (
-        <AdvancedSettings
-          open={advancedOpen}
-          options={options}
-          plugins={plugins}
-          onToggle={toggleAdvanced}
-          onOptionChange={setOption}
-          onPresetChange={applyPreset}
-        />
-      )}
+      <AdvancedSettings
+        open={advancedOpen}
+        options={options}
+        onToggle={toggleAdvanced}
+        onOptionChange={setOption}
+        onPresetChange={applyPreset}
+      />
 
       {/* Section 4: Action Bar */}
       <ActionBar

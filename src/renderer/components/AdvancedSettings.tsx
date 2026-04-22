@@ -1,15 +1,13 @@
+import { useState, useEffect } from 'react'
 import { Settings2, ChevronDown, ChevronUp, Clock, Cpu, Puzzle } from 'lucide-react'
 import type { ScanOptions, ScanPresetId } from '../stores/folder'
-import type { PluginInfo } from '@shared/plugins'
-import type { TranslationKey } from '@renderer/i18n'
-import { detectPreset } from '@shared/constants'
+import type { AlgorithmInfo } from '@shared/plugins'
 import { PresetSelector } from './PresetSelector'
 import { useTranslation } from '@renderer/hooks/useTranslation'
 
 interface AdvancedSettingsProps {
   open: boolean
   options: ScanOptions
-  plugins: PluginInfo[]
   onToggle: () => void
   onOptionChange: <K extends keyof ScanOptions>(key: K, value: ScanOptions[K]) => void
   onPresetChange: (preset: ScanPresetId) => void
@@ -55,108 +53,58 @@ function SliderField({ icon, label, value, min, max, step, format, onChange }: S
   )
 }
 
-function PluginSection({ plugin, options, onOptionChange, onPresetChange, t }: {
-  plugin: PluginInfo
-  options: ScanOptions
-  onOptionChange: <K extends keyof ScanOptions>(key: K, value: ScanOptions[K]) => void
-  onPresetChange: (preset: ScanPresetId) => void
-  t: (key: TranslationKey) => string
-}) {
-  // pHash+SSIM plugin gets preset selector + algorithm thresholds + general sliders
-  if (plugin.id === 'phash-ssim') {
-    const currentPreset = detectPreset({
-      hashAlgorithms: options.hashAlgorithms,
-      hashThresholds: options.hashThresholds,
-      mergeStrategy: options.mergeStrategy,
-      verifyAlgorithms: options.verifyAlgorithms,
-      verifyThresholds: options.verifyThresholds,
-    })
-    return (
-      <div className="space-y-5">
-        <div className="flex items-center gap-2">
-          <Puzzle className="w-4 h-4 text-primary" />
-          <p className="text-sm font-semibold text-foreground-primary">{plugin.name}</p>
-          <span className="text-[10px] font-mono text-foreground-muted bg-surface-secondary px-1.5 py-0.5 rounded">v{plugin.version}</span>
-        </div>
-        <p className="text-xs text-foreground-muted -mt-3">{plugin.description}</p>
-
-        <PresetSelector value={currentPreset} onChange={onPresetChange} />
-        <div className="grid grid-cols-2 gap-6">
-          {Object.entries(options.hashThresholds).map(([algo, val]) => (
-            <SliderField
-              key={`hash-${algo}`}
-              icon={<Puzzle className="w-4 h-4" />}
-              label={`${algo} ${t('advanced.threshold')}`}
-              value={val}
-              min={2}
-              max={20}
-              step={1}
-              format={(v) => `${v}`}
-              onChange={(v) => onOptionChange('hashThresholds', { ...options.hashThresholds, [algo]: v })}
-            />
-          ))}
-          {Object.entries(options.verifyThresholds).map(([algo, val]) => (
-            <SliderField
-              key={`verify-${algo}`}
-              icon={<Puzzle className="w-4 h-4" />}
-              label={`${algo} ${t('advanced.threshold')}`}
-              value={val}
-              min={0.01}
-              max={1}
-              step={0.01}
-              format={(v) => v.toFixed(2)}
-              onChange={(v) => onOptionChange('verifyThresholds', { ...options.verifyThresholds, [algo]: v })}
-            />
-          ))}
-          <SliderField
-            icon={<Clock className="w-4 h-4" />}
-            label={t('advanced.timeWindow')}
-            value={options.timeWindowHours}
-            min={0}
-            max={24}
-            step={1}
-            format={(v) => (v === 0 ? t('advanced.timeWindowOff') : `${v}hr`)}
-            onChange={(v) => onOptionChange('timeWindowHours', v)}
-          />
-          <SliderField
-            icon={<Cpu className="w-4 h-4" />}
-            label={t('advanced.threads')}
-            value={options.parallelThreads}
-            min={1}
-            max={16}
-            step={1}
-            format={(v) => `${v}`}
-            onChange={(v) => onOptionChange('parallelThreads', v)}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  // Generic plugin: show name + description + default thresholds
+function Toggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Puzzle className="w-4 h-4 text-primary" />
-        <p className="text-sm font-semibold text-foreground-primary">{plugin.name}</p>
-        <span className="text-[10px] font-mono text-foreground-muted bg-surface-secondary px-1.5 py-0.5 rounded">v{plugin.version}</span>
-      </div>
-      <p className="text-xs text-foreground-muted">{plugin.description}</p>
-      <div className="flex gap-4 text-xs text-foreground-muted">
-        <span>Hash threshold: <strong className="text-foreground-primary">{plugin.defaultHashThreshold}</strong></span>
-        {plugin.defaultVerifyThreshold != null && (
-          <span>Verify threshold: <strong className="text-foreground-primary">{plugin.defaultVerifyThreshold}</strong></span>
-        )}
-      </div>
-    </div>
+    <button
+      onClick={onToggle}
+      className={`w-10 h-5 rounded-full relative flex items-center px-0.5 transition-colors ${on ? 'bg-primary' : 'bg-border'}`}
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+    >
+      <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${on ? 'translate-x-5' : 'translate-x-0'}`} />
+    </button>
   )
 }
 
-export function AdvancedSettings({ open, options, plugins, onToggle, onOptionChange, onPresetChange }: AdvancedSettingsProps) {
+export function AdvancedSettings({ open, options, onToggle, onOptionChange, onPresetChange }: AdvancedSettingsProps) {
   const { t } = useTranslation()
+  const [algorithms, setAlgorithms] = useState<AlgorithmInfo[]>([])
+
+  useEffect(() => {
+    window.electron.query('algorithm.list').then((res) => {
+      if (res.success) setAlgorithms(res.data as unknown as AlgorithmInfo[])
+    })
+  }, [])
+
+  const hashAlgos = algorithms.filter((a) => a.stage === 'hash')
+  const verifyAlgos = algorithms.filter((a) => a.stage === 'verify')
+
+  const isEnabled = (algo: AlgorithmInfo) =>
+    algo.stage === 'hash'
+      ? options.hashAlgorithms.includes(algo.id)
+      : options.verifyAlgorithms.includes(algo.id)
+
+  const handleToggle = (algo: AlgorithmInfo) => {
+    if (algo.stage === 'hash') {
+      const current = options.hashAlgorithms
+      const updated = current.includes(algo.id)
+        ? current.filter((id) => id !== algo.id)
+        : [...current, algo.id]
+      if (updated.length === 0) return
+      onOptionChange('hashAlgorithms', updated)
+    } else {
+      const current = options.verifyAlgorithms
+      const updated = current.includes(algo.id)
+        ? current.filter((id) => id !== algo.id)
+        : [...current, algo.id]
+      onOptionChange('verifyAlgorithms', updated)
+    }
+    onPresetChange('custom' as ScanPresetId)
+  }
 
   return (
-    <div className="bg-surface-primary border border-border rounded-xl overflow-hidden">
+    <div className="bg-surface-primary border border-border rounded-xl">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary/50 transition-colors"
@@ -179,18 +127,118 @@ export function AdvancedSettings({ open, options, plugins, onToggle, onOptionCha
 
       {open && (
         <div className="px-6 pb-6 border-t border-border pt-6 space-y-6">
-          {plugins.map((plugin, idx) => (
-            <div key={plugin.id}>
-              {idx > 0 && <div className="border-t border-border my-6" />}
-              <PluginSection
-                plugin={plugin}
-                options={options}
-                onOptionChange={onOptionChange}
-                onPresetChange={onPresetChange}
-                t={t}
+          {/* Preset Selector */}
+          <PresetSelector value={options.preset ?? 'balanced'} onChange={onPresetChange} />
+
+          {/* Stage 1: Hash Algorithms */}
+          {hashAlgos.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">
+                Stage 1 — {t('settings.hashAlgorithms')}
+              </p>
+              {hashAlgos.map((algo) => {
+                const enabled = isEnabled(algo)
+                const threshold = options.hashThresholds[algo.id]
+                return (
+                  <div key={algo.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Puzzle className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold text-foreground-primary">{algo.name}</span>
+                        <span className="text-[10px] text-foreground-muted">{algo.description}</span>
+                      </div>
+                      <Toggle on={enabled} onToggle={() => handleToggle(algo)} label={algo.name} />
+                    </div>
+                    {enabled && threshold != null && (
+                      <div className="pl-6">
+                        <SliderField
+                          icon={<Puzzle className="w-3 h-3" />}
+                          label={t('settings.threshold')}
+                          value={threshold}
+                          min={2}
+                          max={20}
+                          step={1}
+                          format={(v) => `${v}`}
+                          onChange={(v) => {
+                            onOptionChange('hashThresholds', { ...options.hashThresholds, [algo.id]: v })
+                            onPresetChange('custom' as ScanPresetId)
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Stage 2: Verify Algorithms */}
+          {verifyAlgos.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-foreground-muted uppercase tracking-wider">
+                Stage 2 — {t('settings.verifyAlgorithms')}
+              </p>
+              {verifyAlgos.map((algo) => {
+                const enabled = isEnabled(algo)
+                const threshold = options.verifyThresholds[algo.id]
+                return (
+                  <div key={algo.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Puzzle className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-semibold text-foreground-primary">{algo.name}</span>
+                        <span className="text-[10px] text-foreground-muted">{algo.description}</span>
+                      </div>
+                      <Toggle on={enabled} onToggle={() => handleToggle(algo)} label={algo.name} />
+                    </div>
+                    {enabled && threshold != null && (
+                      <div className="pl-6">
+                        <SliderField
+                          icon={<Puzzle className="w-3 h-3" />}
+                          label={t('settings.threshold')}
+                          value={threshold}
+                          min={0.01}
+                          max={1}
+                          step={0.01}
+                          format={(v) => v.toFixed(2)}
+                          onChange={(v) => {
+                            onOptionChange('verifyThresholds', { ...options.verifyThresholds, [algo.id]: v })
+                            onPresetChange('custom' as ScanPresetId)
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Performance */}
+          <div className="space-y-3 border-t border-border pt-4">
+            <div className="grid grid-cols-2 gap-6">
+              <SliderField
+                icon={<Clock className="w-4 h-4" />}
+                label={t('advanced.timeWindow')}
+                value={options.timeWindowHours}
+                min={0}
+                max={24}
+                step={1}
+                format={(v) => (v === 0 ? t('advanced.timeWindowOff') : `${v}hr`)}
+                onChange={(v) => onOptionChange('timeWindowHours', v)}
+              />
+              <SliderField
+                icon={<Cpu className="w-4 h-4" />}
+                label={t('advanced.threads')}
+                value={options.parallelThreads}
+                min={1}
+                max={16}
+                step={1}
+                format={(v) => `${v}`}
+                onChange={(v) => onOptionChange('parallelThreads', v)}
               />
             </div>
-          ))}
+          </div>
         </div>
       )}
     </div>
