@@ -45,7 +45,7 @@
 | 1 | GPS 필터 버그 | exifr GPSLatitude DMS 배열 → `!= null` 체크 |
 | 2 | 일시정지/취소 UX | 일시정지 제거, 취소 시 /folders 자동 이동 |
 | 3 | EXIF 필터 위치 | 고급설정에서 분리 → 스캔 모드 아래 별도 섹션 |
-| 4 | 고급설정 플러그인별 분리 | PluginSection, 플러그인 없으면 미표시 |
+| 4 | 고급설정 알고리즘별 분리 | AlgorithmSection, 알고리즘 없으면 미표시 |
 | 5 | 트레이 메뉴 i18n | TRAY_LABELS ko/en/ja |
 | 6 | DB 레거시 테이블 정리 | 4개 테이블 DROP |
 
@@ -84,7 +84,7 @@
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
 | 1 | Worker Threads (piscina) | 성능 | stub 상태, 4~8x 가속 예상 |
-| 2 | Correction Detection 구현 또는 제거 | 정리 | DB 컬럼 잔재 |
+| 2 | Correction Detection 구현 또는 제거 | 정리 | DB 컬럼 잔재 (레거시 DetectionPlugin은 제거 완료) |
 | 3 | exifr 호출 최적화 | 성능 | parse() + gps() 2회 → 1회 통합 |
 | 4 | 다중 회전 해시 (HashAlgorithm) | 알고리즘 | 기획 — 0°/90°/180°/270° 회전 해시. 새 아키텍처 Stage 1 확장 |
 | 5 | Incremental Scan | 기능 | 보류 — 아래 설계 메모 참고 |
