@@ -1,8 +1,8 @@
 # OptiShot 알고리즘 개발 가이드
 
-**작성일**: 2026-04-21
+**작성일**: 2026-04-21 | **최종 수정**: 2026-04-22
 **대상**: OptiShot에 새로운 해시/검증 알고리즘을 추가하려는 개발자
-**현재 버전**: v0.3 (HashAlgorithm / VerifyAlgorithm 분리 아키텍처)
+**현재 버전**: v0.3 (HashAlgorithm / VerifyAlgorithm 분리 아키텍처, Worker Threads 병렬 계산)
 
 ---
 

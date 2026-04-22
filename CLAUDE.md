@@ -5,7 +5,7 @@
 
 ## Architecture
 - **Framework**: Electron (Main + Renderer process)
-- **IPC**: CQRS 패턴 — CommandBus(26) / QueryBus(18) / EventBus(6)
+- **IPC**: CQRS 패턴 — CommandBus(25) / QueryBus(17) / EventBus(6)
 - **Algorithm**: HashAlgorithm/VerifyAlgorithm 인터페이스 + AlgorithmRegistry (2-Stage 자유 조합)
 - **Renderer**: React 19 + TypeScript + Tailwind CSS + Zustand
 - **Main**: Node.js + CQRS handlers + Services
@@ -36,8 +36,10 @@ src/
 │   │   ├── schemas.ts       # Zod 스키마 (payload 검증)
 │   │   └── handlers/        # 도메인별 핸들러 (folder, scan, group, organize, ...)
 │   ├── services/      # Business logic (변경 없음)
-│   ├── engine/        # ScanEngine, BK-Tree, pHash, AlgorithmRegistry
-│   │   └── algorithms/  # HashAlgorithm(phash, dhash) + VerifyAlgorithm(ssim, nmse)
+│   ├── engine/        # ScanEngine, BK-Tree, pHash, AlgorithmRegistry, Worker Threads
+│   │   ├── algorithms/  # HashAlgorithm(phash, dhash) + VerifyAlgorithm(ssim, nmse)
+│   │   ├── hash-worker.ts       # 워커 스레드 엔트리포인트 (pHash/dHash 계산)
+│   │   └── hash-worker-pool.ts  # 워커 풀 (round-robin dispatch, abort 전파)
 │   ├── db/            # Drizzle schema + migrations
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
@@ -50,10 +52,10 @@ src/
 │   ├── types.ts       # 도메인 타입, IpcResponse, ScanRecord
 │   ├── constants.ts   # 단일 소스: SCAN_PRESETS, DEFAULT_*_SETTINGS, IMAGE_EXTENSIONS
 │   ├── utils.ts       # 공유 포맷 함수 (formatBytes, formatDuration, formatDateTime 등)
-│   ├── plugins.ts     # PluginInfo 타입 (UI-safe)
+│   ├── plugins.ts     # AlgorithmInfo 타입 (UI-safe)
 │   └── cqrs/          # CQRS 타입 레지스트리
-│       ├── commands.ts  # CommandMap (26 commands)
-│       ├── queries.ts   # QueryMap (18 queries)
+│       ├── commands.ts  # CommandMap (25 commands)
+│       ├── queries.ts   # QueryMap (17 queries)
 │       ├── events.ts    # EventMap (6 events)
 │       └── bus.ts       # 공통 타입, allowlist 배열
 └── preload/           # contextBridge — command/query/subscribe API
@@ -112,9 +114,9 @@ Renderer                          Main
 - Pre-scan 단계에서 32 concurrent 배치로 파일 목록 필터링 (Stage 1 pHash 전)
 - FolderSelect 페이지에서 스캔 모드 아래 별도 섹션으로 표시 (설정 ON 시)
 - `exifr` 라이브러리 주의사항:
-  - `GPSLatitude`는 `number`가 아닌 DMS 배열(`[도, 분, 초]`) 반환 → `!= null`로 체크
-  - `latitude`/`longitude` (소수점 변환값)은 `pick`으로 선택 불가 → `exifr.gps()` 별도 호출
-- GPS 좌표 추출: `exifr.gps()` → `{ latitude: number, longitude: number }`
+  - Pre-scan 필터: `GPSLatitude`는 DMS 배열 → `!= null`로 체크 (pick 모드)
+  - getExifData: `exifr.parse({gps: true})` 단일 호출로 EXIF + GPS 통합 추출
+- GPS 좌표: `parse({gps:true})` → `exif.latitude`, `exif.longitude` (소수점 변환값)
 - DB 저장: `photos.latitude`, `photos.longitude` (REAL)
 
 ## FolderSelect Page Layout
@@ -144,13 +146,11 @@ Renderer                          Main
 - Virtual lists for large datasets (react-window 적용)
 
 ## Current Status
-- 핵심 기능 완료 (P0~P5), Export 제거, 알림 시스템/크래시 방어 완료
-- 추가: EXIF 필터링, HEIC, i18n, 알림(CQRS 미들웨어), 크래시 방어
-- 추가: 다크 모드 테마, 파일 정리(일괄 리네임 + 되돌리기)
-- 추가: 알고리즘 아키텍처 재설계 (HashAlgorithm/VerifyAlgorithm 분리, 4개 알고리즘, 프리셋), 레거시 DetectionPlugin 제거 완료
-- 추가: Auto-updater UI (Settings > Info 탭)
-- 정리: Correction Detection dead code 제거, exifr 호출 ���적화 (parse+gps → 단일 parse)
-- 성능: Worker Threads 구현 완료 (hash-worker + HashWorkerPool, parallelThreads 설정 반영)
+- 핵심 기능 완료 (P0~P5): 스캔, 검토, 휴지통, 설정, 파일 정리
+- 알고리즘: HashAlgorithm/VerifyAlgorithm 분리 (pHash, dHash, SSIM, NMSE) + 프리셋
+- 성능: Worker Threads (HashWorkerPool, parallelThreads 설정), exifr 단일 호출 최적화
+- 부가 기능: EXIF 필터링, HEIC, i18n(ko/en/ja), 다크 모드, Auto-updater, 알림 시스템
+- 방어: 글로벌 에러 핸들러, 방어적 알림, abort 조용히 처리
 - 테스트: 기능 구현 시 함께 작성 (19파일 203개)
 - 로드맵 상세: docs/ROADMAP.md
 

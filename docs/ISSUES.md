@@ -371,8 +371,8 @@ Stage 2에서 탈락한 후보 중 pHash distance가 낮은 쌍만 Stage 3으로
 **상태**: 미구현 (UI에 "준비 중" 표시됨)
 
 ### 미구현 항목
-1. **보정 감지** (`enableCorrectionDetection`) — 회전/밝기 보정만 다른 중복 감지. Stage 3 (ORB/딥러닝)과 연계
-2. **EXIF 날짜 필터링** (`enableExifFilter`) — 촬영일 기준으로 비교 대상 제한. 대량 라이브러리에서 성능 향상
+1. ~~**보정 감지** (`enableCorrectionDetection`)~~ — 제거됨. 향후 다중 회전 해시 또는 ORB/딥러닝으로 대체 예정
+2. **EXIF 날짜 필터링** (`enableExifFilter`) — ✅ 구현 완료 (Pre-scan 32 concurrent 배치)
 3. **증분 스캔** (`enableIncremental`) — 이전 스캔 이후 추가된 파일만 스캔. photos 테이블에 스캔 이력 연동 필요
 4. **스캔 모드** (`mode: date_range | folder_only | incremental`) — DB에 값만 저장, 실제 필터링 미구현
 5. **시간 윈도우** (`timeWindowHours`) — DB에 값만 저장, 사용처 없음
