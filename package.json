@@ -1,6 +1,6 @@
 {
   "name": "opti-shot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Photo duplicate detection and management desktop app",
   "main": "out/main/index.js",
@@ -48,7 +48,12 @@
     "files": [
       "out/",
       "build/"
-    ]
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "shockzinfinity",
+      "repo": "opti-shot"
+    }
   },
   "packageManager": "bun@1.3.12",
   "engines": {
