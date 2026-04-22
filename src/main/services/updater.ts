@@ -75,9 +75,15 @@ export function downloadUpdate(): void {
   autoUpdater.downloadUpdate()
 }
 
-/** Quit and install the downloaded update. */
-export function installUpdate(): void {
-  autoUpdater.quitAndInstall()
+/** Quit and install the downloaded update. Returns false if install fails. */
+export function installUpdate(): boolean {
+  try {
+    autoUpdater.quitAndInstall()
+    return true
+  } catch (err) {
+    console.error('Install failed:', err instanceof Error ? err.message : err)
+    return false
+  }
 }
 
 /** Clean up interval timer (for app quit). */

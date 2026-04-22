@@ -191,6 +191,8 @@ export const ja = {
   'updater.install': '再起動してインストール',
   'updater.installDesc': 'ダウンロード完了。再起動すると自動的にインストールされます。',
   'updater.error': 'アップデートの確認に失敗しました',
+  'updater.installFailedTitle': '自動インストール失敗',
+  'updater.installFailedDesc': 'コード署名がないため自動インストールできません。現在のアプリを削除し、GitHub Releasesから最新バージョンをダウンロードしてインストールしてください。',
 
   // Presets
   'preset.balanced': 'バランス',

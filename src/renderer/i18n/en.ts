@@ -210,6 +210,8 @@ export const en = {
   'updater.install': 'Restart to Install',
   'updater.installDesc': 'Download complete. Restart to install automatically.',
   'updater.error': 'Update check failed',
+  'updater.installFailedTitle': 'Auto-install failed',
+  'updater.installFailedDesc': 'Auto-install is not available because the app is not code-signed. Please remove the current app and download the latest version from GitHub Releases.',
 
   // Presets
   'preset.balanced': 'Balanced',

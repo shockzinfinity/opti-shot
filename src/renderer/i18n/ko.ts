@@ -191,6 +191,8 @@ export const ko = {
   'updater.install': '재시작하여 설치',
   'updater.installDesc': '다운로드 완료. 재시작하면 자동으로 설치됩니다.',
   'updater.error': '업데이트 확인 실패',
+  'updater.installFailedTitle': '자동 설치 실패',
+  'updater.installFailedDesc': '코드 서명이 없어 자동 설치가 불가합니다. 기존 앱을 제거한 후 GitHub Releases에서 최신 버전을 다운로드하여 설치해 주세요.',
 
   // Presets
   'preset.balanced': '균형',

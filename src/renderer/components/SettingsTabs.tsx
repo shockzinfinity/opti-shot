@@ -590,7 +590,7 @@ export function DataTab() {
 // INFO TAB
 // ============================
 
-type UpdaterStatus = 'idle' | 'checking' | 'up-to-date' | 'available' | 'downloading' | 'downloaded' | 'error'
+type UpdaterStatus = 'idle' | 'checking' | 'up-to-date' | 'available' | 'downloading' | 'downloaded' | 'install-failed' | 'error'
 
 export function InfoTab() {
   const { t } = useTranslation()
@@ -650,8 +650,13 @@ export function InfoTab() {
     window.electron.command('updater.download')
   }
 
-  const handleInstall = () => {
-    window.electron.command('updater.install')
+  const handleInstall = async () => {
+    const res = await window.electron.command('updater.install')
+    if (!res.success) {
+      // Code signature failure — guide manual install
+      setUpdaterStatus('install-failed')
+    }
+    // If success, app will quit and restart — no state update needed
   }
 
   const rows = [
@@ -757,6 +762,13 @@ export function InfoTab() {
               >
                 {t('updater.install')}
               </button>
+            </div>
+          )}
+
+          {updaterStatus === 'install-failed' && (
+            <div className="p-3 bg-warning/10 rounded-lg space-y-1">
+              <p className="text-sm font-semibold text-foreground-primary">{t('updater.installFailedTitle')}</p>
+              <p className="text-xs text-foreground-secondary">{t('updater.installFailedDesc')}</p>
             </div>
           )}
         </div>
