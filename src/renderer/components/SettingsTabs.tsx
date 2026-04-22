@@ -630,12 +630,27 @@ export function InfoTab() {
     return () => unsubs.forEach((fn) => fn())
   }, [])
 
-  const handleCheckUpdate = () => {
+  const handleCheckUpdate = async () => {
     setUpdaterStatus('checking')
-    window.electron.command('updater.check').catch(() => {
+    try {
+      const res = await window.electron.command('updater.check')
+      // Use command response as fallback — events may not fire on repeated checks
+      if (res.success && res.data) {
+        const updateInfo = res.data as { version?: string }
+        if (updateInfo.version && info.version && updateInfo.version !== info.version) {
+          setUpdateVersion(updateInfo.version)
+          setUpdaterStatus('available')
+          return
+        }
+      }
+      // If no update found via response, and events didn't fire, set up-to-date
+      // (small delay to let events fire first if they will)
+      setTimeout(() => {
+        setUpdaterStatus((prev) => prev === 'checking' ? 'up-to-date' : prev)
+      }, 3000)
+    } catch {
       setUpdaterStatus('error')
-    })
-    // State transitions handled by updater.available / updater.notAvailable events
+    }
   }
 
   const handleDownload = () => {
