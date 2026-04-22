@@ -140,7 +140,7 @@ Renderer                          Main
 
 ## Performance Targets
 - 200K images Stage 1 scan: < 30 minutes
-- Worker threads for parallel pHash computation (현재 stub — 순차 실행)
+- Worker threads for parallel hash computation (HashWorkerPool, parallelThreads 설정)
 - Virtual lists for large datasets (react-window 적용)
 
 ## Current Status
@@ -150,7 +150,7 @@ Renderer                          Main
 - 추가: 알고리즘 아키텍처 재설계 (HashAlgorithm/VerifyAlgorithm 분리, 4개 알고리즘, 프리셋), 레거시 DetectionPlugin 제거 완료
 - 추가: Auto-updater UI (Settings > Info 탭)
 - 정리: Correction Detection dead code 제거, exifr 호출 ���적화 (parse+gps → 단일 parse)
-- 중기: Worker Threads (stub)
+- 성능: Worker Threads 구현 완료 (hash-worker + HashWorkerPool, parallelThreads 설정 반영)
 - 테스트: 기능 구현 시 함께 작성 (19파일 203개)
 - 로드맵 상세: docs/ROADMAP.md
 

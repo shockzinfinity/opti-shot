@@ -83,7 +83,7 @@
 
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
-| 1 | Worker Threads (piscina) | 성능 | stub 상태, 4~8x 가속 예상 |
+| 1 | ~~Worker Threads~~ | 성능 | ✅ 완료 — worker_threads 직접 구현 (hash-worker + HashWorkerPool, parallelThreads 설정 반영) |
 | 2 | ~~Correction Detection 구현 또는 제거~~ | 정리 | ✅ 완료 — dead code 제거 (DB 컬럼만 호환 유지) |
 | 3 | ~~exifr 호출 최적화~~ | 성능 | ✅ ���료 — parse(gps:true) 단일 호출로 통합 |
 | 4 | 다중 회전 해시 (HashAlgorithm) | 알고리즘 | 기획 — 0°/90°/180°/270° 회전 해시. 새 아키텍처 Stage 1 확장 |
@@ -138,7 +138,7 @@
 | i18n | ✅ 완비 | ko/en/ja |
 | 알림 | ✅ 완료 | 정책 기반 미들웨어 + 3계층 |
 | 크래시 방어 | ✅ 완료 | 글로벌 핸들러 + 방어적 코드 |
-| Worker Threads | ❌ stub | parallelThreads 설정 미반영 |
+| Worker Threads | ✅ 완료 | HashWorkerPool, parallelThreads 설정 반영 |
 | CI/CD | ⚠️ 부분 | release.yml 완료, 코드 서명 미구현 |
 
 ---
