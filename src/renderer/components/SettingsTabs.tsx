@@ -630,7 +630,8 @@ export function InfoTab() {
       const res = await window.electron.command('updater.check')
       if (res.success && res.data) {
         const updateInfo = res.data as { version?: string }
-        if (updateInfo.version) {
+        // Compare remote version with current app version
+        if (updateInfo.version && info.version && updateInfo.version !== info.version) {
           setUpdateVersion(updateInfo.version)
           setUpdaterStatus('available')
         } else {
