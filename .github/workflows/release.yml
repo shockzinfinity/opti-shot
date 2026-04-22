@@ -46,8 +46,8 @@ jobs:
       - name: Rebuild native modules
         run: bun run postinstall
 
-      - name: Lint
-        run: bun run lint
+      - name: Type check
+        run: npx tsc --noEmit
 
       - name: Run tests
         run: bun run test

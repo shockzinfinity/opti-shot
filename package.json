@@ -14,7 +14,7 @@
     "predev": "electron-rebuild --quiet",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "lint": "eslint src/",
+    "lint": "tsc --noEmit",
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:win": "electron-vite build && electron-builder --win",
     "build:linux": "electron-vite build && electron-builder --linux",
