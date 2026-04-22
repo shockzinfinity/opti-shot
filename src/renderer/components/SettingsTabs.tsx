@@ -634,20 +634,14 @@ export function InfoTab() {
     setUpdaterStatus('checking')
     try {
       const res = await window.electron.command('updater.check')
-      // Use command response as fallback — events may not fire on repeated checks
-      if (res.success && res.data) {
-        const updateInfo = res.data as { version?: string }
-        if (updateInfo.version && info.version && updateInfo.version !== info.version) {
-          setUpdateVersion(updateInfo.version)
-          setUpdaterStatus('available')
-          return
-        }
+      const data = res.data as { version: string | null } | null
+      const remoteVersion = data?.version ?? null
+      if (remoteVersion && remoteVersion !== info.version) {
+        setUpdateVersion(remoteVersion)
+        setUpdaterStatus('available')
+      } else {
+        setUpdaterStatus('up-to-date')
       }
-      // If no update found via response, and events didn't fire, set up-to-date
-      // (small delay to let events fire first if they will)
-      setTimeout(() => {
-        setUpdaterStatus((prev) => prev === 'checking' ? 'up-to-date' : prev)
-      }, 3000)
     } catch {
       setUpdaterStatus('error')
     }

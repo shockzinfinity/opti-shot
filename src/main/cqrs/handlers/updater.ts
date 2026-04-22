@@ -3,13 +3,17 @@ import type { CommandBus } from '../commandBus'
 
 export function registerUpdaterHandlers(cmd: CommandBus): void {
   cmd.register('updater.check', async () => {
-    if (process.env.NODE_ENV === 'development') return null
+    if (process.env.NODE_ENV === 'development') return { version: null }
     try {
       const pkg = await import('electron-updater')
       const result = await pkg.autoUpdater.checkForUpdates()
-      return result?.updateInfo ?? null
-    } catch {
-      return null
+      // Return only serializable plain object — updateInfo may contain non-serializable data
+      const version = result?.updateInfo?.version ?? null
+      console.log('[updater.check] remote version:', version)
+      return { version }
+    } catch (err) {
+      console.error('[updater.check] failed:', err instanceof Error ? err.message : err)
+      return { version: null }
     }
   })
 
