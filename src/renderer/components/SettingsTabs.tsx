@@ -612,6 +612,9 @@ export function InfoTab() {
         setUpdateVersion(version)
         setUpdaterStatus('available')
       }),
+      window.electron.subscribe('updater.notAvailable', () => {
+        setUpdaterStatus('up-to-date')
+      }),
       window.electron.subscribe('updater.progress', (data) => {
         const { percent } = data as { percent: number }
         setDownloadPercent(Math.round(percent))
@@ -627,25 +630,12 @@ export function InfoTab() {
     return () => unsubs.forEach((fn) => fn())
   }, [])
 
-  const handleCheckUpdate = async () => {
+  const handleCheckUpdate = () => {
     setUpdaterStatus('checking')
-    try {
-      const res = await window.electron.command('updater.check')
-      if (res.success && res.data) {
-        const updateInfo = res.data as { version?: string }
-        // Compare remote version with current app version
-        if (updateInfo.version && info.version && updateInfo.version !== info.version) {
-          setUpdateVersion(updateInfo.version)
-          setUpdaterStatus('available')
-        } else {
-          setUpdaterStatus('up-to-date')
-        }
-      } else {
-        setUpdaterStatus('up-to-date')
-      }
-    } catch {
+    window.electron.command('updater.check').catch(() => {
       setUpdaterStatus('error')
-    }
+    })
+    // State transitions handled by updater.available / updater.notAvailable events
   }
 
   const handleDownload = () => {

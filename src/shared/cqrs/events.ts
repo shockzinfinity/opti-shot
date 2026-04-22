@@ -4,6 +4,7 @@ export interface EventMap {
   'scan.progress': ScanProgress
   'organize.progress': OrganizeProgress
   'updater.available': { version: string; releaseDate: string }
+  'updater.notAvailable': void
   'updater.progress': { percent: number; transferred: number; total: number }
   'updater.downloaded': void
   'updater.installFailed': { message: string }

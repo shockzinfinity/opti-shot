@@ -45,6 +45,10 @@ export function initAutoUpdater(): void {
     })
   })
 
+  autoUpdater.on('update-not-available', () => {
+    getEventBus().publish('updater.notAvailable', undefined as never)
+  })
+
   autoUpdater.on('download-progress', (progress: { percent: number; transferred: number; total: number }) => {
     getEventBus().publish('updater.progress', {
       percent: progress.percent,
