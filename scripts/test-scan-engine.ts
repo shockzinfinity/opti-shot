@@ -70,31 +70,31 @@ async function main() {
     verifyThresholds: { ssim: 0.82 },
   })
 
-  // 2. 빠른: dHash(10) only
+  // 2. 빠른: dHash(8) + SSIM(0.75) — 가벼운 검증으로 오탐 줄임
   await runPreset('빠른 (fast)', {
     hashAlgorithms: [dhashAlgorithm],
-    hashThresholds: { dhash: 10 },
+    hashThresholds: { dhash: 8 },
     mergeStrategy: 'union',
-    verifyAlgorithms: [],
-    verifyThresholds: {},
+    verifyAlgorithms: [ssimAlgorithm],
+    verifyThresholds: { ssim: 0.75 },
   })
 
-  // 3. 보수적: pHash(6) + SSIM(0.90)
+  // 3. 보수적: pHash(6) + SSIM(0.85)
   await runPreset('보수적 (conservative)', {
     hashAlgorithms: [phashAlgorithm],
     hashThresholds: { phash: 6 },
     mergeStrategy: 'union',
     verifyAlgorithms: [ssimAlgorithm],
-    verifyThresholds: { ssim: 0.90 },
+    verifyThresholds: { ssim: 0.85 },
   })
 
-  // 4. 정밀: pHash+dHash(Intersection) + SSIM(0.85) → NMSE(0.03)
+  // 4. 정밀: pHash+dHash(Intersection) + SSIM(0.82) → NMSE(0.05)
   await runPreset('정밀 (precise)', {
     hashAlgorithms: [phashAlgorithm, dhashAlgorithm],
     hashThresholds: { phash: 8, dhash: 8 },
     mergeStrategy: 'intersection',
     verifyAlgorithms: [ssimAlgorithm, nmseAlgorithm],
-    verifyThresholds: { ssim: 0.85, nmse: 0.03 },
+    verifyThresholds: { ssim: 0.82, nmse: 0.05 },
   })
 
   // 5. 레거시 호환: pHash only + SSIM(0.82)
