@@ -1338,20 +1338,10 @@ export const myVerifyAlgorithm: VerifyAlgorithm = {
 
 ## 9. ScanEngine 오케스트레이션
 
-### 9.1 듀얼 모드 지원
-
-ScanEngine은 레거시 플러그인 모드와 새 알고리즘 모드를 모두 지원합니다.
+### 9.1 ScanEngine 설정
 
 ```typescript
-/** Configuration options for the scan engine (legacy plugin mode). */
-export interface ScanEngineOptions {
-  plugin: DetectionPlugin
-  hashThreshold?: number
-  verifyThreshold?: number
-  batchSize?: number
-}
-
-/** Configuration options for the scan engine (new algorithm mode). */
+/** Configuration options for the scan engine. */
 export interface ScanEngineAlgorithmOptions {
   /** Stage 1: Hash algorithms to use. */
   hashAlgorithms: HashAlgorithm[]
