@@ -4,7 +4,7 @@ import { useTranslation } from '@renderer/hooks/useTranslation'
 import { SidePanel, PanelSection, PanelRow, PanelEmpty } from './SidePanel'
 import { detectPreset } from '@shared/constants'
 import { formatDuration, formatDateTime } from '@shared/utils'
-import type { PluginInfo } from '@shared/plugins'
+import type { AlgorithmInfo } from '@shared/plugins'
 import type { ScanRecord } from '@shared/types'
 
 interface ScanInfoPanelProps {
@@ -21,21 +21,21 @@ const PRESET_LABELS: Record<string, string> = {
 
 export function ScanInfoPanel({ onClose }: ScanInfoPanelProps) {
   const [scan, setScan] = useState<ScanRecord | null>(null)
-  const [plugins, setPlugins] = useState<PluginInfo[]>([])
+  const [algorithms, setAlgorithms] = useState<AlgorithmInfo[]>([])
   const [loading, setLoading] = useState(true)
   const { t } = useTranslation()
 
   useEffect(() => {
     Promise.all([
       window.electron.query('stats.dashboard'),
-      window.electron.query('plugin.list'),
-    ]).then(([dashRes, pluginRes]) => {
+      window.electron.query('algorithm.list'),
+    ]).then(([dashRes, algoRes]) => {
       if (dashRes.success) {
         const data = dashRes.data as { lastScan: ScanRecord | null }
         setScan(data.lastScan)
       }
-      if (pluginRes.success) {
-        setPlugins((pluginRes.data as unknown as PluginInfo[]).filter((p) => p.enabled))
+      if (algoRes.success) {
+        setAlgorithms(algoRes.data as unknown as AlgorithmInfo[])
       }
       setLoading(false)
     })
@@ -90,20 +90,18 @@ export function ScanInfoPanel({ onClose }: ScanInfoPanelProps) {
           </PanelSection>
 
           <PanelSection icon={<Puzzle className="w-3.5 h-3.5" />} title={t('scanInfo.plugins')}>
-            {plugins.length === 0 ? (
+            {algorithms.length === 0 ? (
               <span className="text-xs text-foreground-muted">{t('scanInfo.noPlugins')}</span>
             ) : (
-              plugins.map((p) => (
-                <div key={p.id} className="flex items-center justify-between">
+              algorithms.map((a) => (
+                <div key={a.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-foreground-primary font-semibold">{p.name}</span>
-                    {p.builtIn && (
-                      <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-primary/10 text-primary">
-                        {t('settings.builtIn')}
-                      </span>
-                    )}
+                    <span className="text-[11px] text-foreground-primary font-semibold">{a.name}</span>
+                    <span className="text-[9px] font-semibold px-1 py-0.5 rounded bg-primary/10 text-primary">
+                      {a.stage === 'hash' ? 'Stage 1' : 'Stage 2'}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-mono text-foreground-muted">v{p.version}</span>
+                  <span className="text-[10px] font-mono text-foreground-muted">v{a.version}</span>
                 </div>
               ))
             )}

@@ -316,7 +316,7 @@ export const ko = {
   'scanInfo.off': '끄기',
   'scanInfo.threads': '스레드',
   'scanInfo.plugins': '감지 알고리즘',
-  'scanInfo.noPlugins': '활성화된 플러그인 없음',
+  'scanInfo.noPlugins': '등록된 알고리즘 없음',
   'scanInfo.custom': 'Custom (사용자 지정)',
   'scanInfo.mode.full': '전체 스캔',
   'scanInfo.mode.date_range': '날짜 범위',

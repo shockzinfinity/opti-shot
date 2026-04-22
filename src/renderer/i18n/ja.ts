@@ -316,7 +316,7 @@ export const ja = {
   'scanInfo.off': 'オフ',
   'scanInfo.threads': 'スレッド',
   'scanInfo.plugins': '検出アルゴリズム',
-  'scanInfo.noPlugins': 'アクティブなプラグインなし',
+  'scanInfo.noPlugins': '登録アルゴリズムなし',
   'scanInfo.custom': 'カスタム',
   'scanInfo.mode.full': 'フルスキャン',
   'scanInfo.mode.date_range': '日付範囲',

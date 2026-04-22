@@ -12,7 +12,6 @@ export type { ExifData } from './quality'
 export { sharpFromPath, clearHeicCache } from './heic'
 export { ScanEngine } from './scan-engine'
 export type {
-  ScanEngineOptions,
   ScanEngineAlgorithmOptions,
   PhotoResult,
   GroupResult,
@@ -22,12 +21,7 @@ export type {
 } from './scan-engine'
 export { computePhashBatch } from './worker'
 
-// Legacy plugin system (to be removed after Step 4)
-export { pluginRegistry } from './plugin-registry'
-export type { DetectionPlugin } from './plugin-registry'
-export { phashSsimPlugin } from './plugins/phash-ssim'
-
-// New algorithm system
+// Algorithm system
 export { algorithmRegistry } from './algorithm-registry'
 export type { HashAlgorithm, VerifyAlgorithm } from './algorithm-registry'
 export { phashAlgorithm } from './algorithms/phash'

@@ -37,8 +37,7 @@ src/
 │   │   └── handlers/        # 도메인별 핸들러 (folder, scan, group, organize, ...)
 │   ├── services/      # Business logic (변경 없음)
 │   ├── engine/        # ScanEngine, BK-Tree, pHash, AlgorithmRegistry
-│   │   ├── algorithms/  # HashAlgorithm(phash, dhash) + VerifyAlgorithm(ssim, nmse)
-│   │   └── plugins/     # DetectionPlugin 구현체 (레거시, 제거 예정)
+│   │   └── algorithms/  # HashAlgorithm(phash, dhash) + VerifyAlgorithm(ssim, nmse)
 │   ├── db/            # Drizzle schema + migrations
 │   └── index.ts       # Entry point
 ├── renderer/          # React App (Renderer Process)
@@ -148,9 +147,9 @@ Renderer                          Main
 - 핵심 기능 완료 (P0~P5), Export 제거, 알림 시스템/크래시 방어 완료
 - 추가: EXIF 필터링, HEIC, i18n, 알림(CQRS 미들웨어), 크래시 방어
 - 추가: 다크 모드 테마, 파일 정리(일괄 리네임 + 되돌리기)
-- 추가: 알고리즘 아키텍처 재설계 (HashAlgorithm/VerifyAlgorithm 분리, 4개 알고리즘, 프리셋)
+- 추가: 알고리즘 아키텍처 재설계 (HashAlgorithm/VerifyAlgorithm 분리, 4개 알고리즘, 프리셋), 레거시 DetectionPlugin 제거 완료
 - 추가: Auto-updater UI (Settings > Info 탭)
-- 중기: Worker Threads (stub), Correction Detection 정리, exifr 최적화
+- 중기: Worker Threads (stub), exifr 최적화
 - 테스트: 기능 구현 시 함께 작성 (19파일 203개)
 - 로드맵 상세: docs/ROADMAP.md
 

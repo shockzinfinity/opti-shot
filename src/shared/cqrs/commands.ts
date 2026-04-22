@@ -71,12 +71,6 @@ export interface CommandMap {
     result: { restoredCount: number }
   }
 
-  // Plugin
-  'plugin.toggle': {
-    input: { pluginId: string; enabled: boolean }
-    result: void
-  }
-
   // Maintenance
   'maintenance.clearCache': { input: void; result: void }
   'maintenance.clearScanHistory': { input: void; result: void }

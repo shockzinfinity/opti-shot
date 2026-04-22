@@ -12,7 +12,6 @@ import { registerStatsHandlers } from './stats'
 import { registerMaintenanceHandlers } from './maintenance'
 import { registerAppHandlers } from './app'
 import { registerUpdaterHandlers } from './updater'
-import { registerPluginHandlers } from './plugin'
 import { registerNotificationHandlers } from './notification'
 import { registerOrganizeHandlers } from './organize'
 import { registerAlgorithmHandlers } from './algorithm'
@@ -32,7 +31,6 @@ export function registerAllCqrsHandlers(
   registerMaintenanceHandlers(cmd, qry)
   registerAppHandlers(cmd, qry)
   registerUpdaterHandlers(cmd)
-  registerPluginHandlers(cmd, qry)
   registerNotificationHandlers(cmd, qry, evt)
   registerOrganizeHandlers(cmd, qry, evt)
   registerAlgorithmHandlers(qry)

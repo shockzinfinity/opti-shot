@@ -4,8 +4,6 @@ import { EventBus } from './eventBus'
 import { registerCqrsBridge } from './ipcBridge'
 import { registerAllCqrsHandlers } from './handlers/register'
 import { applyNotificationMiddleware } from './notificationMiddleware'
-import { pluginRegistry } from '@main/engine/plugin-registry'
-import { phashSsimPlugin } from '@main/engine/plugins/phash-ssim'
 import { algorithmRegistry } from '@main/engine/algorithm-registry'
 import { phashAlgorithm } from '@main/engine/algorithms/phash'
 import { dhashAlgorithm } from '@main/engine/algorithms/dhash'
@@ -21,10 +19,7 @@ export function initCqrs(): void {
   queryBus = new QueryBus()
   eventBus = new EventBus()
 
-  // Register built-in detection plugins (legacy — to be removed after Step 4)
-  pluginRegistry.register(phashSsimPlugin)
-
-  // Register algorithms (new architecture)
+  // Register algorithms
   algorithmRegistry.registerHash(phashAlgorithm)
   algorithmRegistry.registerHash(dhashAlgorithm)
   algorithmRegistry.registerVerify(ssimAlgorithm)

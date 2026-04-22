@@ -1,27 +1,14 @@
 // @TASK P2-R2 - ScanEngine orchestrator
-// @SPEC CLAUDE.md#Architecture — 2-Stage pipeline (plugin-based)
+// @SPEC CLAUDE.md#Architecture — 2-Stage pipeline
 
 import { groupByDistance } from './bk-tree'
 import { mergeGroups } from './group-merger'
 import { computeQualityScore, getExifData } from './quality'
-import type { DetectionPlugin } from './plugin-registry'
 import type { HashAlgorithm, VerifyAlgorithm } from './algorithm-registry'
 import type { ScanProgress } from '@shared/types'
 import { randomUUID } from 'crypto'
 
-/** Configuration options for the scan engine (legacy plugin mode). */
-export interface ScanEngineOptions {
-  /** Detection plugin to use for hashing/verification. */
-  plugin: DetectionPlugin
-  /** Distance threshold for Stage 1 grouping (overrides plugin default). */
-  hashThreshold?: number
-  /** Threshold for Stage 2 verification (overrides plugin default). */
-  verifyThreshold?: number
-  /** Number of files to process per batch (default: 100) */
-  batchSize?: number
-}
-
-/** Configuration options for the scan engine (new algorithm mode). */
+/** Configuration options for the scan engine. */
 export interface ScanEngineAlgorithmOptions {
   /** Stage 1: Hash algorithms to use. */
   hashAlgorithms: HashAlgorithm[]
@@ -85,12 +72,11 @@ export type ProgressCallback = (progress: ScanProgress) => void
 /**
  * ScanEngine: Orchestrates the 2-stage duplicate detection pipeline.
  *
- * Stage 1: pHash computation + BK-Tree grouping
- * Stage 2: SSIM verification of candidate groups
+ * Stage 1: Hash computation + BK-Tree grouping (per algorithm) + merge
+ * Stage 2: Sequential verification pipeline
  * Quality scoring + master selection per group
  */
 export class ScanEngine {
-  private plugin: DetectionPlugin | null
   private hashAlgorithms: HashAlgorithm[]
   private hashThresholds: Record<string, number>
   private mergeStrategy: 'union' | 'intersection'
@@ -98,32 +84,12 @@ export class ScanEngine {
   private verifyThresholds: Record<string, number>
   private batchSize: number
 
-  // Legacy plugin mode
-  private hashThreshold: number
-  private verifyThreshold: number
-
-  constructor(options: ScanEngineOptions | ScanEngineAlgorithmOptions) {
-    if ('plugin' in options) {
-      // Legacy plugin mode
-      this.plugin = options.plugin
-      this.hashAlgorithms = []
-      this.hashThresholds = {}
-      this.mergeStrategy = 'union'
-      this.verifyAlgorithms = []
-      this.verifyThresholds = {}
-      this.hashThreshold = options.hashThreshold ?? options.plugin.defaultHashThreshold
-      this.verifyThreshold = options.verifyThreshold ?? options.plugin.defaultVerifyThreshold ?? 0.82
-    } else {
-      // New algorithm mode
-      this.plugin = null
-      this.hashAlgorithms = options.hashAlgorithms
-      this.hashThresholds = options.hashThresholds
-      this.mergeStrategy = options.mergeStrategy
-      this.verifyAlgorithms = options.verifyAlgorithms
-      this.verifyThresholds = options.verifyThresholds
-      this.hashThreshold = 0
-      this.verifyThreshold = 0
-    }
+  constructor(options: ScanEngineAlgorithmOptions) {
+    this.hashAlgorithms = options.hashAlgorithms
+    this.hashThresholds = options.hashThresholds
+    this.mergeStrategy = options.mergeStrategy
+    this.verifyAlgorithms = options.verifyAlgorithms
+    this.verifyThresholds = options.verifyThresholds
     this.batchSize = options.batchSize ?? 100
   }
 
@@ -171,14 +137,9 @@ export class ScanEngine {
     const pathById = new Map<string, string>() // id -> path
     const idByPath = new Map<string, string>() // path -> id
 
-    // Determine hash functions for Stage 1
-    const activeHashAlgos = this.plugin
-      ? [{ id: '_legacy', computeHash: this.plugin.computeHash.bind(this.plugin) }]
-      : this.hashAlgorithms
-
     // Per-algorithm hash maps: algoId -> Map<path, hash>
     const algoHashMaps = new Map<string, Map<string, string>>()
-    for (const algo of activeHashAlgos) {
+    for (const algo of this.hashAlgorithms) {
       algoHashMaps.set(algo.id, new Map())
     }
 
@@ -194,7 +155,7 @@ export class ScanEngine {
 
         try {
           // Compute hashes for all active algorithms
-          for (const algo of activeHashAlgos) {
+          for (const algo of this.hashAlgorithms) {
             const hash = await algo.computeHash(filePath)
             algoHashMaps.get(algo.id)!.set(filePath, hash)
           }
@@ -207,7 +168,7 @@ export class ScanEngine {
           }
 
           // Primary hash for DB/display
-          hashMap.set(filePath, algoHashMaps.get(activeHashAlgos[0].id)!.get(filePath)!)
+          hashMap.set(filePath, algoHashMaps.get(this.hashAlgorithms[0].id)!.get(filePath)!)
         } catch (err) {
           const reason = err instanceof Error ? err.message : 'Unknown error'
           skippedFiles.push({ path: filePath, reason })
@@ -222,39 +183,23 @@ export class ScanEngine {
     this.checkAborted(signal)
 
     const validPaths = filePaths.filter((path) => idByPath.has(path))
-    let candidateGroups: string[][]
+    const allIds = validPaths.map((path) => idByPath.get(path)!)
+    const groupSets: string[][][] = []
 
-    if (this.plugin) {
-      // Legacy mode: single plugin
+    for (const algo of this.hashAlgorithms) {
+      const algoHashes = algoHashMaps.get(algo.id)!
       const items = validPaths.map((path) => ({
         id: idByPath.get(path)!,
-        hash: hashMap.get(path)!,
+        hash: algoHashes.get(path)!,
       }))
-      candidateGroups = groupByDistance(
-        items,
-        this.hashThreshold,
-        this.plugin.computeDistance,
-      )
-    } else {
-      // New algorithm mode: run BK-Tree per hash algorithm, then merge
-      const allIds = validPaths.map((path) => idByPath.get(path)!)
-      const groupSets: string[][][] = []
-
-      for (const algo of this.hashAlgorithms) {
-        const algoHashes = algoHashMaps.get(algo.id)!
-        const items = validPaths.map((path) => ({
-          id: idByPath.get(path)!,
-          hash: algoHashes.get(path)!,
-        }))
-        const threshold = this.hashThresholds[algo.id] ?? algo.defaultThreshold
-        const groups = groupByDistance(items, threshold, algo.computeDistance)
-        groupSets.push(groups)
-      }
-
-      candidateGroups = groupSets.length === 1
-        ? groupSets[0].filter((g) => g.length >= 2)
-        : mergeGroups(groupSets, allIds, this.mergeStrategy)
+      const threshold = this.hashThresholds[algo.id] ?? algo.defaultThreshold
+      const groups = groupByDistance(items, threshold, algo.computeDistance)
+      groupSets.push(groups)
     }
+
+    const candidateGroups = groupSets.length === 1
+      ? groupSets[0].filter((g) => g.length >= 2)
+      : mergeGroups(groupSets, allIds, this.mergeStrategy)
 
     // --- Stage 2: Verification for each candidate group ---
     const finalGroups: GroupResult[] = []
@@ -264,16 +209,10 @@ export class ScanEngine {
 
       const candidatePaths = candidateIds.map((id) => pathById.get(id)!)
 
-      // Determine verification pipeline
+      // Sequential verification pipeline
       let verifiedSubGroups: string[][]
 
-      if (this.plugin) {
-        // Legacy mode
-        verifiedSubGroups = this.plugin.verify
-          ? await this.plugin.verify(candidatePaths, this.verifyThreshold)
-          : [candidatePaths]
-      } else if (this.verifyAlgorithms.length > 0) {
-        // New algorithm mode: sequential pipeline
+      if (this.verifyAlgorithms.length > 0) {
         verifiedSubGroups = [candidatePaths]
         for (const verifier of this.verifyAlgorithms) {
           const threshold = this.verifyThresholds[verifier.id] ?? verifier.defaultThreshold

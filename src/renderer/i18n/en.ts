@@ -335,7 +335,7 @@ export const en = {
   'scanInfo.off': 'Off',
   'scanInfo.threads': 'Threads',
   'scanInfo.plugins': 'Detection Algorithms',
-  'scanInfo.noPlugins': 'No active plugins',
+  'scanInfo.noPlugins': 'No algorithms registered',
   'scanInfo.custom': 'Custom',
   'scanInfo.mode.full': 'Full Scan',
   'scanInfo.mode.date_range': 'Date Range',
