@@ -12,6 +12,14 @@ export default defineConfig({
         '@main': resolve('src/main'),
       },
     },
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve('src/main/index.ts'),
+          'hash-worker': resolve('src/main/engine/hash-worker.ts'),
+        },
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],

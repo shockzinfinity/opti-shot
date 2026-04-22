@@ -19,7 +19,7 @@ export type {
   SkippedFile,
   ProgressCallback,
 } from './scan-engine'
-export { computePhashBatch } from './worker'
+export { HashWorkerPool } from './hash-worker-pool'
 
 // Algorithm system
 export { algorithmRegistry } from './algorithm-registry'

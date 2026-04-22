@@ -452,7 +452,7 @@ export async function startScan(
     .map((id) => algorithmRegistry.getVerify(id))
     .filter((a): a is NonNullable<typeof a> => a != null)
 
-  // Create engine with new algorithm mode
+  // Create engine with algorithm mode + parallel workers
   const engine = new ScanEngine({
     hashAlgorithms: hashAlgos,
     hashThresholds: options.hashThresholds,
@@ -460,6 +460,7 @@ export async function startScan(
     verifyAlgorithms: verifyAlgos,
     verifyThresholds: options.verifyThresholds,
     batchSize: options.batchSize,
+    parallelThreads: options.parallelThreads,
   })
 
   // Throttle progress to avoid flooding the renderer

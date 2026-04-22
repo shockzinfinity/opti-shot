@@ -4,6 +4,7 @@
 import { groupByDistance } from './bk-tree'
 import { mergeGroups } from './group-merger'
 import { computeQualityScore, getExifData } from './quality'
+import { HashWorkerPool } from './hash-worker-pool'
 import type { HashAlgorithm, VerifyAlgorithm } from './algorithm-registry'
 import type { ScanProgress } from '@shared/types'
 import { randomUUID } from 'crypto'
@@ -22,6 +23,8 @@ export interface ScanEngineAlgorithmOptions {
   verifyThresholds: Record<string, number>
   /** Number of files to process per batch (default: 100) */
   batchSize?: number
+  /** Number of worker threads for parallel hash computation (default: 1 = sequential) */
+  parallelThreads?: number
 }
 
 /** Result of a single photo in the scan. */
@@ -72,7 +75,7 @@ export type ProgressCallback = (progress: ScanProgress) => void
 /**
  * ScanEngine: Orchestrates the 2-stage duplicate detection pipeline.
  *
- * Stage 1: Hash computation + BK-Tree grouping (per algorithm) + merge
+ * Stage 1: Parallel hash computation (worker threads) + BK-Tree grouping + merge
  * Stage 2: Sequential verification pipeline
  * Quality scoring + master selection per group
  */
@@ -83,6 +86,7 @@ export class ScanEngine {
   private verifyAlgorithms: VerifyAlgorithm[]
   private verifyThresholds: Record<string, number>
   private batchSize: number
+  private parallelThreads: number
 
   constructor(options: ScanEngineAlgorithmOptions) {
     this.hashAlgorithms = options.hashAlgorithms
@@ -91,6 +95,7 @@ export class ScanEngine {
     this.verifyAlgorithms = options.verifyAlgorithms
     this.verifyThresholds = options.verifyThresholds
     this.batchSize = options.batchSize ?? 100
+    this.parallelThreads = options.parallelThreads ?? 1
   }
 
   /**
@@ -146,36 +151,86 @@ export class ScanEngine {
     // Primary hash map for display (first algorithm)
     const hashMap = new Map<string, string>()
 
-    for (let i = 0; i < filePaths.length; i += this.batchSize) {
-      this.checkAborted(signal)
+    // Use worker pool for parallel hash computation (≥2 threads)
+    const useWorkers = this.parallelThreads >= 2
+    let pool: HashWorkerPool | null = null
 
-      const batch = filePaths.slice(i, i + this.batchSize)
-      for (const filePath of batch) {
+    try {
+      if (useWorkers) {
+        pool = new HashWorkerPool(this.parallelThreads)
+      }
+
+      // Process in batches for progress reporting
+      for (let i = 0; i < filePaths.length; i += this.batchSize) {
         this.checkAborted(signal)
 
-        try {
-          // Compute hashes for all active algorithms
+        const batch = filePaths.slice(i, i + this.batchSize)
+
+        if (useWorkers && pool) {
+          // --- Parallel mode: dispatch batch to worker pool per algorithm ---
           for (const algo of this.hashAlgorithms) {
-            const hash = await algo.computeHash(filePath)
-            algoHashMaps.get(algo.id)!.set(filePath, hash)
+            this.checkAborted(signal)
+            const { hashes, errors } = await pool.computeBatch(algo.id, batch, signal)
+
+            const algoMap = algoHashMaps.get(algo.id)!
+            for (const [fp, hash] of hashes) {
+              algoMap.set(fp, hash)
+            }
+            for (const [fp, reason] of errors) {
+              // Only record skip once per file (first algo that fails)
+              if (!skippedFiles.some((s) => s.path === fp)) {
+                skippedFiles.push({ path: fp, reason })
+              }
+            }
           }
 
-          // Assign ID only once per file
-          if (!idByPath.has(filePath)) {
-            const id = randomUUID()
-            pathById.set(id, filePath)
-            idByPath.set(filePath, id)
+          // Register IDs and primary hash for successful files
+          for (const filePath of batch) {
+            const firstAlgoMap = algoHashMaps.get(this.hashAlgorithms[0].id)!
+            if (firstAlgoMap.has(filePath)) {
+              if (!idByPath.has(filePath)) {
+                const id = randomUUID()
+                pathById.set(id, filePath)
+                idByPath.set(filePath, id)
+              }
+              hashMap.set(filePath, firstAlgoMap.get(filePath)!)
+            }
           }
 
-          // Primary hash for DB/display
-          hashMap.set(filePath, algoHashMaps.get(this.hashAlgorithms[0].id)!.get(filePath)!)
-        } catch (err) {
-          const reason = err instanceof Error ? err.message : 'Unknown error'
-          skippedFiles.push({ path: filePath, reason })
+          processedFiles += batch.length
+          emitProgress(batch[batch.length - 1], 0)
+        } else {
+          // --- Sequential mode (1 thread / test fallback) ---
+          for (const filePath of batch) {
+            this.checkAborted(signal)
+
+            try {
+              for (const algo of this.hashAlgorithms) {
+                const hash = await algo.computeHash(filePath)
+                algoHashMaps.get(algo.id)!.set(filePath, hash)
+              }
+
+              if (!idByPath.has(filePath)) {
+                const id = randomUUID()
+                pathById.set(id, filePath)
+                idByPath.set(filePath, id)
+              }
+
+              hashMap.set(filePath, algoHashMaps.get(this.hashAlgorithms[0].id)!.get(filePath)!)
+            } catch (err) {
+              const reason = err instanceof Error ? err.message : 'Unknown error'
+              skippedFiles.push({ path: filePath, reason })
+            }
+
+            processedFiles++
+            emitProgress(filePath, 0)
+          }
         }
-
-        processedFiles++
-        emitProgress(filePath, 0)
+      }
+    } finally {
+      // Always terminate worker pool
+      if (pool) {
+        await pool.terminate()
       }
     }
 
