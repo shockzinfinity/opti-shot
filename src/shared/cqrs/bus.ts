@@ -54,6 +54,6 @@ export const ALL_QUERY_TYPES: QueryType[] = [
 export const ALL_EVENT_TYPES: EventType[] = [
   'scan.progress',
   'organize.progress',
-  'updater.available', 'updater.progress', 'updater.downloaded',
+  'updater.available', 'updater.progress', 'updater.downloaded', 'updater.installFailed',
   'notification.new',
 ]

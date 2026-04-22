@@ -6,5 +6,6 @@ export interface EventMap {
   'updater.available': { version: string; releaseDate: string }
   'updater.progress': { percent: number; transferred: number; total: number }
   'updater.downloaded': void
+  'updater.installFailed': { message: string }
   'notification.new': NotificationEntry
 }

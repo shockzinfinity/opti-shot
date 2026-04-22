@@ -11,6 +11,14 @@ const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000
 
 let checkTimer: ReturnType<typeof setInterval> | null = null
 
+/** Track if install was just attempted — to distinguish install errors from other errors */
+let installAttempted = false
+
+/** Detect code signature related errors */
+function isCodeSignatureError(message: string): boolean {
+  return message.includes('Code signature') || message.includes('code sign') || message.includes('not pass validation')
+}
+
 /**
  * Initialize the auto-updater.
  * Skips initialization in development mode.
@@ -51,12 +59,27 @@ export function initAutoUpdater(): void {
 
   autoUpdater.on('error', (error: Error) => {
     console.error('Auto-update error:', error.message)
-    sendNotification({
-      level: 'error',
-      category: 'system',
-      title: 'notification.system.updateError',
-      message: error.message,
-    })
+
+    if (installAttempted && isCodeSignatureError(error.message)) {
+      // Code signature failure during install — send friendly event + notification
+      installAttempted = false
+      getEventBus().publish('updater.installFailed', {
+        message: error.message,
+      })
+      sendNotification({
+        level: 'warning',
+        category: 'system',
+        title: 'updater.installFailed',
+        message: 'Auto-install unavailable (unsigned app). Please remove the current app and install the downloaded version manually.',
+      })
+    } else {
+      sendNotification({
+        level: 'error',
+        category: 'system',
+        title: 'notification.system.updateError',
+        message: error.message,
+      })
+    }
   })
 
   // Initial check after 5 seconds
@@ -75,15 +98,12 @@ export function downloadUpdate(): void {
   autoUpdater.downloadUpdate()
 }
 
-/** Quit and install the downloaded update. Returns false if install fails. */
-export function installUpdate(): boolean {
-  try {
-    autoUpdater.quitAndInstall()
-    return true
-  } catch (err) {
-    console.error('Install failed:', err instanceof Error ? err.message : err)
-    return false
-  }
+/** Quit and install the downloaded update. */
+export function installUpdate(): void {
+  installAttempted = true
+  autoUpdater.quitAndInstall()
+  // If quitAndInstall succeeds, app exits — never reaches here
+  // If it fails, autoUpdater.on('error') fires asynchronously
 }
 
 /** Clean up interval timer (for app quit). */

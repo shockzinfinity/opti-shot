@@ -620,6 +620,9 @@ export function InfoTab() {
       window.electron.subscribe('updater.downloaded', () => {
         setUpdaterStatus('downloaded')
       }),
+      window.electron.subscribe('updater.installFailed', () => {
+        setUpdaterStatus('install-failed')
+      }),
     ]
     return () => unsubs.forEach((fn) => fn())
   }, [])
@@ -651,13 +654,9 @@ export function InfoTab() {
     window.electron.command('updater.download')
   }
 
-  const handleInstall = async () => {
-    const res = await window.electron.command('updater.install')
-    if (!res.success) {
-      // Code signature failure — guide manual install
-      setUpdaterStatus('install-failed')
-    }
-    // If success, app will quit and restart — no state update needed
+  const handleInstall = () => {
+    window.electron.command('updater.install')
+    // If successful, app quits. If failed, updater.installFailed event fires.
   }
 
   const rows = [

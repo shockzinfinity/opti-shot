@@ -18,9 +18,7 @@ export function registerUpdaterHandlers(cmd: CommandBus): void {
   })
 
   cmd.register('updater.install', async () => {
-    const success = installUpdate()
-    if (!success) {
-      throw new Error('Auto-install failed: app is not code-signed')
-    }
+    installUpdate()
+    // If successful, app quits. If failed, error event fires asynchronously.
   })
 }
