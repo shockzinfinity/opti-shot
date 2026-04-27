@@ -35,29 +35,36 @@
 
 ## Key Features
 
-### Duplicate Detection (2-Stage Plugin Architecture)
+### Duplicate Detection (2-Stage Algorithm Architecture)
 
-단순한 해시 비교가 아닌, **2단계 검증 파이프라인**으로 정밀도와 속도를 모두 확보합니다.
-감지 알고리즘은 `DetectionPlugin` 인터페이스로 교체 가능합니다.
+**HashAlgorithm**(Stage 1)과 **VerifyAlgorithm**(Stage 2) 인터페이스로 분리된 2-Stage 파이프라인입니다.
+각 단계에 복수의 알고리즘을 자유롭게 조합할 수 있고, 프리셋으로 빠르게 시작할 수 있습니다.
 
-| Stage | Algorithm | Purpose |
-|-------|-----------|---------|
-| **Stage 1** | pHash + BK-Tree | DCT 기반 Perceptual Hash로 빠른 후보 추출. BK-Tree 인덱싱으로 O(log n) 검색 |
-| **Stage 2** | SSIM | Structural Similarity 검증으로 오탐 제거. 휘도/대비/구조 3채널 비교 |
+| Stage | Algorithms | Purpose |
+|-------|------------|---------|
+| **Stage 1 (HashAlgorithm)** | pHash, dHash | 64-bit 해시 + BK-Tree로 후보 그룹 빠르게 도출 (O(log N) 근방 탐색) |
+| **Stage 2 (VerifyAlgorithm)** | SSIM, NMSE | 후보 쌍에 대해서만 픽셀 단위 정밀 비교, 오탐 제거 |
 
-- **pHash Threshold**: Hamming Distance 기반 (기본 8, 4~16 조절 가능)
-- **SSIM Threshold**: 구조적 유사도 (기본 0.82, 0.5~0.95 조절 가능)
-- **Plugin Registry**: 내장 pHash-SSIM 외 커스텀 플러그인 확장 가능
-- 플러그인별 임계값 UI 분리 (PluginSection)
+- **그룹 병합 전략**: 복수 Stage 1 결과를 Union(합집합) 또는 Intersection(교집합)으로 병합 — Union-Find 자료구조
+- **Stage 2 순차 파이프라인**: 복수 검증 알고리즘은 순차 적용 (모두 통과해야 그룹에 잔류)
+- **프리셋 4종**: 균형 / 빠른 / 보수적 / 정밀 + 사용자 정의
+- **AlgorithmRegistry**: 내장 알고리즘 외 향후 동적 등록 확장 예정
 
 ### Quality Scoring
 
-중복 그룹 내에서 **가장 좋은 버전(Master)**을 자동 선별합니다.
+중복 그룹 내에서 **가장 좋은 버전(Best)**을 자동 선별합니다.
 
-- **Laplacian Variance** — 이미지 선명도 평가 (blur 감지)
-- **해상도** — 높은 해상도 우선
-- **파일 크기** — 원본 품질 보존 여부 판단
-- **EXIF 메타데이터** — 촬영 정보 보존 여부 가점
+- **해상도** — 픽셀 수가 클수록 정보량 우위
+- **파일 크기** — 같은 해상도에서 클수록 압축률↓ (원본 품질 보존 우위)
+- **EXIF 메타데이터** — 카메라/촬영 설정 보존 여부 가점
+- **포맷 우선순위** — RAW > 무손실 > JPEG 압축본
+- *(향후)* 선명도(sharpness) 추정, 노출/포커스 점수, 얼굴 보존 우선순위
+
+### About OptiShot (인앱 기술 가이드)
+
+설정 → 정보 탭의 **About OptiShot** 버튼으로 진입하는 풀스크린 기술 가이드입니다 (10개 섹션).
+앱의 동작 원리, 알고리즘, 임계값 튜닝, 안전 정책을 좌측 사이드 네비 + 우측 본문 스크롤 형태로 제공합니다.
+콘텐츠 데이터(`src/renderer/content/about/`)는 다국어 확장이 가능한 구조이며, 현재는 한국어 본문을 제공합니다.
 
 ### File Organizer
 
@@ -124,24 +131,25 @@ Light / Dark / Auto 3가지 테마를 지원합니다. Auto 모드는 시스템 
 │  2. EXIF Pre-Filter (Optional)                             │
 │     └─ 날짜/카메라/GPS/해상도로 대상 파일 사전 축소            │
 │                                                            │
-│  3. Stage 1: pHash + BK-Tree                               │
-│     └─ DCT 기반 64-bit 해시 생성 → BK-Tree 범위 검색         │
-│     └─ Hamming Distance ≤ threshold → 후보 그룹 생성        │
+│  3. Stage 1: HashAlgorithm (pHash, dHash)                  │
+│     └─ Worker Thread Pool에서 병렬 해시 계산                │
+│     └─ BK-Tree 인덱싱 → Hamming 거리 근방 탐색              │
+│     └─ Union-Find로 복수 알고리즘 결과 Union/Intersection   │
 │                                                            │
-│  4. Stage 2: SSIM Verification                             │
-│     └─ 후보 그룹 내 구조적 유사도 정밀 검증                   │
-│     └─ 오탐 제거, 최종 중복 그룹 확정                         │
+│  4. Stage 2: VerifyAlgorithm (SSIM, NMSE)                  │
+│     └─ 후보 쌍에 대해서만 픽셀 단위 정밀 비교                │
+│     └─ 복수 알고리즘은 순차 적용, 모두 통과해야 잔류          │
 │                                                            │
 │  5. Quality Scoring                                        │
-│     └─ Laplacian 분산 + 해상도 + 메타데이터 기반 점수         │
-│     └─ 그룹 내 Master (최적 버전) 자동 선정                   │
+│     └─ 해상도 + 파일크기 + EXIF + 포맷 가중 합산            │
+│     └─ 그룹 내 Best (최적 버전) 자동 선정                   │
 │                                                            │
 │  6. Group Review                                           │
 │     └─ Side-by-side 비교, EXIF 상세, 대표 사진 선택          │
 │     └─ 사용자 최종 판정 (Keep All / Delete Duplicates)       │
 │                                                            │
 │  7. Cleanup                                                │
-│     └─ Soft Delete → 30일 보관 → 자동 정리                  │
+│     └─ Soft Delete → 30일 보관 → 자동 정리 스케줄러          │
 │                                                            │
 │  + File Organizer (독립 기능)                               │
 │     └─ 촬영일 기준 일괄 리네임 + 되돌리기                     │
@@ -238,8 +246,9 @@ bun run build:linux
 | **EXIF** | exifr | Metadata extraction (GPS, camera, date) |
 | **Build** | Vite 7 + electron-vite | Fast HMR + production bundling |
 | **Package** | electron-builder | Cross-platform installers + auto-update |
-| **Test** | Vitest + Playwright | Unit (181 tests) + E2E |
-| **i18n** | Custom (ko/en/ja) | 3-language support |
+| **Test** | Vitest + Playwright | Unit (190 tests) + E2E (6 tests, macOS) |
+| **i18n** | Custom (ko/en/ja) | 3-language UI labels |
+| **Update** | GitHub Releases (직접) | net.request → ~/Downloads, 수동 설치 |
 
 ---
 
@@ -252,8 +261,8 @@ bun run build:linux
 ```
 Renderer (React)                          Main (Node.js)
   │                                         │
-  ├── command('scan.start', opts) ────────► CommandBus (26) → notificationMiddleware → Handler → Service
-  ├── query('group.list', params) ────────► QueryBus   (18) → Handler → Service
+  ├── command('scan.start', opts) ────────► CommandBus (25) → notificationMiddleware → Handler → Service
+  ├── query('group.list', params) ────────► QueryBus   (17) → Handler → Service
   └── subscribe('scan.progress')  ◄──────── EventBus    (6) → BrowserWindow.send
 ```
 
@@ -289,76 +298,97 @@ Renderer (React)                          Main (Node.js)
 src/
 ├── main/                # Electron Main Process
 │   ├── cqrs/            # CQRS infrastructure
-│   │   ├── commandBus.ts    # 26 commands (state changes)
-│   │   ├── queryBus.ts      # 18 queries (data reads)
-│   │   ├── eventBus.ts      # 6 events (Main→Renderer push)
-│   │   ├── ipcBridge.ts     # IPC entry (dual validation)
-│   │   ├── schemas.ts       # Zod payload schemas
-│   │   ├── notificationMiddleware.ts  # Auto-notification via policy
-│   │   └── handlers/        # Domain handlers (13 modules)
+│   │   ├── commandBus.ts                # 25 commands (state changes)
+│   │   ├── queryBus.ts                  # 17 queries (data reads)
+│   │   ├── eventBus.ts                  # 6 events (Main→Renderer push)
+│   │   ├── ipcBridge.ts                 # IPC entry (dual validation)
+│   │   ├── schemas.ts                   # Zod payload schemas
+│   │   ├── notificationMiddleware.ts    # Auto-notification via policy
+│   │   └── handlers/                    # Domain handlers per resource
 │   ├── db/              # Drizzle schema (8 tables) & migrations
-│   ├── engine/          # BK-Tree, pHash, SSIM, quality scoring
-│   │   └── plugins/     # DetectionPlugin implementations
-│   ├── services/        # Business logic (scan, organize, trash, notification, ...)
+│   ├── engine/          # ScanEngine, BK-Tree, AlgorithmRegistry
+│   │   ├── algorithms/  # HashAlgorithm (pHash, dHash) + VerifyAlgorithm (SSIM, NMSE)
+│   │   ├── hash-worker.ts        # Worker thread entrypoint
+│   │   └── hash-worker-pool.ts   # Round-robin dispatch + abort propagation
+│   ├── services/        # Business logic (scan, organize, trash, notification, updater, ...)
 │   └── scheduler/       # Trash cleanup scheduler
 ├── renderer/            # React App (Renderer Process)
-│   ├── components/      # Reusable UI (FolderPicker, ActionBar, ...)
+│   ├── components/      # Reusable UI (FolderPicker, ActionBar, AboutOptiShotModal, ...)
+│   ├── content/about/   # About OptiShot 콘텐츠 데이터 (ko.ts + types.ts + index.ts)
 │   ├── pages/           # 7 route-based screens
 │   ├── stores/          # Zustand stores
 │   ├── hooks/           # Custom hooks (useTheme, useTranslation, ...)
-│   └── i18n/            # ko, en, ja translations
+│   └── i18n/            # ko, en, ja UI label translations
 ├── shared/              # Types shared between processes
 │   ├── types.ts         # Domain types
-│   ├── constants.ts     # Single-source constants
+│   ├── constants.ts     # Single-source constants (SCAN_PRESETS, DEFAULT_*_SETTINGS)
 │   ├── utils.ts         # Shared format functions
 │   └── cqrs/            # Type registries (CommandMap, QueryMap, EventMap)
 └── preload/             # contextBridge API
+
+e2e/                     # Playwright Electron tests (macOS, 6 critical paths)
 ```
 
 ---
 
 ## Algorithms Deep Dive
 
-### pHash (Perceptual Hash)
+> 더 자세한 설명과 임계값 튜닝 가이드는 앱 내 **About OptiShot** 모달(설정 → 정보 탭)을 참고하세요.
 
-```
-Input Image → Grayscale → Resize 32x32 → DCT → Top-left 8x8 → Median → 64-bit Hash
-```
+### Stage 1 — HashAlgorithm
 
-- DCT(Discrete Cosine Transform) 기반으로 이미지의 저주파 특성 추출
-- 크기 변경, 밝기 조절, 경미한 편집에도 유사한 해시 생성
-- 64-bit 해시 간 Hamming Distance로 유사도 측정
+**pHash (Perceptual Hash)**
+```
+Input → Grayscale → Resize 32x32 → DCT → Top-left 8x8 → Median → 64-bit Hash
+```
+DCT(이산 코사인 변환) 저주파 영역 기반. 색상·밝기·약한 압축 변화에 강건.
+
+**dHash (Difference Hash)**
+```
+Input → Grayscale → Resize 9x8 → Adjacent pixel diff (sign) → 64-bit Hash
+```
+그래디언트 기반. 회전·왜곡에 더 민감하지만 계산이 매우 빠름.
 
 ### BK-Tree (Burkhard-Keller Tree)
 
-- 메트릭 공간에서의 효율적 범위 검색 트리
-- 삽입: O(log n), 검색: O(log n) 평균
-- 200K 해시에서 threshold 이내의 모든 후보를 빠르게 검색
+- 메트릭 공간 범위 검색 트리, Hamming 거리 기반 근방 탐색
+- 삽입/검색 O(log N) 평균
+- Stage 1 결과를 BK-Tree에 인덱싱한 뒤 임계값 이내 후보를 효율적으로 추출
 
-### SSIM (Structural Similarity Index)
+### Union-Find (그룹 병합)
 
+복수 해시 알고리즘이 만든 후보 쌍을 하나의 그룹으로 합칠 때 서로소 집합 자료구조 사용:
+- **Union 전략**: 어느 알고리즘이든 묶이면 동일 그룹 (회수율↑)
+- **Intersection 전략**: 모든 알고리즘이 동의해야 묶임 (정확도↑)
+
+### Stage 2 — VerifyAlgorithm
+
+**SSIM (Structural Similarity Index)**
 ```
 SSIM(x, y) = [l(x,y)]^α · [c(x,y)]^β · [s(x,y)]^γ
+  l = luminance, c = contrast, s = structure
+```
+인간 시각 인지 모델 기반. 256×256 그레이스케일 비교.
 
-l = luminance comparison (휘도)
-c = contrast comparison (대비)
-s = structure comparison (구조)
+**NMSE (Normalized Mean Squared Error)**
+```
+NMSE = mean((x - y)²) / normalization
+```
+픽셀 단위 차이 제곱 평균을 정규화. SSIM보다 보수적이며 미세 차이까지 분리.
+
+복수 검증 알고리즘은 **순차 파이프라인**으로 모두 통과해야 그룹에 잔류 (예: 정밀 프리셋 = SSIM → NMSE).
+
+### Quality Score (Best 선별)
+
+```
+Score = w1 × Resolution + w2 × FileSize + w3 × MetadataBonus + w4 × FormatPriority
 ```
 
-- 인간의 시각 인지 모델 기반
-- 단순 픽셀 비교보다 체감 유사도에 가까운 결과
-- pHash 후보에 대해서만 실행하여 연산량 제어
-
-### Quality Score
-
-```
-Score = w1 × LaplacianVariance + w2 × Resolution + w3 × FileSize + w4 × MetadataBonus
-```
-
-- **Laplacian Variance**: 엣지 강도 기반 선명도 (높을수록 선명)
 - **Resolution**: 픽셀 수 (가로 × 세로)
-- **FileSize**: 압축 품질 간접 지표
-- **Metadata Bonus**: EXIF 보존 여부 가점
+- **FileSize**: 같은 해상도일수록 압축률↓, 즉 화질 손실↓
+- **MetadataBonus**: EXIF(카메라/촬영 설정) 보존 여부 가점 — 원본 가능성 시그널
+- **FormatPriority**: RAW(HEIC/HEIF) > 무손실 > JPEG 압축본
+- *(향후)* 선명도(sharpness, Laplacian variance), 노출/포커스 점수, 얼굴 보존
 
 ---
 
@@ -393,21 +423,24 @@ Score = w1 × LaplacianVariance + w2 × Resolution + w3 × FileSize + w4 × Meta
 
 ## Roadmap
 
-현재 핵심 기능이 완료된 상태이며, 다음 항목들이 계획되어 있습니다.
+핵심 기능 + 알고리즘 아키텍처 + 인앱 기술 가이드 + E2E 인프라까지 완료된 상태입니다 (v0.4.0).
 
 | Phase | Feature | Status |
 |-------|---------|--------|
-| v0.2 단기 | Auto-updater 실전 배포 | 코드 있음, 배포 미완 |
-| v0.2 단기 | Incremental Scan | 설계 논의 필요 |
-| v0.2 단기 | dHash+MSE 플러그인 | 가이드 완료, 구현 대기 |
-| v0.2 단기 | 다중 플러그인 동시 실행 | 기획 |
-| v0.3 중기 | Worker Threads 병렬 처리 | stub |
-| v0.3 중기 | 다중 회전 pHash 플러그인 | 기획 |
-| v0.4+ 장기 | ORB / 딥러닝 플러그인 | 기획 |
-| v0.4+ 장기 | 지도 기반 위치 필터링 | GPS 데이터 있음 |
-| v0.4+ 장기 | EXIF 메타데이터 편집 | 아이디어 |
-| 인프라 | GitHub Actions CI/CD | 미구현 |
-| 인프라 | 코드 서명 (Apple/Windows) | 미구현 |
+| v0.2~v0.3 | Auto-updater (GitHub Releases 직접 다운로드) | ✅ 완료 |
+| v0.2~v0.3 | 알고리즘 아키텍처 재설계 (HashAlgorithm/VerifyAlgorithm) + 프리셋 | ✅ 완료 |
+| v0.2~v0.3 | Worker Threads 병렬 해시 (HashWorkerPool) | ✅ 완료 |
+| v0.2~v0.3 | dHash + NMSE 추가 | ✅ 완료 |
+| v0.2~v0.3 | 그룹 병합 (Union/Intersection, Union-Find) | ✅ 완료 |
+| v0.2~v0.3 | GitHub Actions CI/CD (release.yml, 3-OS 매트릭스) | ✅ 완료 |
+| **v0.4** | **About OptiShot 인앱 기술 가이드** | ✅ 완료 |
+| **v0.4** | **Playwright Electron E2E (macOS, 6 critical paths)** | ✅ 완료 |
+| v0.5+ | 다중 회전 해시 (Stage 1 확장) | 기획 |
+| v0.5+ | About 본문 영어/일본어 번역 | 기획 |
+| v0.5+ | 코드 서명 (Apple notarization, Windows signing) | 미구현 |
+| v0.5+ | E2E 확장 (스캔/그룹 휴지통 플로우) | 픽스처 셋업 후 |
+| v0.6+ | ORB 특징점 매칭 / 딥러닝 임베딩(CLIP/Gemma 4 E2B) | 기획 |
+| v0.6+ | 지도 기반 위치 필터링 / EXIF 편집 | 아이디어 |
 
 상세 로드맵: [docs/ROADMAP.md](docs/ROADMAP.md)
 

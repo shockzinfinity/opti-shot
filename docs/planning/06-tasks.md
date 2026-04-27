@@ -1,5 +1,8 @@
 # 06-tasks.md — OptiShot Electron Phase Breakdown
 
+> **상태: ✅ P0~P5 구현 완료 (v0.1~v0.3.x)** — 본 문서는 초기 빌드 계획입니다.
+> v0.4.0 시점부터의 신규 작업과 향후 로드맵은 [docs/ROADMAP.md](../ROADMAP.md)에서 추적합니다.
+
 ## メタ情報
 - **프로젝트**: OptiShot — Electron + React + TypeScript 사진 중복 감지 도구
 - **생성일**: 2026-04-17
