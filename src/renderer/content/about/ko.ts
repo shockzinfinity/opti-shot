@@ -1,0 +1,193 @@
+import type { AboutContent } from './types'
+
+export const ko: AboutContent = {
+  intro: 'OptiShot이 사진 라이브러리에서 중복·유사 이미지를 어떻게 찾아내고, 어떤 원리로 안전하게 정리하는지 설명합니다. 설정의 임계값과 프리셋을 직접 조정하기 전에 먼저 읽어보면 도움이 됩니다.',
+  sections: [
+    {
+      id: 'overview',
+      title: '개요',
+      blocks: [
+        { type: 'paragraph', text: 'OptiShot은 사진 라이브러리에서 중복·유사 이미지를 찾아 정리하는 데스크톱 도구입니다. 수십만 장 단위의 라이브러리를 빠르고 정확하게 처리하기 위해 2-Stage 파이프라인 구조를 채택했습니다.' },
+        { type: 'heading', text: '왜 두 단계로 나누는가' },
+        { type: 'paragraph', text: '모든 이미지 쌍을 정밀 비교하면 비용이 O(N²)로 폭발합니다. 라이브러리가 10만 장이면 50억 쌍이 됩니다. 따라서 가벼운 해시로 먼저 후보를 좁힌 뒤, 좁혀진 쌍에만 정밀 검증을 적용합니다.' },
+        { type: 'list', items: [
+          'Stage 1 — 후보 탐색(Hash): 모든 이미지를 64-bit 해시로 변환해 비슷한 후보 그룹을 빠르게 도출',
+          'Stage 2 — 정밀 검증(Verify): Stage 1에서 묶인 후보 쌍에 대해서만 픽셀 단위 비교 수행',
+        ]},
+        { type: 'paragraph', text: '결과적으로 정밀 비교의 입력 규모를 수십~수백 배 줄여 전체 스캔 시간을 크게 단축합니다.' },
+      ],
+    },
+    {
+      id: 'hash',
+      title: '해시 알고리즘 (Stage 1)',
+      blocks: [
+        { type: 'heading', text: 'pHash (Perceptual Hash)' },
+        { type: 'paragraph', text: '이미지를 32×32 그레이스케일로 다운스케일한 뒤 DCT(이산 코사인 변환)를 적용해 저주파 8×8 영역을 추출하고, 평균값 기준 0/1로 변환하여 64-bit 해시로 만듭니다. 두 해시 간 Hamming 거리(다른 비트 수)가 곧 유사도 지표이며, 낮을수록 유사합니다.' },
+        { type: 'paragraph', text: '주파수 도메인에서 비교하므로 색상·밝기·약한 압축 변화에 강건합니다.' },
+        { type: 'heading', text: 'dHash (Difference Hash)' },
+        { type: 'paragraph', text: '이미지를 9×8로 다운스케일한 뒤 가로 방향 인접 픽셀 차이의 부호를 0/1로 인코딩하여 64-bit 해시를 만듭니다. 그래디언트 기반이라 회전·왜곡에 더 민감하지만 계산 비용이 매우 낮습니다.' },
+        { type: 'heading', text: 'BK-Tree 인덱싱' },
+        { type: 'paragraph', text: '후보 검색은 BK-Tree(메트릭 트리) 자료구조로 처리합니다. 단순 전수 비교가 O(N²)인 반면, BK-Tree는 Hamming 거리 기반 근방 탐색을 평균 O(log N) 수준으로 끝냅니다.' },
+      ],
+    },
+    {
+      id: 'verify',
+      title: '검증 알고리즘 (Stage 2)',
+      blocks: [
+        { type: 'heading', text: 'SSIM (Structural Similarity Index)' },
+        { type: 'paragraph', text: '두 이미지의 휘도(luminance), 대비(contrast), 구조(structure) 세 측면을 분리 측정하여 결합한 유사도 지표입니다. 0~1 범위, 1에 가까울수록 유사합니다. OptiShot은 256×256 그레이스케일로 다운스케일한 뒤 SSIM을 계산합니다.' },
+        { type: 'paragraph', text: '사람 눈의 인지 특성과 유사하게 동작하므로, 같은 사진의 보정·압축 변형을 잘 잡습니다.' },
+        { type: 'heading', text: 'NMSE (Normalized Mean Squared Error)' },
+        { type: 'paragraph', text: '픽셀별 차이 제곱의 평균을 정규화한 값입니다. 0~1 범위, 0에 가까울수록 유사합니다. SSIM보다 보수적으로 동작하여 미세한 픽셀 차이까지 분리해내는 경향이 있습니다.' },
+        { type: 'paragraph', text: 'SSIM과 NMSE를 함께 쓰면 SSIM의 너그러움을 NMSE가 보완하여 정확도가 올라갑니다.' },
+      ],
+    },
+    {
+      id: 'thresholds',
+      title: '임계값과 튜닝',
+      blocks: [
+        { type: 'paragraph', text: '각 알고리즘은 임계값을 가지며, 이 값이 결과의 엄격함과 회수율을 좌우합니다.' },
+        { type: 'table',
+          headers: ['알고리즘', '단위', '권장 범위', '의미'],
+          rows: [
+            ['pHash', 'Hamming distance (0~64)', '4~12', '낮을수록 엄격, 8 = 보통'],
+            ['dHash', 'Hamming distance (0~64)', '4~12', '동일'],
+            ['SSIM', '유사도 (0~1)', '0.75~0.92', '높을수록 엄격'],
+            ['NMSE', '오차 (0~1)', '0.02~0.08', '낮을수록 엄격'],
+          ],
+        },
+        { type: 'paragraph', text: '임계값을 너무 낮추면(엄격) 같은 사진의 압축본조차 다른 그룹으로 분리되어 회수율이 떨어집니다. 반대로 너무 높이면(느슨) 무관한 사진까지 묶여 검토 부담이 커집니다.' },
+        { type: 'paragraph', text: '시작은 프리셋의 기본값을 사용하고, 결과를 보면서 ±2(해시) 또는 ±0.05(SSIM) 단위로 조정하길 권장합니다.' },
+      ],
+    },
+    {
+      id: 'presets',
+      title: '프리셋',
+      blocks: [
+        { type: 'paragraph', text: '4개 프리셋은 위 알고리즘과 임계값을 조합한 권장 시작점입니다. 고급 설정에서 어떤 값이든 수정하면 자동으로 "사용자 정의"로 전환됩니다.' },
+        { type: 'table',
+          headers: ['프리셋', 'Stage 1', 'Stage 2', '용도'],
+          rows: [
+            ['균형 (balanced)', 'pHash + dHash (Union)', 'SSIM 0.82', '일반 라이브러리 권장'],
+            ['빠른 (fast)', 'dHash 단독', 'SSIM 0.75', '대용량 1차 정리'],
+            ['보수적 (conservative)', 'pHash 단독 (엄격)', 'SSIM 0.85', '오탐 최소화'],
+            ['정밀 (precise)', 'pHash + dHash (Intersection)', 'SSIM + NMSE 순차', '정확도 최우선'],
+          ],
+        },
+      ],
+    },
+    {
+      id: 'merge',
+      title: '그룹 병합 전략',
+      blocks: [
+        { type: 'paragraph', text: '복수의 Stage 1 알고리즘이 각각 후보 쌍을 만들면 이를 합쳐야 합니다. OptiShot은 두 가지 병합 전략을 제공합니다.' },
+        { type: 'list', items: [
+          'Union (합집합): 어느 알고리즘에서든 묶이면 같은 그룹. 회수율↑, 오탐↑',
+          'Intersection (교집합): 모든 알고리즘이 동의해야 묶임. 정확도↑, 누락 가능성↑',
+        ]},
+        { type: 'paragraph', text: '내부적으로 Union-Find(서로소 집합) 자료구조로 그룹을 효율적으로 병합·조회합니다.' },
+        { type: 'heading', text: 'Stage 2의 순차 파이프라인' },
+        { type: 'paragraph', text: '복수의 Stage 2 알고리즘은 병렬이 아닌 순차 파이프라인입니다. 첫 번째 검증을 통과한 쌍만 두 번째에 전달되며, 모두 통과해야 최종 그룹에 남습니다. 정밀 프리셋은 SSIM → NMSE 순서를 사용합니다.' },
+      ],
+    },
+    {
+      id: 'exif',
+      title: 'EXIF 사전 필터링',
+      blocks: [
+        { type: 'paragraph', text: 'Stage 1 해시 계산 자체도 비용이므로, 명백히 다른 이미지는 해시 단계 전에 제외하면 전체 시간이 크게 단축됩니다. EXIF 메타데이터로 4가지 사전 필터를 적용할 수 있습니다.' },
+        { type: 'list', items: [
+          '촬영 날짜 범위: 특정 기간 사진만 분석',
+          '카메라 모델: 특정 기기로 찍은 사진만',
+          'GPS 유/무: 위치 정보 보유 여부로 필터',
+          '최소 해상도: 썸네일·아이콘 등 작은 이미지 제외',
+        ]},
+        { type: 'paragraph', text: 'EXIF 추출은 exifr 라이브러리로 32 concurrent 배치 처리하며, GPS 좌표는 parse({gps:true}) 단일 호출로 EXIF 본문과 함께 추출합니다.' },
+      ],
+    },
+    {
+      id: 'quality',
+      title: '품질 평가 & 베스트 선별',
+      blocks: [
+        { type: 'paragraph', text: '같은 장면을 찍은 사진이라도 해상도, 압축률, 메타데이터 보존 정도가 제각각입니다. 한 그룹 안에서 어느 사진을 남길지 매번 사용자가 직접 비교하는 부담을 줄이기 위해, OptiShot은 각 사진에 품질 점수를 부여하고 그룹 내 최고 점수를 "베스트"로 자동 표시합니다.' },
+        { type: 'heading', text: '판정 기준 (가중 합산)' },
+        { type: 'table',
+          headers: ['지표', '의미', '우선순위'],
+          rows: [
+            ['해상도', '가로 × 세로 픽셀 수가 클수록 정보량이 많음', '높음'],
+            ['파일 크기', '같은 해상도에서 클수록 압축률이 낮아 화질 손실이 적음', '중간'],
+            ['EXIF 메타데이터', '카메라/렌즈/촬영 설정 보존 여부 — 원본일 가능성↑', '중간'],
+            ['포맷 우선순위', 'RAW(HEIC/HEIF) > 무손실 > JPEG 압축본', '보조'],
+          ],
+        },
+        { type: 'heading', text: '실무 시나리오' },
+        { type: 'list', items: [
+          '동일 사진의 RAW와 JPEG가 같은 그룹에 묶이면 RAW가 베스트로 선정됩니다',
+          '소셜 앱에서 다운받은 압축본보다 원본 카메라 파일이 우선됩니다',
+          '편집·보정으로 메타데이터가 사라진 사본보다 EXIF 보존 원본이 우선됩니다',
+        ]},
+        { type: 'heading', text: '사용자 결정의 우선' },
+        { type: 'paragraph', text: '자동 판정은 어디까지나 제안입니다. 검토 화면에서 사용자가 다른 사진을 베스트로 지정하거나 그룹 전체 보존(kept_all)을 선택할 수 있고, 그룹 결정(decision)이 DB의 group_decisions 레코드로 영구 기록되어 다음 스캔 시에도 유지됩니다.' },
+        { type: 'paragraph', text: '향후 선명도(sharpness) 추정과 노출·포커스 점수, 얼굴 인식 기반 보존 우선순위를 가중치에 추가할 예정입니다.' },
+      ],
+    },
+    {
+      id: 'workers',
+      title: '워커 스레드 아키텍처',
+      blocks: [
+        { type: 'paragraph', text: 'Node.js는 기본적으로 단일 스레드 이벤트 루프 위에서 동작합니다. 수만 장의 이미지를 디코딩하고 DCT를 계산하는 CPU-bound 작업을 메인 스레드에서 처리하면 UI가 멈추고 IPC 응답도 지연됩니다. OptiShot은 이를 피하기 위해 별도 워커 스레드 풀을 사용합니다.' },
+        { type: 'heading', text: '프로세스/스레드 구조' },
+        { type: 'list', items: [
+          'Main 프로세스: IPC 라우팅, DB(SQLite), 비즈니스 로직, ScanEngine 오케스트레이션',
+          'Renderer 프로세스: React UI, Zustand 상태, 검토 화면',
+          'Worker 스레드: 이미지 디코딩 + pHash/dHash 계산만 담당 (메모리 격리)',
+        ]},
+        { type: 'heading', text: 'HashWorkerPool 동작' },
+        { type: 'paragraph', text: 'Main 프로세스가 시작 시 parallelThreads 개수만큼 워커를 미리 spawn합니다. 스캔 시 파일 경로가 들어오면 round-robin으로 워커에 dispatch하고, 워커는 sharp(libvips)로 이미지를 디코딩하여 32×32 / 9×8로 다운스케일한 뒤 해시를 계산해 메인으로 postMessage 합니다.' },
+        { type: 'list', items: [
+          'sharp는 네이티브 C 라이브러리(libvips) 바인딩이라 순수 JS 대비 5~10배 빠름',
+          '메시지 패싱은 transferable buffer로 zero-copy에 가깝게 처리',
+          '취소(abort) 시 메인이 워커에 신호를 broadcast → 진행 중 작업 즉시 중단',
+        ]},
+        { type: 'heading', text: 'parallelThreads 결정 가이드' },
+        { type: 'table',
+          headers: ['시스템', '권장값', '이유'],
+          rows: [
+            ['SSD + 8코어 이상', 'CPU 코어 수와 동등', 'I/O 병목 거의 없음'],
+            ['HDD + 다코어', '코어 수의 절반', 'HDD 랜덤 read 병목이 큼'],
+            ['배터리 절약 모드', '2~4', '발열·전력 우선'],
+            ['저사양/4코어 이하', '코어 수 - 1', 'UI 응답 보존'],
+          ],
+        },
+        { type: 'paragraph', text: '워커 수를 늘릴수록 항상 빨라지는 것은 아닙니다. CPU 코어 수를 넘기면 컨텍스트 스위칭 비용이 늘고, 디스크가 SSD가 아니면 동시 read가 오히려 큐를 만들어 처리량이 떨어집니다. 기본 프리셋의 권장값으로 시작해 실측 후 조정하는 것이 가장 빠른 경로입니다.' },
+        { type: 'paragraph', text: 'Stage 2 검증(SSIM/NMSE)은 현재 워커 풀이 아닌 메인 스레드에서 직렬 처리됩니다. Stage 1으로 후보가 충분히 좁혀졌기 때문에 병목이 거의 없으며, 향후 부하가 커지면 워커 풀로 확장 가능한 구조입니다.' },
+      ],
+    },
+    {
+      id: 'soft-delete',
+      title: 'Soft Delete (휴지통)',
+      blocks: [
+        { type: 'paragraph', text: 'OptiShot의 핵심 안전 정책은 "사용자의 원본 파일은 어떤 경우에도 즉시 사라지지 않는다" 입니다. 모든 삭제는 OptiShot 자체 휴지통으로 이동하는 것으로 시작하고, 일정 기간 후에야 영구 삭제됩니다.' },
+        { type: 'heading', text: '왜 OS 휴지통이 아닌 자체 휴지통인가' },
+        { type: 'list', items: [
+          '플랫폼 일관성: macOS 휴지통, Windows 재활용함, Linux Trash spec이 동작과 복원 메커니즘이 모두 다름',
+          '복원 정확성: OS 휴지통은 원본 위치 복원이 보장되지 않거나 권한 문제가 발생할 수 있음',
+          '대량 처리 성능: OS 휴지통 API는 파일별 호출 비용이 크고 진행률 추적이 어려움',
+          '추적성: OptiShot이 보낸 항목과 사용자가 직접 보낸 항목을 분리 관리',
+        ]},
+        { type: 'heading', text: '이동 절차' },
+        { type: 'list', items: [
+          '1. 원본 파일을 OptiShot 휴지통 디렉토리로 복사 (copy)',
+          '2. 복사 성공 확인 후 원본 위치에서 삭제 (unlink)',
+          '3. DB의 trash_items 레코드에 원래 경로, 이동 시각, 그룹 ID, 파일 크기 기록',
+        ]},
+        { type: 'paragraph', text: '단순 rename 대신 copy + delete를 쓰는 이유는 원본과 휴지통이 다른 디스크에 있을 수 있기 때문입니다. 또한 중간에 실패해도 원본이 보존됩니다.' },
+        { type: 'heading', text: '복원과 충돌 처리' },
+        { type: 'paragraph', text: '복원 시 DB에 저장된 원래 경로로 파일을 되돌립니다. 만약 그 위치에 이미 다른 파일이 있으면(원래 사진이 같은 이름으로 새로 들어왔거나 사용자가 수동 복사한 경우), 복원이 자동 차단되고 사용자에게 알림이 표시됩니다 — 기존 파일을 덮어쓰지 않습니다.' },
+        { type: 'heading', text: '자동 영구 삭제 (Retention)' },
+        { type: 'paragraph', text: '휴지통 보관 기간(기본 30일, 설정에서 변경 가능) 경과 시 백그라운드 스케줄러가 자동 영구 삭제합니다. 또한 사용자가 휴지통 화면에서 "전체 비우기"를 명시 실행해 즉시 영구 삭제할 수도 있습니다.' },
+        { type: 'heading', text: '원본 파일 보호 원칙' },
+        { type: 'paragraph', text: 'OptiShot은 어떤 상황에서도 원본 파일의 내용(픽셀, EXIF, 파일 헤더)을 수정하지 않습니다. 허용되는 동작은 이동(휴지통으로/원위치로)과 영구 삭제뿐입니다. 파일 정리(/organize) 기능의 리네임도 파일 시스템상의 이름만 바꾸고 내용은 그대로 보존합니다.' },
+      ],
+    },
+  ],
+}

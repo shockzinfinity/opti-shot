@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { HeaderBar } from './components/HeaderBar'
+import { AboutOptiShotModal } from './components/AboutOptiShotModal'
 import { Dashboard } from './pages/Dashboard'
 import { FolderSelect } from './pages/FolderSelect'
 import { ScanProgress } from './pages/ScanProgress'
@@ -13,8 +14,17 @@ import { useSettingsStore } from './stores/settings'
 
 export default function App() {
   const loadSettings = useSettingsStore((s) => s.loadSettings)
+  const [showAbout, setShowAbout] = useState(false)
+
   useEffect(() => { loadSettings() }, [loadSettings])
   useTheme()
+
+  // Opened only on explicit user action via Settings → Info tab.
+  useEffect(() => {
+    const handler = () => setShowAbout(true)
+    window.addEventListener('optishot:open-about', handler)
+    return () => window.removeEventListener('optishot:open-about', handler)
+  }, [])
 
   return (
     <HashRouter>
@@ -35,6 +45,8 @@ export default function App() {
             <Route path="/settings" element={<ScrollPage><Settings /></ScrollPage>} />
           </Routes>
         </main>
+
+        {showAbout && <AboutOptiShotModal onClose={() => setShowAbout(false)} />}
       </div>
     </HashRouter>
   )

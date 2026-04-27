@@ -21,6 +21,7 @@ import {
   Clock,
   Puzzle,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTranslation } from '@renderer/hooks/useTranslation'
@@ -687,6 +688,20 @@ export function InfoTab() {
           </div>
         ))}
       </div>
+
+      {/* About OptiShot — opens technical guide modal */}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent('optishot:open-about'))}
+        data-testid="info-open-about"
+        className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-surface-secondary text-left hover:bg-primary/5 hover:text-primary transition-colors"
+      >
+        <BookOpen className="w-5 h-5 text-primary shrink-0" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{t('about.openButton')}</p>
+          <p className="text-xs text-foreground-muted">{t('about.openDesc')}</p>
+        </div>
+      </button>
 
       {/* Software Update */}
       <div className="space-y-3">

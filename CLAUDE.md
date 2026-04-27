@@ -145,17 +145,20 @@ Renderer                          Main
 - Worker threads for parallel hash computation (HashWorkerPool, parallelThreads 설정)
 - Virtual lists for large datasets (react-window 적용)
 
-## Current Status (v0.3.x)
+## Current Status (v0.4.0)
 - 핵심 기능 완료 (P0~P5): 스캔, 검토, 휴지통, 설정, 파일 정리
 - 알고리즘: HashAlgorithm/VerifyAlgorithm 분리 (pHash, dHash, SSIM, NMSE) + 프리셋
 - 성능: Worker Threads (HashWorkerPool, parallelThreads 설정), exifr 단일 호출 최적화
 - 부가 기능: EXIF 필터링, HEIC, i18n(ko/en/ja), 다크 모드, 알림 시스템
+- About OptiShot 모달: 정보 탭에서 진입, 풀스크린 모달 + 사이드 네비, 10개 섹션 인앱 기술 가이드
+  - 콘텐츠 데이터: `src/renderer/content/about/{ko.ts,index.ts,types.ts}` — 다국어 확장 가능 구조
+  - 본문은 현재 ko만 (`getAboutContent(language)` → fallback to ko), UI 라벨은 ko/en/ja
 - 업데이트: GitHub Releases 직접 다운로드 방식 (electron-updater 의존성 제거됨)
   - 체크: GitHub API → 버전 비교 → 알림
   - 다운로드: net.request로 ~/Downloads에 저장, 진행률 EventBus 전파
   - 설치: shell.showItemInFolder로 다운로드 위치 열기 (코드 서명 미적용 → 수동 설치)
 - 방어: 글로벌 에러 핸들러, 방어적 알림, abort 조용히 처리
-- 테스트: 기능 구현 시 함께 작성 (18파일 190개)
+- 테스트: 단위 Vitest 18파일 190개 + E2E Playwright Electron 6개 (smoke / About 모달 / 라우팅 / 언어)
 - 로드맵 상세: docs/ROADMAP.md
 
 ## Safety Rules

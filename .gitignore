@@ -8,6 +8,8 @@ out/
 
 # Test
 coverage/
+test-results/
+playwright-report/
 
 # Environment
 .env

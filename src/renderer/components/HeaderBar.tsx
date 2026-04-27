@@ -28,6 +28,7 @@ export function HeaderBar() {
           onClick={() => navigate('/')}
           className="flex items-center gap-2 cursor-pointer hover:text-primary transition-colors"
           aria-label="Go to Dashboard"
+          data-testid="header-dashboard-button"
         >
           <Aperture className="w-5 h-5 text-primary" />
           <span className="text-base font-heading font-bold hover:text-primary transition-colors">OptiShot</span>

@@ -386,4 +386,11 @@ export const en = {
   'notification.markAllRead': 'Mark all read',
   'notification.clearAll': 'Clear all',
   'notification.empty': 'No notifications',
+
+  // About modal (header label + button — body content is currently Korean only)
+  'about.title': 'About OptiShot',
+  'about.subtitle': 'How OptiShot works',
+  'about.openButton': 'About OptiShot',
+  'about.openDesc': 'Detailed explanation of algorithms, thresholds, and safety policy',
+  'about.close': 'Close',
 } as const

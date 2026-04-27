@@ -367,4 +367,11 @@ export const ja = {
   'notification.markAllRead': 'すべて既読',
   'notification.clearAll': 'すべてクリア',
   'notification.empty': '通知はありません',
+
+  // About modal (header label + button — body content is currently Korean only)
+  'about.title': 'About OptiShot',
+  'about.subtitle': 'OptiShotの仕組み',
+  'about.openButton': 'About OptiShot',
+  'about.openDesc': 'アルゴリズム、しきい値、安全ポリシーの詳細説明',
+  'about.close': '閉じる',
 } as const

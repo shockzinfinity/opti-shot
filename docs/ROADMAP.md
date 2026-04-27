@@ -1,6 +1,6 @@
 # OptiShot 로드맵 현황
 
-> 최종 갱신: 2026-04-22 | 현재 버전: v0.3.x
+> 최종 갱신: 2026-04-27 | 현재 버전: v0.4.0
 
 ## Phase 완료 현황
 
@@ -35,6 +35,8 @@
 | dHash + NMSE | Stage 1 dHash(Gradient) + Stage 2 NMSE(정규화 MSE) 알고리즘 |
 | 그룹 병합 엔진 | Union-Find 기반 Union/Intersection 전략 + 복수 Stage 2 순차 파이프라인 |
 | 프리셋 시스템 | 균형/빠른/보수적/정밀/사용자정의 — 점진적 공개 UI |
+| About OptiShot 모달 | 인앱 기술 가이드 — 10개 섹션(개요/해시/검증/임계값/프리셋/병합/EXIF/품질/워커/Soft Delete) — 사이드 네비 + 본문 스크롤, 다국어 확장 가능한 콘텐츠 데이터 구조 |
+| Playwright E2E | macOS 셋업 + 6개 critical-path 테스트 (smoke / About 모달 3종 / 라우팅 / 언어 전환) |
 
 ---
 
@@ -51,13 +53,13 @@
 
 ---
 
-## 단기 — 사용자 가치 중심 (v0.2 ~ v0.3.x 완료)
+## 단기 — 사용자 가치 중심 (v0.2 ~ v0.4 완료)
 
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
 | 1 | ~~Auto-updater 실전 배포~~ | 배포 | ✅ 완료 — GitHub Releases 직접 다운로드 방식 (v0.3.2~) |
 | 2 | ~~감지 알고리즘 아키텍처 재설계~~ | 아키텍처 | ✅ 완료 — 아래 상세 |
-| 3 | Quick Start 가이드 / 온보딩 | UX | 아이디어 |
+| 3 | ~~Quick Start 가이드 / 온보딩~~ | UX | ✅ 완료 — About OptiShot 인앱 기술 가이드 모달 (v0.4.0) |
 
 ### #2 감지 알고리즘 아키텍처 재설계 ✅
 
@@ -135,11 +137,12 @@
 | 크로스 플랫폼 | ✅ 양호 | path 처리, titleBarStyle, 트래시 폴더 분기 |
 | 다크 모드 | ✅ 완료 | Light/Dark/Auto + 시스템 감지 |
 | 파일 정리 | ✅ 완료 | 일괄 리네임 + 되돌리기 + 이력 초기화 |
-| 테스트 | ⚠️ 부분 | 단위 18파일 190개, E2E 0개 |
+| 테스트 | ✅ 부분 | 단위 18파일 190개, E2E 6개 |
 | i18n | ✅ 완비 | ko/en/ja |
 | 알림 | ✅ 완료 | 정책 기반 미들웨어 + 3계층 |
 | 크래시 방어 | ✅ 완료 | 글로벌 핸들러 + 방어적 코드 |
 | Worker Threads | ✅ 완료 | HashWorkerPool, parallelThreads 설정 반영 |
+| E2E 테스트 | ✅ 부분 | Playwright Electron 6개 (smoke / About 모달 / 라우팅 / 언어). 스캔 플로우는 픽스처 셋업 후 v0.5+ |
 | CI/CD | ⚠️ 부분 | release.yml 완료, 코드 서명 미구현 |
 
 ---

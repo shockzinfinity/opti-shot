@@ -367,4 +367,10 @@ export const ko = {
   'notification.markAllRead': '모두 읽음',
   'notification.clearAll': '모두 지우기',
   'notification.empty': '알림이 없습니다',
+
+  'about.title': 'About OptiShot',
+  'about.subtitle': 'OptiShot은 어떻게 작동하는가',
+  'about.openButton': 'About OptiShot',
+  'about.openDesc': '앱의 동작 원리와 알고리즘, 임계값, 안전 정책을 자세히 설명합니다',
+  'about.close': '닫기',
 } as const
