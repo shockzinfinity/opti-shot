@@ -67,7 +67,7 @@ npm run dev
 |------|----------|----------|
 | 원본 파일 수정 금지 | `grep -rn "unlinkSync\|rmSync\|renameSync" src/main/services/` — trash.ts의 trash 디렉터리 내 삭제만 허용 | `trash.ts`, `export.ts` |
 | Soft Delete Only (30일) | trash.test.ts: "does NOT delete original" 테스트 존재 확인 | `tests/unit/services/trash.test.ts` |
-| 100% 로컬 | `grep -rn "fetch\|axios\|http\|https" src/` — `electron-updater`만 허용 | 전체 |
+| 100% 로컬 | `grep -rn "fetch\|axios\|http\|https" src/` — auto-updater의 GitHub API 호출만 허용 | 전체 |
 | contextIsolation=true | `src/main/index.ts` 확인 | `index.ts` |
 
 ### B. 보안 (Electron Security)

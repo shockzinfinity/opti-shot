@@ -1,6 +1,6 @@
 # OptiShot 로드맵 현황
 
-> 최종 갱신: 2026-04-22
+> 최종 갱신: 2026-04-22 | 현재 버전: v0.3.x
 
 ## Phase 완료 현황
 
@@ -31,7 +31,7 @@
 | 다크 모드 테마 | Light/Dark/Auto + 시스템 테마 감지 (CSS 변수 오버라이드) |
 | 파일 정리 | 촬영일 기반 일괄 리네임 + 되돌리기 + 이력 초기화 (설정) |
 | DB 스키마 경량화 | 레거시 4테이블 제거, 현재 8테이블 |
-| Auto-updater UI | Settings > Info 탭 업데이트 확인/다운로드/설치 + EventBus 연동 |
+| Auto-updater | GitHub API 직접 체크 + ~/Downloads로 다운로드 + Finder 위치 열기 (electron-updater 의존성 제거) |
 | dHash + NMSE | Stage 1 dHash(Gradient) + Stage 2 NMSE(정규화 MSE) 알고리즘 |
 | 그룹 병합 엔진 | Union-Find 기반 Union/Intersection 전략 + 복수 Stage 2 순차 파이프라인 |
 | 프리셋 시스템 | 균형/빠른/보수적/정밀/사용자정의 — 점진적 공개 UI |
@@ -51,12 +51,12 @@
 
 ---
 
-## 단기 — 사용자 가치 중심 (v0.2)
+## 단기 — 사용자 가치 중심 (v0.2 ~ v0.3.x 완료)
 
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
-| 1 | Auto-updater 실전 배포 | 배포 | ✅ UI/EventBus 구현 완료, 실전 태그 테스트만 남음 |
-| 2 | 감지 알고리즘 아키텍처 재설계 | 아키텍처 | ✅ 완료 — 아래 상세 |
+| 1 | ~~Auto-updater 실전 배포~~ | 배포 | ✅ 완료 — GitHub Releases 직접 다운로드 방식 (v0.3.2~) |
+| 2 | ~~감지 알고리즘 아키텍처 재설계~~ | 아키텍처 | ✅ 완료 — 아래 상세 |
 | 3 | Quick Start 가이드 / 온보딩 | UX | 아이디어 |
 
 ### #2 감지 알고리즘 아키텍처 재설계 ✅
@@ -79,15 +79,16 @@
 
 ---
 
-## 중기 — 내부 품질/성능 (v0.3)
+## 중기 — 내부 품질/성능 (v0.3.x 완료)
 
 | # | 항목 | 분류 | 상태 |
 |---|------|------|------|
 | 1 | ~~Worker Threads~~ | 성능 | ✅ 완료 — worker_threads 직접 구현 (hash-worker + HashWorkerPool, parallelThreads 설정 반영) |
 | 2 | ~~Correction Detection 구현 또는 제거~~ | 정리 | ✅ 완료 — dead code 제거 (DB 컬럼만 호환 유지) |
-| 3 | ~~exifr 호출 최적화~~ | 성능 | ✅ ���료 — parse(gps:true) 단일 호출로 통합 |
-| 4 | 다중 회전 해시 (HashAlgorithm) | 알고리즘 | 기획 — 0°/90°/180°/270° 회전 해시. 새 아키텍처 Stage 1 확장 |
-| 5 | Incremental Scan | 기능 | 보류 — 아래 설계 메모 참고 |
+| 3 | ~~exifr 호출 최적화~~ | 성능 | ✅ 완료 — parse(gps:true) 단일 호출로 통합 |
+| 4 | ~~Auto-updater 재설계~~ | 배포 | ✅ 완료 — electron-updater 제거, GitHub Releases 직접 다운로드 |
+| 5 | 다중 회전 해시 (HashAlgorithm) | 알고리즘 | 기획 — 0°/90°/180°/270° 회전 해시. 새 아키텍처 Stage 1 확장 |
+| 6 | Incremental Scan | 기능 | 보류 — 아래 설계 메모 참고 |
 
 ---
 
@@ -112,7 +113,7 @@
 |---|------|------|
 | 1 | GitHub Actions 워크플로우 | ✅ release.yml (태그 트리거, 3-OS 매트릭스, 캐싱, lint, 테스트) |
 | 2 | macOS/Windows/Linux 크로스 빌드 자동화 | ✅ electron-builder 3-OS 타겟 |
-| 3 | 코드 서명 (Apple notarization, Windows signing) | 미구현 (장기) |
+| 3 | 코드 서명 (Apple notarization, Windows signing) | 미구현 — 자동 설치 불가, 현재는 ~/Downloads로 다운로드 후 수동 설치 안내 |
 
 ---
 
@@ -134,7 +135,7 @@
 | 크로스 플랫폼 | ✅ 양호 | path 처리, titleBarStyle, 트래시 폴더 분기 |
 | 다크 모드 | ✅ 완료 | Light/Dark/Auto + 시스템 감지 |
 | 파일 정리 | ✅ 완료 | 일괄 리네임 + 되돌리기 + 이력 초기화 |
-| 테스트 | ⚠️ 부분 | 단위 19파일 203개, E2E 0개 |
+| 테스트 | ⚠️ 부분 | 단위 18파일 190개, E2E 0개 |
 | i18n | ✅ 완비 | ko/en/ja |
 | 알림 | ✅ 완료 | 정책 기반 미들웨어 + 3계층 |
 | 크래시 방어 | ✅ 완료 | 글로벌 핸들러 + 방어적 코드 |
